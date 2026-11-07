@@ -14,14 +14,14 @@
     "Apri pannello recuperato.cmd": "aad6fdca63b5ef0e94d7ece6f6b80f4f5e5dac59ecc201a279ee8c00fa737ca7",
     "Avvia Ishtar Lab.bat": "4d65edc09436862f38076f18f66a042bb0c46f98da8d5294c9e8613496f5ca37",
     "Avvia Ishtar Lab.cmd": "7f451789243c3af471524ee22d75798a223cb214c381fe048c49f520d5542c31",
-    "CHANGELOG.md": "0d669b5f7fe7abea62b78bdf0777ec30b217f37790b5b0da0a5fe28acacf9d27",
+    "CHANGELOG.md": "982e98cc735203788dfbccdf01152d810e645fa32b205ade417b6698575393ae",
     "CONTRIBUTING.md": "5a0eda557d0a680e36f9b1a7bfaa823765ac95d5a1078aae9d8d91f01d6c288c",
     "Ferma backend Ishtar Lab.cmd": "5be2b69c63047e6f609c4f97cbdfb020299e07d0281448dd2a55b6df2233af34",
     "GUIDA-COLLABORATORE.md": "72b9a21870f41d1a30c53cf0f6dca2afb8d1431ae93dad0f5ef18a3ff6132d3f",
     "LICENSE.md": "0f065f02e89a4f7cc77431eeb546daab889e8ebccf0271521d7d2e1562cd417f",
     "LICENSING-SCOPE.md": "c02d7e09d9c8dd6090479effa76f6be937ae22990917bd6d58237dad469bdfa7",
     "PIANO-INVENTARIO.md": "855cdfd6f9a850031c9edbb3cc92d0e1a0d7a7a76550219197ce54da63cad069",
-    "PROJECT.md": "e83de93c0a191f86bd5423f2e524f49967f8a8d3f38a476fd5d25c94948019ae",
+    "PROJECT.md": "3adc3348f569ffd0a37d83acc73028000e07cdd7cbcd2d3c2775c1a71b88cb95",
     "Prepara Ishtar Lab.bat": "6425d404186afa260a365636460333d15d1c0b0b7ed0e6fdfb62a267df0f8f27",
     "README.md": "fc90264200aa5cd8aef91a618ed3683c907da515a22e767201e1446a3be64fd7",
     "THIRD_PARTY_NOTICES.md": "6231727cf6a5f80dffa1f72474f71ebe04a4c1d781f98c1cc4dca058c3bdf44b",
@@ -615,7 +615,7 @@
     "tools/prepara-consegna.py": "d504144890749655b077dacbdcd99ef8a74b6674b49d21e4075599a094484e90",
     "tools/prepara-installazione.mjs": "1cd9145817bd6a12b1a7a51198a2224b3c25d2ce63527926b75d3b7d0c077772",
     "verifiche/avvio-bat.json": "baba0f1293a93b33e17526d199464c410cdb4d9c9306e6561954a020d714d369",
-    "verifiche/consegna-github.json": "4f245e1682d2f63431fbb99d55aa85de8dee100c09bc677c500e859570f6e44a",
+    "verifiche/consegna-github.json": "c23b2a5cd494fbd1599ce906a57cf678017356b4ad20e63dfbe33bbee0189d2e",
     "verifiche/csv.test.mjs": "92f852fb961d538cdd1107c27dbb287d761c2ce8c023a34378303fcf8e88376a",
     "verifiche/dashboard-ripristinata.jpg": "2fff4c178bd55ee39ccab688d9dcf27230081ed02b24b0bee273b91201855107",
     "verifiche/integrita-design.json": "61e119f4c624ecb70b46244a5f2d5476214a23174ebfa613d471af8a91c85e14",
@@ -623,5 +623,7 @@
     "verifiche/qa-catalogo-operativo.json": "ddad076b4bc671248e7709b084cc4406925b0dd38b7483be7ed800a92bf8bcfe"
   },
   "hash_format": "SHA-256 dei blob Git normalizzati e dello ZIP prodotto da git archive; checkout BAT può usare CRLF",
-  "staged_secret_scan_matches": 0
+  "staged_secret_scan_matches": 0,
+  "scope": "Snapshot della release v0.1.0-preview-20261107; i successivi aggiornamenti documentali del ramo main non fanno parte di questo manifest.",
+  "release_tag": "v0.1.0-preview-20261107"
 }
