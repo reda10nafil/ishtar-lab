@@ -6,7 +6,7 @@ tags: [ishtar-lab, consegna]
 
 # GitHub e collaborazione
 
-Il titolare ha autorizzato il 7 novembre il salvataggio di app e vault su GitHub del proprio account, poi ha scelto esplicitamente la visibilità pubblica. Repository previsto: https://github.com/reda10nafil/ishtar-lab . L'esito effettivo e il commit sono registrati nel rapporto di consegna, non presunti dalla presenza di questo link.
+Il titolare ha autorizzato il 7 novembre il salvataggio di app e vault su GitHub del proprio account, poi ha scelto esplicitamente la visibilità pubblica. Repository verificato: https://github.com/reda10nafil/ishtar-lab . L'esito effettivo e il commit sono registrati nel rapporto di consegna, non presunti dalla presenza di questo link.
 
 ## Contenuto
 
@@ -27,3 +27,7 @@ Il titolare ha successivamente precisato di non invitare nessuno e di rendere il
 Riferimento: verifiche/consegna-github.json nella radice. Link alla release e hash del pacchetto saranno riportati nella relazione finale. La presenza del codice su GitHub non significa che il sito sia pubblicato o che il database sia stato copiato.
 
 [[00 Inizia qui]] · [[Licenza - guida pratica]] · [[Roadmap per fasi]]
+
+## Esito finale verificato
+
+Il repository è pubblico e il download senza autenticazione è stato provato. [Scarica la release](https://github.com/reda10nafil/ishtar-lab/releases/tag/v0.1.0-preview-20261107). Lo ZIP contiene app e vault; non include credenziali né database privato. SHA-256: b221fab00ba60b5050a5224c9d64c3297051e9f6906bdf76aac30ce3c27875b5. Nessun invito inviato. Il bootstrap su PC pulito resta da provare.
