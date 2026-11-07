@@ -622,7 +622,7 @@
     "verifiche/pagine-ripristinate.json": "ec84255c5263cae69ff3b121ba8936350dc093ecd4859232383a4f58d6cadd71",
     "verifiche/qa-catalogo-operativo.json": "ddad076b4bc671248e7709b084cc4406925b0dd38b7483be7ed800a92bf8bcfe"
   },
-  "hash_format": "SHA-256 dei blob Git normalizzati e dello ZIP prodotto da git archive; checkout BAT può usare CRLF",
+  "hash_format": "SHA-256 dei blob Git canonici e dei file nello ZIP; eventuali conversioni CRLF del checkout non si applicano a questa verifica.",
   "staged_secret_scan_matches": 0,
   "scope": "Snapshot della release v0.1.0-preview-20261107; i successivi aggiornamenti documentali del ramo main non fanno parte di questo manifest.",
   "release_tag": "v0.1.0-preview-20261107"
