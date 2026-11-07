@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" role="img" aria-labelledby="title">
+  <title id="title">Immagine dimostrativa: foto prodotto da associare</title>
+  <rect width="640" height="640" rx="48" fill="#261b27"/>
+  <rect x="64" y="64" width="512" height="512" rx="32" fill="none" stroke="#ff7ea9" stroke-width="3" stroke-dasharray="12 12"/>
+  <path d="M284 231c0-47 72-47 72 0 0 31-36 27-36 53v28m0 0L159 398c-16 9-9 29 7 29h308c16 0 23-20 7-29L320 312" fill="none" stroke="#ff7ea9" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="320" y="490" text-anchor="middle" fill="#fff1f6" font-family="Arial,sans-serif" font-size="24">Foto da associare</text>
+  <text x="320" y="530" text-anchor="middle" fill="#ff9cbd" font-family="Arial,sans-serif" font-size="18">SEGNAPOSTO DEMO</text>
+</svg>

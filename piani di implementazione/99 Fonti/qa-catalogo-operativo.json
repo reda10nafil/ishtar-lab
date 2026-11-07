@@ -1,0 +1,13 @@
+{
+  "products": 82,
+  "categories": 8,
+  "custom_fields": 14,
+  "gui_create_saved": true,
+  "gui_custom_field_persisted": true,
+  "gui_photo_upload_readable": true,
+  "gui_stock_change_persisted_and_restored": true,
+  "temporary_product_removed": true,
+  "cross_origin_rejected": true,
+  "anonymous_backend_rejected": true,
+  "uploaded_photo_asset_retained": "http://127.0.0.1:59730/ishtar-lab-assets/output-1-01M6STWVK6M6X59YYDZJME530V.png"
+}

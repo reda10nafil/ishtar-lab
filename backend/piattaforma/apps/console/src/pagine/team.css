@@ -1,0 +1,25 @@
+.persone { display: grid; }
+
+.persona {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--linea);
+}
+
+.persona:first-child { padding-top: 2px; }
+.persona:last-child { padding-bottom: 2px; border-bottom: 0; }
+
+/* Dentro un riquadro la tabella non aggiunge un secondo vetro. */
+.riquadro > .tabella-guscio {
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.ruoli-matrice .tabella td:not(:first-child) { color: var(--testo-2); }
+.ruoli-matrice .tabella td:first-child { font-weight: 600; }

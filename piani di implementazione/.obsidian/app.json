@@ -1,0 +1,10 @@
+{
+  "alwaysUpdateLinks": true,
+  "newLinkFormat": "shortest",
+  "useMarkdownLinks": false,
+  "attachmentFolderPath": "99 Fonti",
+  "showLineNumber": false,
+  "readableLineLength": true,
+  "defaultViewMode": "preview",
+  "promptDelete": true
+}

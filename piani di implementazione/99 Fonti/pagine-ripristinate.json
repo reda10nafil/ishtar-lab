@@ -1,0 +1,174 @@
+{
+  "date": "2026-11-07",
+  "method": "Browser: navigazione e ricaricamento completo, titolo e componenti visibili",
+  "pages": [
+    {
+      "route": "home",
+      "heading": "Good morning, Noor",
+      "cards": 11,
+      "ok": true
+    },
+    {
+      "route": "orders/all",
+      "heading": "Orders",
+      "cards": 5,
+      "ok": true
+    },
+    {
+      "route": "orders/drafts",
+      "heading": "Orders",
+      "cards": 3,
+      "ok": true
+    },
+    {
+      "route": "orders/returns",
+      "heading": "Orders",
+      "cards": 6,
+      "ok": true
+    },
+    {
+      "route": "products/catalogue",
+      "heading": "Prodotti",
+      "cards": 82,
+      "ok": true
+    },
+    {
+      "route": "products/inventory",
+      "heading": "Prodotti",
+      "cards": 4,
+      "ok": true
+    },
+    {
+      "route": "products/collections",
+      "heading": "Prodotti",
+      "cards": 5,
+      "ok": true
+    },
+    {
+      "route": "customers/people",
+      "heading": "Customers",
+      "cards": 1,
+      "ok": true
+    },
+    {
+      "route": "customers/segments",
+      "heading": "Customers",
+      "cards": 7,
+      "ok": true
+    },
+    {
+      "route": "analytics/sales",
+      "heading": "Analytics",
+      "cards": 7,
+      "ok": true
+    },
+    {
+      "route": "analytics/traffic",
+      "heading": "Analytics",
+      "cards": 7,
+      "ok": true
+    },
+    {
+      "route": "analytics/builder",
+      "heading": "Analytics",
+      "cards": 2,
+      "ok": true
+    },
+    {
+      "route": "marketing/campaigns",
+      "heading": "Marketing",
+      "cards": 11,
+      "ok": true
+    },
+    {
+      "route": "marketing/automations",
+      "heading": "Marketing",
+      "cards": 6,
+      "ok": true
+    },
+    {
+      "route": "discounts/codes",
+      "heading": "Discounts",
+      "cards": 1,
+      "ok": true
+    },
+    {
+      "route": "discounts/gift",
+      "heading": "Discounts",
+      "cards": 1,
+      "ok": true
+    },
+    {
+      "route": "channels/storefront",
+      "heading": "Online shop",
+      "cards": 4,
+      "ok": true
+    },
+    {
+      "route": "channels/till",
+      "heading": "Shop till",
+      "cards": 2,
+      "ok": true
+    },
+    {
+      "route": "channels/wholesale",
+      "heading": "Wholesale",
+      "cards": 9,
+      "ok": true
+    },
+    {
+      "route": "apps/installed",
+      "heading": "Apps",
+      "cards": 4,
+      "ok": true
+    },
+    {
+      "route": "apps/browse",
+      "heading": "Apps",
+      "cards": 8,
+      "ok": true
+    },
+    {
+      "route": "settings/store",
+      "heading": "Settings",
+      "cards": 1,
+      "ok": true
+    },
+    {
+      "route": "help",
+      "heading": "Help",
+      "cards": 4,
+      "ok": true
+    },
+    {
+      "route": "settings/team",
+      "heading": "Settings",
+      "cards": 1,
+      "ok": true
+    },
+    {
+      "route": "settings/shipping",
+      "heading": "Settings",
+      "cards": 1,
+      "ok": true
+    },
+    {
+      "route": "settings/alerts",
+      "heading": "Settings",
+      "cards": 1,
+      "ok": true
+    },
+    {
+      "route": "settings/appearance",
+      "heading": "Settings",
+      "cards": 1,
+      "ok": true
+    },
+    {
+      "route": "settings/data",
+      "heading": "Settings",
+      "cards": 1,
+      "ok": true
+    }
+  ]
+}

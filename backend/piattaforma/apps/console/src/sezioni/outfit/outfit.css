@@ -1,0 +1,234 @@
+/* Outfit Studio: solo token di base.css, così vale anche con il tema chiaro. */
+
+.outfit-filtro { width: auto; min-height: 42px; padding-block: 8px; }
+
+.outfit-conteggio {
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 99px;
+  background: var(--sup-2);
+  font-size: 13px;
+  font-style: normal;
+  line-height: 20px;
+}
+
+.outfit-segmenti { max-width: 100%; flex-wrap: wrap; }
+.outfit-segmenti em { min-width: 20px; margin-left: 2px; }
+
+.griglia-outfit {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+.outfit-scheda {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 9px;
+  overflow: hidden;
+  border-radius: var(--raggio-l);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.outfit-scheda:hover { border-color: var(--linea-forte); transform: translateY(-1px); }
+.outfit-scheda .foto-composta { border-radius: var(--raggio); }
+
+.outfit-scheda__stato { position: absolute; top: 16px; left: 16px; }
+.outfit-scheda__stato .etichetta { background: var(--modale-1); }
+
+.outfit-scheda__testo { display: grid; gap: 3px; padding: 10px 5px 5px; }
+.outfit-scheda__testo strong { min-width: 0; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.outfit-scheda__testo > small { overflow: hidden; color: var(--testo-2); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+
+.outfit-scheda__piede { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 10px; margin-top: 6px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.outfit-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 99px; background: var(--sup-1); font-size: 13px; font-weight: 600; white-space: nowrap; }
+.outfit-chip::before { width: 6px; height: 6px; border-radius: 50%; background: currentColor; content: ""; }
+.outfit-chip--ok { color: var(--ok); }
+.outfit-chip--attesa { color: var(--attesa); }
+
+.testo-attesa { color: var(--attesa); }
+
+/* Tessere numeriche in cima alla colonna, come nel dettaglio del pannello. */
+.outfit-tessere { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); grid-auto-flow: column; gap: 10px; margin: 0; }
+.outfit-tessere > div { display: grid; gap: 2px; min-width: 0; padding: 10px 12px; border: 1px solid var(--linea); border-radius: var(--raggio-s); background: var(--sup-1); }
+.outfit-tessere dt { color: var(--testo-2); font-size: 13px; }
+.outfit-tessere dd { margin: 0; overflow: hidden; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* La tela e la foto composta hanno la stessa geometria: 4:5, posizioni in percentuale. */
+.foto-composta, .tela {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  isolation: isolate;
+  aspect-ratio: 4 / 5;
+  border: 1px solid var(--linea);
+  border-radius: var(--raggio);
+  background-color: var(--incavo);
+}
+
+.foto-composta--vuota { display: grid; place-items: center; color: var(--testo-3); }
+
+.foto-composta__pezzo, .tela__pezzo {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+}
+
+.foto-composta__pezzo img, .tela__pezzo img { width: 100%; height: 100%; border-radius: var(--raggio-s); object-fit: contain; }
+
+.pezzo-senza-foto {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--raggio-s);
+  background: var(--sup-2);
+  color: var(--testo-2);
+  font-weight: 700;
+}
+
+.studio-tela { display: grid; gap: 10px; }
+
+.tela--modificabile {
+  background-image: radial-gradient(var(--linea) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+.tela__pezzo {
+  border: 2px solid transparent;
+  border-radius: var(--raggio-s);
+  outline-offset: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.tela--modificabile .tela__pezzo { cursor: grab; touch-action: none; }
+.tela--modificabile .tela__pezzo:active { cursor: grabbing; }
+.tela__pezzo img { pointer-events: none; }
+.tela__pezzo--scelto { border-color: var(--accento); }
+
+.tela__strumenti { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.tela__nome { flex: 1 1 100%; min-width: 0; overflow: hidden; color: var(--testo-2); font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Pagina dell'outfit. */
+.studio__barra { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.studio__indietro { display: inline-flex; align-items: center; gap: 6px; color: var(--testo-2); font-size: 15px; text-decoration: none; }
+.studio__indietro:hover { color: var(--testo); }
+
+.studio__esito { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; color: var(--testo-3); font-size: 14px; }
+.studio__esito--errore { color: var(--errore); }
+.studio__riprova { min-height: 32px; padding: 0 10px; font-size: 14px; }
+
+.studio {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+}
+
+.studio__colonna { display: grid; gap: 16px; min-width: 0; }
+.studio .riquadro .vuoto { padding-block: 22px; border: 0; background: none; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+
+.outfit-esito { display: flex; align-items: flex-start; gap: 8px; }
+.outfit-esito svg { flex: none; margin-top: 2px; }
+.outfit-esito ul { margin-top: 4px; font-size: 14px; font-weight: 500; }
+
+.outfit-nota { color: var(--testo-2); font-size: 14px; }
+
+.capi-elenco { display: grid; gap: 12px; }
+
+.capo-riga { display: flex; gap: 12px; min-width: 0; padding: 10px; border: 1px solid var(--linea); border-radius: var(--raggio-s); }
+.capo-riga--scelta { border-color: var(--accento); }
+.capo-riga__corpo { display: grid; flex: 1; gap: 8px; min-width: 0; }
+.capo-riga__testa { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 6px 10px; }
+.capo-riga__testa .riga__testo { min-width: 140px; }
+.capo-riga__testa strong { overflow-wrap: anywhere; }
+
+.capo-riga__apri { flex: none; align-self: flex-start; width: auto; min-height: 0; padding: 0; border: 0; background: none; }
+.capo-riga__apri:hover:not(:disabled) { background: none; }
+
+.capo-riga__alternativa { justify-self: start; min-height: 34px; padding: 0 10px; color: var(--testo-2); font-size: 14px; }
+
+.capo-alternativa {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  padding: 8px 10px;
+  border-radius: var(--raggio-s);
+  background: var(--sup-1);
+}
+
+.capo-alternativa svg { flex: none; color: var(--testo-3); }
+.capo-alternativa .riga__testo { min-width: 120px; }
+.capo-alternativa strong { overflow-wrap: anywhere; font-size: 15px; }
+
+.taglie { display: flex; flex-wrap: wrap; gap: 4px; }
+
+.taglie li {
+  padding: 1px 8px;
+  border: 1px solid var(--linea);
+  border-radius: 8px;
+  color: var(--testo-2);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.taglie li span { color: var(--testo-3); font-variant-numeric: tabular-nums; }
+.taglie__esaurita { color: var(--testo-3) !important; text-decoration: line-through; }
+
+.conti { display: grid; gap: 6px; margin: 0; }
+.conti > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; color: var(--testo-2); }
+.conti dt { font-size: 15px; }
+.conti dd { margin: 0; color: var(--testo); font-variant-numeric: tabular-nums; }
+.conti__totale { padding-top: 6px; border-top: 1px solid var(--linea); font-weight: 600; }
+
+.prezzo-carico { display: grid; gap: 10px; padding-top: 12px; border-top: 1px solid var(--linea); }
+.prezzo-carico__titolo { color: var(--testo-2); font-size: 14px; font-weight: 600; }
+
+/* Scelta dal catalogo: serve più spazio del modale normale. */
+.modale:has(.catalogo-capi) { width: min(720px, 100%); }
+.catalogo-capi { display: grid; gap: 12px; min-width: 0; }
+.catalogo-capi__filtri { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 220px); gap: 8px; }
+.catalogo-capi__filtri .cerca { width: 100%; }
+.catalogo-capi__elenco { display: grid; gap: 8px; }
+
+.catalogo-capi__voce {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--linea);
+  border-radius: var(--raggio-s);
+}
+
+.catalogo-capi__voce .riga__testo { min-width: 0; }
+.catalogo-capi__voce strong { overflow-wrap: anywhere; }
+.catalogo-capi__voce button { flex: none; }
+
+/* Su una colonna sola i risultati vanno in fondo: prima si compone, poi si misura. */
+@media (max-width: 1120px) {
+  .studio { grid-template-columns: minmax(0, 1fr); }
+  .studio__colonna { display: contents; }
+  .studio__risultati { order: 1; }
+}
+
+@media (max-width: 860px) {
+  .griglia-outfit { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .outfit-filtro { flex: 1 1 100%; width: 100%; }
+  .catalogo-capi__filtri { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 460px) {
+  .griglia-outfit { grid-template-columns: minmax(0, 1fr); }
+  .catalogo-capi__voce { flex-wrap: wrap; }
+  .catalogo-capi__voce .riga__testo { flex: 1 1 60%; }
+  .catalogo-capi__voce button { flex: 1 1 100%; }
+}

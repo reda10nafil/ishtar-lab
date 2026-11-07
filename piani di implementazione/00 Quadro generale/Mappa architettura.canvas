@@ -1,0 +1,149 @@
+{
+  "nodes": [
+    {
+      "id": "ui",
+      "type": "text",
+      "text": "PANNELLO ORIGINALE\n4273 · glass e componenti conservati",
+      "x": 0,
+      "y": 0,
+      "width": 330,
+      "height": 110,
+      "color": "6"
+    },
+    {
+      "id": "bridge",
+      "type": "text",
+      "text": "PONTE LOCALE\ncatalogo + foto · singolo proprietario",
+      "x": 0,
+      "y": 200,
+      "width": 330,
+      "height": 110
+    },
+    {
+      "id": "api",
+      "type": "text",
+      "text": "API MEDUSA / MERCUR\n9273 · backend indipendente",
+      "x": 0,
+      "y": 400,
+      "width": 330,
+      "height": 110,
+      "color": "4"
+    },
+    {
+      "id": "db",
+      "type": "text",
+      "text": "DATABASE · 55730\nprodotti, offerte, scorte e campi",
+      "x": -430,
+      "y": 650,
+      "width": 310,
+      "height": 110,
+      "color": "4"
+    },
+    {
+      "id": "s3",
+      "type": "text",
+      "text": "ARCHIVIO FOTO · 59730\nbucket e volume dedicati",
+      "x": 0,
+      "y": 650,
+      "width": 330,
+      "height": 110,
+      "color": "4"
+    },
+    {
+      "id": "redis",
+      "type": "text",
+      "text": "REDIS · 56730\ncache / infrastruttura",
+      "x": 450,
+      "y": 650,
+      "width": 310,
+      "height": 110
+    },
+    {
+      "id": "demo",
+      "type": "text",
+      "text": "DATI DEMO NEL BROWSER\nhome, vendite, clienti, visite e altri moduli",
+      "x": 500,
+      "y": 0,
+      "width": 360,
+      "height": 130,
+      "color": "2"
+    },
+    {
+      "id": "future",
+      "type": "text",
+      "text": "FUTURO DA INTEGRARE\nsiti · ordini · analytics · mercato\nNessun collegamento reale verificato",
+      "x": 500,
+      "y": 370,
+      "width": 360,
+      "height": 150,
+      "color": "3"
+    },
+    {
+      "id": "home",
+      "type": "file",
+      "file": "00 Inizia qui.md",
+      "x": -450,
+      "y": 0,
+      "width": 330,
+      "height": 180
+    }
+  ],
+  "edges": [
+    {
+      "id": "0",
+      "fromNode": "ui",
+      "fromSide": "bottom",
+      "toNode": "bridge",
+      "toSide": "top",
+      "label": "catalogo"
+    },
+    {
+      "id": "1",
+      "fromNode": "bridge",
+      "fromSide": "bottom",
+      "toNode": "api",
+      "toSide": "top",
+      "label": "autenticazione server"
+    },
+    {
+      "id": "2",
+      "fromNode": "api",
+      "fromSide": "bottom",
+      "toNode": "db",
+      "toSide": "top",
+      "label": "persistenza"
+    },
+    {
+      "id": "3",
+      "fromNode": "api",
+      "fromSide": "bottom",
+      "toNode": "s3",
+      "toSide": "top",
+      "label": "upload"
+    },
+    {
+      "id": "4",
+      "fromNode": "api",
+      "fromSide": "bottom",
+      "toNode": "redis",
+      "toSide": "top",
+      "label": "servizi"
+    },
+    {
+      "id": "5",
+      "fromNode": "ui",
+      "fromSide": "right",
+      "toNode": "demo",
+      "toSide": "top",
+      "label": "stato dimostrativo"
+    },
+    {
+      "id": "6",
+      "fromNode": "api",
+      "fromSide": "bottom",
+      "toNode": "future",
+      "toSide": "top",
+      "label": "proposta, non attiva"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "date": "2026-11-07",
+  "repo": "reda10nafil/ishtar-lab",
+  "visibility": "public",
+  "status": "prepared-upload-pending",
+  "bootstrap_clean_pc_tested": false,
+  "database_included": false,
+  "private_credentials_included": false,
+  "collaborator_invited": false,
+  "collaborator_username_pending": false,
+  "license_version": "1.1",
+  "repo_created": true,
+  "repo_private_verified": false,
+  "prepared_files": 614,
+  "known_secret_scan_passed": true,
+  "csv_tests": 5,
+  "setup_prerequisites_check_passed": true,
+  "vault_notes": 29,
+  "vault_links_ok": true,
+  "public_explicitly_authorized": true,
+  "collaborator_invites_cancelled_by_user": true
+}

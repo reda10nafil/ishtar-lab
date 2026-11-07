@@ -1,0 +1,93 @@
+.impostazioni__moduli {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  max-width: 920px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.impostazioni__elenco { display: grid; }
+.impostazioni__elenco .impostazione + .impostazione { border-top: 1px solid var(--linea); }
+
+.impostazione {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 18px;
+  padding: 11px 0;
+}
+
+.impostazione > div:first-child { flex: 1; min-width: 200px; }
+.impostazione strong { font-weight: 600; }
+.impostazione p { margin-top: 2px; color: var(--testo-2); font-size: 14px; }
+
+.impostazioni__piede {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 14px;
+  border-top: 1px solid var(--linea);
+}
+
+.impostazioni__valori {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.impostazioni__valori span:first-child { display: grid; justify-items: end; }
+.impostazioni__valori small { color: var(--testo-2); font-size: 13px; }
+
+/* Il testo di aiuto di un campo non deve allungare il campo accanto. */
+.impostazioni__coppia { align-items: start; }
+
+.impostazioni__conteggio {
+  margin-left: 4px;
+  color: var(--testo-3);
+  font-weight: 400;
+}
+
+.impostazioni__riga-modulo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.impostazioni__riga-modulo .campo { flex: 1; min-width: 200px; max-width: 280px; }
+.impostazioni__riga-modulo > button { margin-top: 27px; }
+
+.impostazioni__temi {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+}
+
+.impostazioni__temi button {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  justify-content: stretch;
+  justify-items: start;
+  gap: 4px;
+  min-height: 112px;
+  padding: 14px;
+  border-radius: var(--raggio);
+  text-align: left;
+  white-space: normal;
+}
+
+.impostazioni__temi small { color: var(--testo-2); font-size: 13px; font-weight: 400; }
+.impostazioni__temi button[aria-checked="true"] { border-color: var(--accento); background: var(--sup-2); }
+.impostazioni__temi button[aria-checked="true"] svg { color: var(--accento); }
+
+@media (max-width: 560px) {
+  .impostazioni__riga-modulo .campo { max-width: none; }
+  .impostazioni__riga-modulo > button { width: 100%; margin-top: 0; }
+  .impostazioni__valori { width: 100%; justify-content: space-between; }
+  .impostazioni__valori span:first-child { justify-items: start; }
+  .impostazioni__piede button { width: 100%; }
+}

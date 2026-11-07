@@ -1,0 +1,13 @@
+{
+  "date": "2026-11-07",
+  "file": "Avvia Ishtar Lab.bat",
+  "test_args": [
+    "--no-browser"
+  ],
+  "exit_code": 0,
+  "services_ready": true,
+  "frontend_ready": true,
+  "duplicate_api_avoided": true,
+  "cold_windows_boot_tested": false,
+  "docker_initially_stopped_tested": false
+}

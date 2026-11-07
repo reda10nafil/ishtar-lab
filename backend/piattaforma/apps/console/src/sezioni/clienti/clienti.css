@@ -1,0 +1,137 @@
+.cli-nome { display: grid; min-width: 0; }
+.cli-nome strong { font-weight: 600; overflow-wrap: anywhere; }
+.cli-nome small { color: var(--testo-2); font-size: 13px; overflow-wrap: anywhere; }
+
+.cli-etichette { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+
+.cli-ristretto { display: inline-flex; align-items: center; gap: 8px; color: var(--testo-2); }
+
+.cli-griglia {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.cli-dati { display: grid; gap: 10px; margin: 0; }
+.cli-dati > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; }
+.cli-dati dt { color: var(--testo-2); }
+.cli-dati dd { margin: 0; overflow-wrap: anywhere; }
+.cli-dati small { color: var(--testo-3); }
+
+.cli-nota { color: var(--testo-2); white-space: pre-wrap; }
+
+.cli-scelta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--linea);
+  border-radius: var(--raggio-s);
+}
+
+.cli-scelta > span { display: grid; min-width: 0; }
+.cli-scelta strong { font-weight: 600; }
+.cli-scelta small { color: var(--testo-2); font-size: 13px; }
+
+.cli-gruppi { display: grid; gap: 12px; }
+.cli-gruppi ul { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.cli-gruppi li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px 4px 12px;
+  border: 1px solid var(--linea);
+  border-radius: 99px;
+}
+.cli-gruppi a { color: var(--testo); text-decoration: none; }
+.cli-gruppi select { flex: 1; min-width: 0; }
+
+.cli-blocco { display: grid; gap: 14px; }
+.cli-blocco .tabella-guscio { border: 0; background: none; box-shadow: none; backdrop-filter: none; }
+.cli-blocco .filtri em { margin-left: 2px; font-size: 13px; font-style: normal; opacity: 0.75; }
+
+.cli-ordina { display: inline-flex; align-items: center; gap: 8px; color: var(--testo-2); font-size: 14px; }
+.cli-ordina select { width: auto; min-width: 150px; }
+
+.cli-persona { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
+
+.cli-iniziali {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 99px;
+  background: var(--sup-2);
+  color: var(--testo);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.cli-segmenti {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.cli-segmento {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 18px;
+  border-radius: var(--raggio-l);
+  color: var(--testo);
+  text-decoration: none;
+}
+
+.cli-segmento:hover { border-color: var(--linea-forte); }
+.cli-segmento__nome { font-size: 17px; font-weight: 600; }
+.cli-segmento strong { margin-top: 8px; font-size: 34px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.cli-segmento small { color: var(--testo-2); font-size: 13px; }
+
+.cli-segmento__piede {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 34px;
+  margin-top: 10px;
+}
+
+.cli-gruppo-iniziali { display: inline-flex; }
+.cli-gruppo-iniziali .cli-iniziali { width: 30px; height: 30px; margin-right: -6px; border: 2px solid var(--fondo); font-size: 11px; }
+
+.cli-citta { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.cli-citta li {
+  display: grid;
+  grid-template-columns: minmax(90px, 160px) 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 2px;
+}
+.cli-citta a { color: var(--testo); overflow-wrap: anywhere; }
+.cli-citta i { display: block; height: 8px; overflow: hidden; border-radius: 99px; background: var(--sup-2); }
+.cli-citta b { display: block; height: 100%; border-radius: 99px; background: var(--accento); }
+.cli-citta span { color: var(--testo-2); font-variant-numeric: tabular-nums; }
+
+.cli-collegamento {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--linea);
+  border-radius: var(--raggio-s);
+  color: var(--testo);
+  text-decoration: none;
+}
+
+.cli-collegamento:hover { border-color: var(--linea-forte); }
+
+@media (max-width: 860px) {
+  /* Su telefono ogni riga mostra l'essenziale: il resto è nella scheda del cliente. */
+  .tabella[aria-label="Customers"] td[data-titolo="Last order"] { display: none; }
+  .cli-ordina { flex: 1 1 100%; }
+  .cli-ordina select { flex: 1; min-width: 0; }
+}

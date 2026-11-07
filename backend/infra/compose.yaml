@@ -1,0 +1,71 @@
+# Servizi locali di Multi Outfit, separati da Postiz, ChatbotX e n8n.
+# Tutte le porte sono legate a 127.0.0.1: nulla e raggiungibile dalla rete.
+name: ishtar-lab-redx
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "127.0.0.1:55730:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    ports:
+      - "127.0.0.1:56730:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD --no-auth-warning ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  storage:
+    # Archivio compatibile S3 per foto e video (RustFS, lo stesso motore gia usato da ChatbotX).
+    image: rustfs/rustfs@sha256:d30c5e04efc48cea32dfcf9550ccc5a01840564bc99c113d1a04471d43d4872f
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      RUSTFS_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
+      RUSTFS_SECRET_KEY: ${STORAGE_SECRET_KEY}
+      RUSTFS_CONSOLE_ENABLE: "true"
+    ports:
+      - "127.0.0.1:59730:9000"
+      - "127.0.0.1:59731:9001"
+    volumes:
+      - storage_data:/data
+
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:58730:8025"
+      - "127.0.0.1:51730:1025"
+
+volumes:
+  postgres_data:
+    name: ishtar_lab_redx_postgres
+  redis_data:
+    name: ishtar_lab_redx_redis
+  storage_data:
+    name: ishtar_lab_redx_storage
+
+networks:
+  default:
+    name: ishtar_lab_redx_private

@@ -1,0 +1,9 @@
+# Ishtar Lab — backend indipendente
+
+- Memoria principale: `C:/Users/reda_/Desktop/redx/PROJECT.md`; cronologia: `C:/Users/reda_/Desktop/redx/CHANGELOG.md`; istruzioni: `C:/Users/reda_/Desktop/redx/AGENTS.md`. Leggerle a inizio sessione e dopo compattazione, poi confrontarle con i file. Aggiornarle dopo traguardi e prima di concludere.
+- Regole condivise: `C:/Users/reda_/Desktop/Progetti suddivisi/AGENTS.md` e `C:/Users/reda_/Desktop/Progetti suddivisi/RISORSE.md`. Non eseguire bootstrap globali sull’originale. Le istruzioni upstream in piattaforma/AGENTS.md sono conservate; leggere la documentazione Mercur installata prima di modifiche non banali.
+- Istanza `ishtar-lab-redx`: porte, database, volumi e chiavi indipendenti. Non usare, fermare o cancellare i servizi multi-outfit o quelli social. Il salvataggio Recupero-pannello-2026-11-06 resta immutato.
+- Avvio/API, stop, migrazioni e inizializzazione passano da infra/runtime.mjs; tutti i wrapper puntano a questa istanza. Non sostituire il primo frontend con la console di supporto.
+- Test mirati: `node piattaforma/packages/api/node_modules/jest/bin/jest.js --config infra/jest-security.cjs --runInBand`; CSV: `python infra/test-csv.py`; typecheck API: `node piattaforma/node_modules/typescript/bin/tsc -p piattaforma/packages/api/tsconfig.json --noEmit --incremental false`.
+- Segreti nei file .env ignorati: non copiarli in note o rapporti. Il DB isolato contiene 82 articoli DEMO importati dal CSV normalizzato, con offerte e scorte. Non eseguire il vecchio seed. La preparazione idempotente delle categorie è `node infra/runtime.mjs setup-catalog`; importatore iniziale in tools/importa_demo_ishtar.py. Documentazione corrente in PROJECT.md.
+- Il primo pannello usa /admin/ishtar/catalogo tramite catalog_bridge.py con credenziali server-side e controlli same-origin. Preservare i permessi delle rotte native. Gli altri moduli del frontend sono ancora dimostrativi nel browser.

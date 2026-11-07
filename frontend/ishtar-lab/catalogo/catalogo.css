@@ -1,0 +1,46 @@
+/* Estensioni del design originale: nessuna sostituzione di pagine o griglie. */
+ishtar-catalog{display:contents;color:var(--ink);font-family:var(--font)}
+ishtar-catalog .il-file{display:none}
+ishtar-catalog .il-dialog{position:fixed;inset:0;margin:auto;width:min(780px,calc(100% - 40px));height:fit-content;max-width:calc(100% - 40px);max-height:calc(100dvh - 40px);padding:0;color:var(--ink);background:var(--glass-solid);border:1px solid var(--edge);border-radius:var(--r-xl);box-shadow:var(--lift),0 30px 90px #0005;backdrop-filter:var(--blur-lg);overflow:auto;font:inherit}
+ishtar-catalog .il-dialog.modal--wide{width:min(980px,calc(100% - 40px))}
+ishtar-catalog .il-dialog::backdrop{background:#21121d66;backdrop-filter:blur(8px)}
+ishtar-catalog .il-dialog>header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:22px 24px 8px;position:relative;z-index:2}
+ishtar-catalog .il-dialog>header h2{font-size:var(--fs-2xl);font-weight:700;letter-spacing:-.015em;margin:0}
+ishtar-catalog .il-dialog-body{padding:14px 24px 24px;position:relative;z-index:2}
+ishtar-catalog .il-close{width:34px;height:34px;padding:0;flex:none}
+ishtar-catalog .il-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 20px}
+ishtar-catalog .il-tabs button{font-size:var(--fs-sm);padding:8px 11px}
+ishtar-catalog .il-selected{background:var(--accent-soft)!important;color:var(--accent-text)!important;box-shadow:inset 0 0 0 1px var(--accent)!important}
+ishtar-catalog [hidden]{display:none!important}
+ishtar-catalog .il-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+ishtar-catalog .il-field{display:flex;flex-direction:column;gap:6px;min-width:0}
+ishtar-catalog .il-field>span{font-size:var(--fs-sm);color:var(--ink-2);font-weight:600}
+ishtar-catalog .il-full{grid-column:1/-1}
+ishtar-catalog input:not([type=checkbox]):not([type=file]),ishtar-catalog select,ishtar-catalog textarea{width:100%;background:var(--glass-3);box-shadow:inset 0 0 0 1px var(--line-2);border:0;border-radius:13px;padding:10px 13px;color:var(--ink);font:500 var(--fs-base) var(--font);min-width:0}
+ishtar-catalog input:not([type=checkbox]):not([type=file]),ishtar-catalog select{height:44px}
+ishtar-catalog select option{background:var(--bg);color:var(--ink)}
+ishtar-catalog .il-help{font-size:var(--fs-sm);color:var(--muted);line-height:1.6;margin-top:12px}
+ishtar-catalog .il-dialog p{margin:8px 0 16px;line-height:1.5}
+ishtar-catalog footer{display:flex;align-items:center;justify-content:flex-end;gap:12px;padding-top:18px;margin-top:20px;border-top:1px solid var(--line)}
+ishtar-catalog footer span{font-size:var(--fs-xs);color:var(--muted);margin-right:auto}
+ishtar-catalog .il-form-error{color:var(--bad);font-size:var(--fs-sm)}
+ishtar-catalog .il-upload{display:block;border:1px dashed var(--line-2);border-radius:var(--r-md);padding:16px;margin:12px 0;background:var(--glass);cursor:pointer}
+ishtar-catalog .il-upload input{display:block;margin-top:10px;font:inherit}
+ishtar-catalog .il-photo-add{display:flex;gap:10px;align-items:center}
+ishtar-catalog .il-gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}
+ishtar-catalog .il-gallery img{width:100%;height:130px;object-fit:cover;border-radius:var(--r-md)}
+ishtar-catalog .il-gallery button{font-size:var(--fs-xs);padding:6px;margin-top:4px}
+ishtar-catalog .il-field-list{margin-bottom:22px}
+ishtar-catalog .il-field-list>div{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+ishtar-catalog .il-field-list span{font-size:var(--fs-xs);color:var(--muted);min-width:70px}
+ishtar-catalog .il-map{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px 0}
+ishtar-catalog .il-map label{display:flex;flex-direction:column;gap:6px;font-size:var(--fs-sm)}
+ishtar-catalog .il-table{overflow:auto;max-height:330px}
+ishtar-catalog table{width:100%;border-collapse:collapse;font-size:var(--fs-sm)}
+ishtar-catalog td,ishtar-catalog th{padding:10px;text-align:left;border-bottom:1px solid var(--line)}
+ishtar-catalog .il-choice{display:block;padding:16px 0;font-size:var(--fs-sm)}
+ishtar-catalog .il-progress{font-size:var(--fs-sm);color:var(--muted);padding:8px 0}
+ishtar-catalog pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:var(--fs-sm)}
+.thumb>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;z-index:1}.thumb:has(img:not([style*="display: none"]))>b{opacity:0}
+html[data-theme="dark"] ishtar-catalog input,html[data-theme="dark"] ishtar-catalog select{color-scheme:dark}
+@media(max-width:640px){ishtar-catalog .il-form-grid,ishtar-catalog .il-map{grid-template-columns:1fr}ishtar-catalog .il-dialog{max-width:calc(100% - 20px);max-height:calc(100dvh - 20px)}ishtar-catalog footer{flex-wrap:wrap}ishtar-catalog .il-field-list span{display:none}}

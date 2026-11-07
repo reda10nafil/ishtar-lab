@@ -1,0 +1,103 @@
+.mag-sezioni { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.mag-sezioni a {
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  border-radius: 99px;
+  color: var(--testo-2);
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.mag-sezioni a:hover { color: var(--testo); }
+.mag-sezioni a.active { border-color: var(--linea); background: var(--sup-2); color: var(--testo); }
+
+.mag-cifre {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.mag-tessera {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px 16px;
+  border-radius: var(--raggio);
+}
+
+.mag-tessera__icona {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--raggio-s);
+  background: var(--sup-2);
+  color: var(--accento);
+}
+
+.mag-tessera__testo { display: grid; min-width: 0; }
+.mag-tessera strong { font-size: 23px; font-weight: 600; line-height: 1.15; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.mag-tessera__testo > span { color: var(--testo-2); font-size: 14px; }
+.mag-tessera small { color: var(--testo-3); font-size: 13px; }
+
+.mag-blocco .tabella-guscio { border: 0; background: none; box-shadow: none; backdrop-filter: none; }
+
+.mag-livello { display: inline-flex; align-items: center; gap: 10px; min-width: 150px; font-variant-numeric: tabular-nums; }
+.mag-livello i { display: block; flex: 1; height: 6px; overflow: hidden; border-radius: 99px; background: var(--sup-2); }
+.mag-livello b { display: block; height: 100%; border-radius: 99px; background: var(--ok); }
+.mag-livello--esaurimento b { background: var(--attesa); }
+.mag-livello--esaurito b { background: var(--errore); }
+.mag-livello--esaurimento > span { color: var(--attesa); }
+.mag-livello--esaurito > span { color: var(--errore); }
+
+.mag-prodotto { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
+.mag-prodotto .anteprima { width: 40px; height: 40px; border-radius: var(--raggio-s); }
+.mag-prodotto > span:last-child { display: grid; min-width: 0; }
+.mag-prodotto strong { font-weight: 600; overflow-wrap: anywhere; }
+.mag-prodotto small { color: var(--testo-2); font-size: 13px; }
+
+.mag-sku { color: var(--testo-2); font-size: 13px; overflow-wrap: anywhere; }
+
+.mag-nota { color: var(--testo-2); font-size: 14px; }
+
+.mag-contate { width: 104px; text-align: right; }
+
+.mag-soglia { display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.mag-soglia input { width: 96px; text-align: right; }
+
+.mag-collegamento {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--linea);
+  border-radius: var(--raggio-s);
+  color: var(--testo);
+  text-decoration: none;
+}
+
+.mag-collegamento:hover { border-color: var(--linea-forte); }
+
+/* I filtri stanno su una riga: senza questa regola ogni tendina prenderebbe tutta la larghezza. */
+.mag-barra select { flex: 0 1 190px; width: auto; min-width: 150px; }
+
+@media (max-width: 860px) {
+  .mag-cifre { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mag-tessera { padding: 12px; }
+  .mag-tessera strong { font-size: 19px; }
+  .mag-barra select { flex: 1 1 100%; width: 100%; min-width: 0; }
+
+  /* Su telefono ogni riga mostra l'essenziale: il resto è nella scheda, a un tocco di distanza. */
+  .tabella[aria-label="Stock"] td[data-titolo="SKU"],
+  .tabella[aria-label="Stock"] td[data-titolo="Warehouse"],
+  .tabella[aria-label="Stock"] td[data-titolo="Reserved"],
+  .tabella[aria-label="Stock"] td[data-titolo="Value at cost"],
+  .tabella[aria-label="Movements"] td[data-titolo="SKU"],
+  .tabella[aria-label="Movements"] td[data-titolo="From"],
+  .tabella[aria-label="Movements"] td[data-titolo="To"],
+  .tabella[aria-label="Movements"] td[data-titolo="Reason"] { display: none; }
+}
