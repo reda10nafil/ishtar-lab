@@ -72,3 +72,8 @@
 ### Istruzione finale GitHub — 7 novembre 2026
 
 L'utente ha ordinato esplicitamente di rendere il repository **pubblico**, scaricabile da chiunque, e di non mandare inviti a nessuno. Questa istruzione sostituisce la precedente visibilità privata e la richiesta del nome del collaboratore, che è annullata. Pubblicare app+vault e pacchetto pulito, mantenendo avvisi/licenze dei terzi e senza affermare che la visibilità conceda diritti ulteriori. Non caricare credenziali, DB, dati sorgenti privati, log o archivio storico. Il titolare prevede di poter cambiare in seguito la visibilità: nessuna modifica futura automatica viene programmata.
+
+
+### Caricamento sorgenti verificato — 7 novembre 2026
+
+Repository pubblico https://github.com/reda10nafil/ishtar-lab, ramo main, prima consegna 56c2291d449585f54cf4c5dfc8ed47e2a494cddd. Push concluso e visibilità pubblica verificata. 615 file, codice app/backend, 29 note del vault e licenza 1.1. Nessun invito. Controllo sugli oggetti Git: nessuna corrispondenza con i nove segreti della configurazione campionata; esclusi file env/credenziali, DB/volumi, archivi e dati sorgenti privati. Test CSV 5/5 e controllo prerequisiti del setup passati; bootstrap pulito non provato. Pacchetto ZIP e release in preparazione; esito finale nel rapporto di consegna. Le segnalazioni whitespace di Git appartengono a testo/bundle recuperati e non sono state usate per riscrivere il design.

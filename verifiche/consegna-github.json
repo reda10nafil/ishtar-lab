@@ -2,7 +2,7 @@
   "date": "2026-11-07",
   "repo": "reda10nafil/ishtar-lab",
   "visibility": "public",
-  "status": "prepared-upload-pending",
+  "status": "source-published-package-being-prepared",
   "bootstrap_clean_pc_tested": false,
   "database_included": false,
   "private_credentials_included": false,
@@ -18,5 +18,11 @@
   "vault_notes": 29,
   "vault_links_ok": true,
   "public_explicitly_authorized": true,
-  "collaborator_invites_cancelled_by_user": true
+  "collaborator_invites_cancelled_by_user": true,
+  "source_commit": "56c2291d449585f54cf4c5dfc8ed47e2a494cddd",
+  "repo_public_verified": true,
+  "staged_files": 615,
+  "staged_known_secret_scan_matches": 0,
+  "source_url": "https://github.com/reda10nafil/ishtar-lab",
+  "release_url": "https://github.com/reda10nafil/ishtar-lab/releases/tag/v0.1.0-preview-20261107"
 }
