@@ -1,0 +1,69 @@
+{
+  "date": "2026-11-08",
+  "css": [
+    {
+      "file": "frontend/ishtar-lab/assets/analytics-VM6KzLQm.css",
+      "style_rules_unchanged": true
+    },
+    {
+      "file": "frontend/ishtar-lab/assets/apps-DqDfR3Nm.css",
+      "style_rules_unchanged": true
+    },
+    {
+      "file": "frontend/ishtar-lab/assets/channels-BoKttra-.css",
+      "style_rules_unchanged": true
+    },
+    {
+      "file": "frontend/ishtar-lab/assets/customers-CfUXS5Zb.css",
+      "style_rules_unchanged": true
+    },
+    {
+      "file": "frontend/ishtar-lab/assets/discounts-DwqCzSQu.css",
+      "style_rules_unchanged": true
+    },
+    {
+      "file": "frontend/ishtar-lab/assets/home-BtIS86NS.css",
+      "style_rules_unchanged": true
+    },
+    {
+      "file": "frontend/ishtar-lab/assets/index-B-NC1f34.css",
+      "style_rules_unchanged": true
+    },
+    {
+      "file": "frontend/ishtar-lab/assets/marketing-DsV-USVn.css",
+      "style_rules_unchanged": true
+    },
+    {
+      "file": "frontend/ishtar-lab/assets/orders-BwKFe3tz.css",
+      "style_rules_unchanged": true
+    },
+    {
+      "file": "frontend/ishtar-lab/assets/products-CMB2-zPu.css",
+      "style_rules_unchanged": true
+    },
+    {
+      "file": "frontend/ishtar-lab/assets/settings-1twQLons.css",
+      "style_rules_unchanged": true
+    }
+  ],
+  "own_license_exact_copy": true,
+  "old_author_names_in_operational_frontend": false,
+  "notices_preserved_separately": true,
+  "gui_verified": true,
+  "profile_owner": "Reda Zahloul",
+  "license_dialog_verified": true,
+  "pages_verified": [
+    "home",
+    "products/catalogue",
+    "products/inventory",
+    "channels/storefront",
+    "settings/store",
+    "settings/team",
+    "discounts/gift",
+    "analytics/sales"
+  ],
+  "unit_tests_passed": 7,
+  "scope": "Pulizia branding, spostamento avvisi, profilo demo e avviso licenza; non audit sicurezza completo",
+  "audit_thread_id": "01a1b96e-ca82-7cf3-a1cf-df5551840130",
+  "audit_complete": false
+}

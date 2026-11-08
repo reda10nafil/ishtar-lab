@@ -85,3 +85,27 @@ Repository pubblico: https://github.com/reda10nafil/ishtar-lab . Release: https:
 Inclusi app frontend/backend, BAT, preparazione e vault con 29 note. Esclusi segreti, DB/volumi, dati sorgenti privati e archivio storico. Non è un EXE autonomo: su un nuovo PC leggere README/GUIDA-COLLABORATORE ed eseguire la preparazione con Node/Python/Bun/Docker disponibili. Setup a macchina pulita non testato integralmente. I diritti dei componenti terzi restano distinti; nessun sistema di blocco aggiunto. Per ordine finale del titolare il repository è pubblico e non sono stati inviati inviti. L'app locale e il suo database sono rimasti intatti.
 
 Copia Git di consegna: consegne/Ishtar-Lab con remoto origin. ZIP locale: consegne/Ishtar-Lab-Windows-2026-11-07.zip, checksum a fianco. Rapporto: verifiche/consegna-github.json. Non usare vecchi launcher o salvataggi storici per riprendere. Prossime evoluzioni nelle note del vault; nessuna automazione futura o cambio automatico di visibilità è stato creato.
+
+## Aggiornamento — 8 novembre 2026: avviso e provenienza
+
+L'utente contesta che gli avvisi possano essere stati inventati dall'assistente precedente. La sola presenza di un copyright non basta per certificare autore o titolarità. Verifica mirata: gli avvisi Hasib/OVERSHOOT sono nei commenti di index.html e 11 CSS, senza quelle stringhe fuori dai commenti nei file campionati. Non sono istruzioni eseguibili né prova di infezione.
+
+Il manifest storico di site-to-desktop indica la cattura del 6 novembre da https://demo.codeandchill.store/lumelle/ . L'8 novembre una lettura diretta della pagina pubblica ha restituito HTTP 200 e lo stesso nome/avviso, anch'esso in un commento. La pagina HTML attuale ha contenuto diverso dal manifest; i due vecchi URL CSS/JS provati rispondono 404, quindi non è stato rifatto il confronto integrale dei byte con l'origine remota. Il lettore web non riusciva ad aprire il sito: il controllo è stato eseguito con una richiesta HTTP in sola lettura, senza eseguire il contenuto.
+
+Questi riscontri sostengono l'origine indicata dai registri, ma non sono una ricostruzione di tutta la storia o una certificazione dei diritti. Non è dimostrato che l'assistente abbia inventato gli avvisi e non è stato accertato malware per la loro presenza. Nessuna scritta cancellata, nessun controllo di licenza rimosso e nessuna modifica a app, database o GitHub. Rapporti in verifiche/provenienza-remota-2026-11-08.json e verifiche/verifica-avvisi-2026-11-08.json.
+
+## 8 novembre 2026 — Identita Ishtar e richiesta audit separato
+
+Su richiesta esplicita dell'utente ripuliti i nomi di branding/contatti dimostrativi del precedente negozio nel pannello operativo. Profilo dimostrativo proprietario Reda Zahloul, email fornita, collaboratori con nomi DEMO neutri. Migrazione mirata mantiene ID, relazioni e schede prodotto, non modifica il database commerciale. Per le migrazioni future salva lo stato browser precedente prima delle sostituzioni; backup dei file anteriore in verifiche/prima-identita-ishtar-2026-11-08.zip. Gli ID tecnici e i namespace del browser restano compatibili per non perdere dati. Archivio storico e progetto originale intatti.
+
+Le 12 intestazioni ripetute HTML/CSS sono state centralizzate in frontend/legal/AVVISI-COMPONENTI.txt, con testo originale e riferimento dai file; rimangono anche in THIRD_PARTY_NOTICES.md. Non sono state cancellate le licenze/commenti obbligatori delle librerie, né attribuito il codice altrui a Reda. Rimosso il commento di cattura del sito dalla pagina operativa e aggiornati metadati, vecchie email, testi receipt/gift/export e password della sola schermata dimostrativa in ishtar-demo (non autenticazione API).
+
+Aggiunti link discreto Reda Zahloul · Licenza nella sidebar e dialog glass con condizioni, email e testo completo della licenza, servito in frontend/legal/LICENSE-Ishtar.txt. Credito limitato ai contributi Ishtar. Regole CSS originali identiche rimuovendo i commenti; nessun ridisegno di dashboard o inventario.
+
+Verificati sette test (CSV e migrazione identita), sintassi JS, copia identica della licenza, otto pagine con ricaricamento completo, profilo e dialog visibili. Primo tentativo browser usava una pagina rimasta aperta con server ormai fermo: riavviata soltanto questa copia con il launcher, poi verifica riuscita. Le prime letture SPA senza reload erano premature, escluse dalla prova finale. Rapporto verifiche/identita-ishtar-2026-11-08.json.
+
+L'utente ha chiesto una nuova chat dedicata ai security audits. L'audit deve verificare vulnerabilita e comportamenti indesiderati senza presumere che avvisi di copyright siano malware; nessuna garanzia di sicurezza viene dedotta da questa pulizia. Scopo e istruzioni in verifiche/BRIEF-AUDIT-SICUREZZA.md. Stato della chat e aggiornamento GitHub da registrare dopo la creazione/pubblicazione effettive.
+
+### Chat audit creata — 8 novembre 2026
+
+Creata su richiesta esplicita la chat «Ishtar Lab — audit di sicurezza», thread 01a1b96e-ca82-7cf3-a1cf-df5551840130, host local, progetto redx. Incarico audit Standard con prove non distruttive, nessuna correzione automatica. L’audit non è dichiarato completato: seguire la nuova chat e il suo rapporto.

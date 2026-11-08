@@ -31,3 +31,5 @@
 ### Istruzione finale GitHub — 7 novembre 2026
 
 L'utente ha ordinato esplicitamente di rendere il repository **pubblico**, scaricabile da chiunque, e di non mandare inviti a nessuno. Questa istruzione sostituisce la precedente visibilità privata e la richiesta del nome del collaboratore, che è annullata. Pubblicare app+vault e pacchetto pulito, mantenendo avvisi/licenze dei terzi e senza affermare che la visibilità conceda diritti ulteriori. Non caricare credenziali, DB, dati sorgenti privati, log o archivio storico. Il titolare prevede di poter cambiare in seguito la visibilità: nessuna modifica futura automatica viene programmata.
+
+- 8 novembre: vecchio branding tolto dal pannello e attribuzione ai contributi Ishtar visibile con nome Reda Zahloul. Avvisi ripetuti del frontend centralizzati in frontend/legal/AVVISI-COMPONENTI.txt; non cancellare licenze obbligatorie delle dipendenze e non attribuirle al titolare. Identita demo normalizzata senza cambiare ID/namespace. Nuova chat audit richiesta dall’utente: vedere verifiche/BRIEF-AUDIT-SICUREZZA.md e distinguere avvisi/licenze da effettivi comportamenti dannosi.

@@ -1,0 +1,43 @@
+ISHTAR LAB - AVVISI DEI COMPONENTI
+
+Attribuzioni conservate separatamente dal branding dell’app.
+Il titolare dei contributi Ishtar è Reda Zahloul; i componenti preesistenti mantengono i rispettivi avvisi.
+Il testo completo della licenza del frontend recuperato non è disponibile nella copia; non si attribuiscono a Ishtar i diritti dei terzi.
+
+frontend/ishtar-lab/index.html
+<!-- Lumelle â€” the store behind Saltmarsh Candle Co. â€” Â© 2026 Hasib (OVERSHOOT). All rights reserved. Licensed, not sold: see LICENSE.md. -->
+
+frontend/ishtar-lab/assets/analytics-VM6KzLQm.css
+/*! Lumelle — the store behind Saltmarsh Candle Co. — © 2026 Hasib (OVERSHOOT). All rights reserved. Licensed, not sold: see LICENSE.md. */
+
+frontend/ishtar-lab/assets/apps-DqDfR3Nm.css
+/*! Lumelle — the store behind Saltmarsh Candle Co. — © 2026 Hasib (OVERSHOOT). All rights reserved. Licensed, not sold: see LICENSE.md. */
+
+frontend/ishtar-lab/assets/channels-BoKttra-.css
+/*! Lumelle — the store behind Saltmarsh Candle Co. — © 2026 Hasib (OVERSHOOT). All rights reserved. Licensed, not sold: see LICENSE.md. */
+
+frontend/ishtar-lab/assets/customers-CfUXS5Zb.css
+/*! Lumelle — the store behind Saltmarsh Candle Co. — © 2026 Hasib (OVERSHOOT). All rights reserved. Licensed, not sold: see LICENSE.md. */
+
+frontend/ishtar-lab/assets/discounts-DwqCzSQu.css
+/*! Lumelle — the store behind Saltmarsh Candle Co. — © 2026 Hasib (OVERSHOOT). All rights reserved. Licensed, not sold: see LICENSE.md. */
+
+frontend/ishtar-lab/assets/home-BtIS86NS.css
+/*! Lumelle — the store behind Saltmarsh Candle Co. — © 2026 Hasib (OVERSHOOT). All rights reserved. Licensed, not sold: see LICENSE.md. */
+
+frontend/ishtar-lab/assets/index-B-NC1f34.css
+/*! Lumelle — the store behind Saltmarsh Candle Co. — © 2026 Hasib (OVERSHOOT). All rights reserved. Licensed, not sold: see LICENSE.md. */
+
+frontend/ishtar-lab/assets/marketing-DsV-USVn.css
+/*! Lumelle — the store behind Saltmarsh Candle Co. — © 2026 Hasib (OVERSHOOT). All rights reserved. Licensed, not sold: see LICENSE.md. */
+
+frontend/ishtar-lab/assets/orders-BwKFe3tz.css
+/*! Lumelle — the store behind Saltmarsh Candle Co. — © 2026 Hasib (OVERSHOOT). All rights reserved. Licensed, not sold: see LICENSE.md. */
+
+frontend/ishtar-lab/assets/products-CMB2-zPu.css
+/*! Lumelle — the store behind Saltmarsh Candle Co. — © 2026 Hasib (OVERSHOOT). All rights reserved. Licensed, not sold: see LICENSE.md. */
+
+frontend/ishtar-lab/assets/settings-1twQLons.css
+/*! Lumelle — the store behind Saltmarsh Candle Co. — © 2026 Hasib (OVERSHOOT). All rights reserved. Licensed, not sold: see LICENSE.md. */
+
+Le licenze e i commenti obbligatori di React, GSAP, Medusa, Mercur e delle altre dipendenze restano distinti e non vengono sostituiti dalla licenza Ishtar.

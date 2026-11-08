@@ -1,0 +1,11 @@
+# Audit di sicurezza richiesto dall’utente — 8 novembre 2026
+
+Eseguire un audit Standard con Codex Security sulla copia operativa Ishtar Lab in C:/Users/reda_/Desktop/redx. Prima leggere AGENTS.md e gli ultimi aggiornamenti di PROJECT.md e CHANGELOG.md; usare la skill security-scan e i controlli preliminari del plugin disponibili nella nuova chat.
+
+Ambito: frontend operativo (JavaScript, HTML, CSS, nuovi identita.mjs/branding-ui.mjs e controller catalogo); server/ponte avvia_pannello.py e catalog_bridge.py; backend/piattaforma/packages/api/src e medusa-config.ts; backend/infra e comandi di avvio/preparazione; manifest/lock/configurazioni delle dipendenze. Escludere dal conteggio duplicati, consegne, archivio storico, node_modules, cache, output e vecchi ZIP. Leggere impostazioni sensibili solo per verificarne l’uso, senza stampare o copiare segreti.
+
+L’utente teme comportamenti inseriti dall’assistente precedente. Distinguere prove di rete/esfiltrazione, esecuzione di comandi, persistenza, accessi e controlli occulti da normali librerie e commenti di copyright. Il solo nome di un autore non dimostra malware. La pulizia attuale ha sostituito branding/profili demo e centralizzato gli avvisi; non certifica diritti o sicurezza. I tre rilievi storici corretti sono descritti nella memoria: non considerarli automaticamente ancora presenti o risolutivi di tutto il sistema.
+
+Audit e prove non distruttive: non cambiare codice/UI/dati, non rimuovere licenze o controlli di accesso, non arrestare servizi originali, non modificare GitHub o creare inviti, non inviare dati a servizi esterni. Le API della sola copia sono locali, 9273 e pannello 4273. Non resettare account, inventari, DB o volumi. Scrivere il rapporto e le evidenze esclusivamente in verifiche/audit-sicurezza-2026-11-08 (o nel percorso canonico assegnato dal plugin, collegato con un breve file locale); gli aggiornamenti condivisi di PROJECT/CHANGELOG saranno coordinati successivamente.
+
+Consegnare vulnerabilita confermate con gravita, confidenza, file/linee e scenario, prove riproducibili prive di segreti, aree coperte e non coperte, limiti e correzioni consigliate. Nessun impegno a dichiarare l’app totalmente sicura. Non effettuare automaticamente correzioni nella stessa passata: l’incarico e l’audit richiesto nella nuova chat.

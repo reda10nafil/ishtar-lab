@@ -38,3 +38,15 @@ La licenza Ishtar non riduce i permessi che le licenze altrui concedono autonoma
 - [Direttiva 2009/24/CE, testo EUR-Lex](https://eur-lex.europa.eu/legal-content/IT/TXT/?uri=CELEX:32009L0024).
 
 Le fonti online sono state consultate il 7 novembre 2026. Per un rilascio prevalgono i termini dell'esatta revisione distribuita e i diritti effettivamente acquisiti, non una generica descrizione del progetto upstream.
+
+## Aggiornamento — 8 novembre 2026: avviso e provenienza
+
+L'utente contesta che gli avvisi possano essere stati inventati dall'assistente precedente. La sola presenza di un copyright non basta per certificare autore o titolarità. Verifica mirata: gli avvisi Hasib/OVERSHOOT sono nei commenti di index.html e 11 CSS, senza quelle stringhe fuori dai commenti nei file campionati. Non sono istruzioni eseguibili né prova di infezione.
+
+Il manifest storico di site-to-desktop indica la cattura del 6 novembre da https://demo.codeandchill.store/lumelle/ . L'8 novembre una lettura diretta della pagina pubblica ha restituito HTTP 200 e lo stesso nome/avviso, anch'esso in un commento. La pagina HTML attuale ha contenuto diverso dal manifest; i due vecchi URL CSS/JS provati rispondono 404, quindi non è stato rifatto il confronto integrale dei byte con l'origine remota. Il lettore web non riusciva ad aprire il sito: il controllo è stato eseguito con una richiesta HTTP in sola lettura, senza eseguire il contenuto.
+
+Questi riscontri sostengono l'origine indicata dai registri, ma non sono una ricostruzione di tutta la storia o una certificazione dei diritti. Non è dimostrato che l'assistente abbia inventato gli avvisi e non è stato accertato malware per la loro presenza. Nessuna scritta cancellata, nessun controllo di licenza rimosso e nessuna modifica a app, database o GitHub. Rapporti in verifiche/provenienza-remota-2026-11-08.json e verifiche/verifica-avvisi-2026-11-08.json.
+
+## 8 novembre 2026 — Presentazione degli avvisi
+
+Le intestazioni ripetute di index.html e 11 CSS sono ora conservate in frontend/legal/AVVISI-COMPONENTI.txt e richiamate da un commento neutro nei file. Il testo non e stato sostituito da un copyright Ishtar. Le licenze obbligatorie delle dipendenze sono preservate; il branding del pannello, il profilo e il dialog licenza mostrano Reda Zahloul e Ishtar Lab. Il nuovo audit richiesto e distinto dalla verifica di provenienza e non autorizza rimozioni di tutele o attribuzioni false.

@@ -19,6 +19,8 @@ File aggiunti per la copia e l'integrazione locale, da includere con hash nel ma
 - frontend/ishtar-lab/catalogo/catalogo.js
 - frontend/ishtar-lab/catalogo/catalogo.css
 - frontend/ishtar-lab/catalogo/csv.mjs
+- frontend/ishtar-lab/identita.mjs
+- frontend/ishtar-lab/branding-ui.mjs
 - La documentazione originale nella cartella piani di implementazione, escluse citazioni, licenze altrui, prove copiate e immagini di riferimento.
 
 Questa lista è prudenziale, non una perizia di originalità. L'adattatore importa componenti del frontend recuperato: la sua separazione in file non prova da sola l'indipendenza giuridica del contributo. Verificare anche la compatibilità dei derivati con l'accordo sul frontend.
