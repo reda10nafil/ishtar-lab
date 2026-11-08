@@ -109,3 +109,7 @@ L'utente ha chiesto una nuova chat dedicata ai security audits. L'audit deve ver
 ### Chat audit creata — 8 novembre 2026
 
 Creata su richiesta esplicita la chat «Ishtar Lab — audit di sicurezza», thread 01a1b96e-ca82-7cf3-a1cf-df5551840130, host local, progetto redx. Incarico audit Standard con prove non distruttive, nessuna correzione automatica. L’audit non è dichiarato completato: seguire la nuova chat e il suo rapporto.
+
+### Identita pubblicata — 8 novembre 2026
+
+Aggiornamento caricato su GitHub, commit d5235b84b5f2078294c953bda5cea9a89c7ba708. Release v0.1.1-preview-20261108 pubblicata e ZIP scaricato senza autenticazione, hash SHA-256 verificato: f82fd1dd0f263050f6236318bbe030d0a6e6e7fab94ef53dc1fa06b0674d5a73. Download: https://github.com/reda10nafil/ishtar-lab/releases/download/v0.1.1-preview-20261108/Ishtar-Lab-Windows-2026-11-08.zip . Otto pagine e sette test superati, stile originale conservato. Audit richiesto nella nuova chat 01a1b96e-ca82-7cf3-a1cf-df5551840130 attivo, non concluso. Gli avvisi obbligatori restano separati dal branding e non sono stati attribuiti a Ishtar.

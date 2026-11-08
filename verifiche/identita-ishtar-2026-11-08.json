@@ -65,5 +65,14 @@
   "unit_tests_passed": 7,
   "scope": "Pulizia branding, spostamento avvisi, profilo demo e avviso licenza; non audit sicurezza completo",
   "audit_thread_id": "01a1b96e-ca82-7cf3-a1cf-df5551840130",
-  "audit_complete": false
+  "audit_complete": false,
+  "package_commit": "d5235b84b5f2078294c953bda5cea9a89c7ba708",
+  "package_sha256": "f82fd1dd0f263050f6236318bbe030d0a6e6e7fab94ef53dc1fa06b0674d5a73",
+  "package_file": "C:\\Users\\reda_\\Desktop\\redx\\consegne\\Ishtar-Lab-Windows-2026-11-08.zip",
+  "package_manifest_verified": true,
+  "release_tag": "v0.1.1-preview-20261108",
+  "github_uploaded": true,
+  "download_url": "https://github.com/reda10nafil/ishtar-lab/releases/download/v0.1.1-preview-20261108/Ishtar-Lab-Windows-2026-11-08.zip",
+  "anonymous_download_sha256_verified": true,
+  "audit_thread_created": true
 }
