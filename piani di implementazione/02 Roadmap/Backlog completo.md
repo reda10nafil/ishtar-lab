@@ -7,11 +7,11 @@ tags: [ishtar-lab]
 
 # Backlog completo
 
-Inventario di **107 interventi proposti**, organizzati in 12 categorie funzionali pi� licenza/propriet�. Le attivit� restano da completare; LEG-01 � parzialmente svolta perch� nome e recapito sono ora compilati. Questa lista non cancella n� riclassifica come assenti le funzioni gi� operative; per quelle leggere [[Stato delle funzioni]].
+Inventario di **107 interventi proposti**, organizzati in 12 categorie funzionali più licenza/proprietà. Le attività restano da completare; LEG-01 è parzialmente svolta perché nome e recapito sono ora compilati. Questa lista non cancella né riclassifica come assenti le funzioni già operative; per quelle leggere [[Stato delle funzioni]].
 
-P0: stabilit�/protezione e prerequisiti del rilascio. P1: ciclo operativo affidabile. P2: ampliamento. P3: evoluzioni successive. Le priorit� legali riguardano la distribuzione, non l'inserimento di blocchi nell'app.
+P0: stabilità/protezione e prerequisiti del rilascio. P1: ciclo operativo affidabile. P2: ampliamento. P3: evoluzioni successive. Le priorità legali riguardano la distribuzione, non l'inserimento di blocchi nell'app.
 
-| ID | Priorit� | Categoria | Intervento | Stato |
+| ID | Priorità | Categoria | Intervento | Stato |
 |---|---|---|---|---|
 | IMP-01 | P0 | [[Importazione CSV e immagini]] | Provare il trascinamento reale da Esplora file | Da fare |
 | LEG-01 | P0 | [[Licenza - guida pratica]] | Titolare/recapito compilati; completare accettazione dei destinatari | Parziale |
@@ -25,7 +25,7 @@ P0: stabilit�/protezione e prerequisiti del rilascio. P1: ciclo operativo affi
 | ANA-03 | P1 | [[Analisi vendite e visite]] | Acquisire visite dal sito scelto | Da fare |
 | ANA-04 | P1 | [[Analisi vendite e visite]] | Misurare il percorso prodotto-carrello-acquisto | Da fare |
 | ANA-05 | P1 | [[Analisi vendite e visite]] | Indicatori reali, demo e mancanti riconoscibili | Da fare |
-| CAT-01 | P1 | [[Catalogo e varianti]] | Varianti taglia � colore nella stessa scheda | Da fare |
+| CAT-01 | P1 | [[Catalogo e varianti]] | Varianti taglia × colore nella stessa scheda | Da fare |
 | CAT-02 | P1 | [[Catalogo e varianti]] | Campi specifici per categoria moda | Da fare |
 | CAT-03 | P1 | [[Catalogo e varianti]] | Controlli tipizzati completi per i campi | Da fare |
 | CAT-04 | P1 | [[Catalogo e varianti]] | Gestione di categorie e sottocategorie dall'app | Da fare |
@@ -41,7 +41,7 @@ P0: stabilit�/protezione e prerequisiti del rilascio. P1: ciclo operativo affi
 | IMP-05 | P1 | [[Importazione CSV e immagini]] | Associazione assistita delle immagini locali | Da fare |
 | IMP-06 | P1 | [[Importazione CSV e immagini]] | Validazione server e pulizia dei caricamenti | Da fare |
 | INV-01 | P1 | [[Magazzino e acquisti]] | Registro dei movimenti con causale | Da fare |
-| INV-02 | P1 | [[Magazzino e acquisti]] | Riserve e concorrenza sulle disponibilit� | Da fare |
+| INV-02 | P1 | [[Magazzino e acquisti]] | Riserve e concorrenza sulle disponibilità | Da fare |
 | INV-03 | P1 | [[Magazzino e acquisti]] | Depositi, ubicazioni e trasferimenti | Da fare |
 | INV-04 | P1 | [[Magazzino e acquisti]] | Ordini di acquisto e ricezione merce | Da fare |
 | INV-05 | P1 | [[Magazzino e acquisti]] | Conteggio inventariale e riconciliazione | Da fare |
@@ -65,7 +65,7 @@ P0: stabilit�/protezione e prerequisiti del rilascio. P1: ciclo operativo affi
 | VEN-05 | P1 | [[Ordini vendite e resi]] | Preparazione, spedizioni e tracking | Da fare |
 | VEN-06 | P1 | [[Ordini vendite e resi]] | Resi e rimborsi collegati a scorte e ricavi | Da fare |
 | WEB-01 | P1 | [[Siti e canali di vendita]] | Scegliere e collegare il primo sito reale | Da fare |
-| WEB-02 | P1 | [[Siti e canali di vendita]] | Modello di sincronizzazione per ogni entit� | Da fare |
+| WEB-02 | P1 | [[Siti e canali di vendita]] | Modello di sincronizzazione per ogni entità | Da fare |
 | WEB-03 | P1 | [[Siti e canali di vendita]] | Importazione iniziale e aggiornamenti incrementali | Da fare |
 | WEB-04 | P1 | [[Siti e canali di vendita]] | Webhook firmati e idempotenti | Da fare |
 | WEB-05 | P1 | [[Siti e canali di vendita]] | Pubblicazione controllata dei prodotti | Da fare |
@@ -101,7 +101,7 @@ P0: stabilit�/protezione e prerequisiti del rilascio. P1: ciclo operativo affi
 | MER-02 | P2 | [[Ricerca di mercato]] | Fonti autorizzate con provenienza | Da fare |
 | MER-03 | P2 | [[Ricerca di mercato]] | Confronto prezzi comparabili | Da fare |
 | MER-04 | P2 | [[Ricerca di mercato]] | Storico e variazioni del mercato | Da fare |
-| MER-05 | P2 | [[Ricerca di mercato]] | Domanda, tendenze e stagionalit� | Da fare |
+| MER-05 | P2 | [[Ricerca di mercato]] | Domanda, tendenze e stagionalità | Da fare |
 | OPS-09 | P2 | [[Sicurezza backup e continuita]] | Backup automatici scelti e verificati | Da fare |
 | OPS-10 | P2 | [[Sicurezza backup e continuita]] | Monitoraggio code, disponibilita e risorse | Da fare |
 | UX-06 | P2 | [[Interfaccia e qualita]] | Italiano, date, valuta e fuso coerenti | Da fare |
@@ -109,10 +109,10 @@ P0: stabilit�/protezione e prerequisiti del rilascio. P1: ciclo operativo affi
 | UX-08 | P2 | [[Interfaccia e qualita]] | Informazioni, licenza e guida nell'app | Da fare |
 | UX-09 | P2 | [[Interfaccia e qualita]] | Prestazioni con molti articoli e foto | Da fare |
 | VEN-07 | P2 | [[Ordini vendite e resi]] | Preventivi, bozze e B2B dal pannello | Da fare |
-| VEN-08 | P2 | [[Ordini vendite e resi]] | Cassa fisica e modalit� di emergenza | Da fare |
+| VEN-08 | P2 | [[Ordini vendite e resi]] | Cassa fisica e modalità di emergenza | Da fare |
 | WEB-06 | P2 | [[Siti e canali di vendita]] | Contenuti sito, SEO e pagine | Da fare |
 | WEB-07 | P2 | [[Siti e canali di vendita]] | Feed Merchant Center e cataloghi social | Da fare |
-| WEB-08 | P2 | [[Siti e canali di vendita]] | Pi� negozi con dati separati | Da fare |
+| WEB-08 | P2 | [[Siti e canali di vendita]] | Più negozi con dati separati | Da fare |
 | WEB-09 | P2 | [[Siti e canali di vendita]] | Salute dei collegamenti e revoca | Da fare |
 | AI-06 | P3 | [[Automazioni e assistenza IA]] | Riepiloghi e suggerimenti verificabili | Da fare |
 | AI-07 | P3 | [[Automazioni e assistenza IA]] | Pianificazioni soltanto su richiesta | Da fare |
@@ -125,4 +125,4 @@ Il criterio di completamento di ciascuna riga si trova nella nota di categoria. 
 
 ## Verifica del 12 novembre 2026
 
-La sincronizzazione GitHub riguarda la documentazione; nessuna delle 107 attivit� viene chiusa da questa revisione. OPS-01 resta da fare: il repository non contiene il database privato e non prova un ripristino completo. Il tentativo di audit dell'8 novembre si � fermato all'apertura del plugin, prima di una scansione; riprenderlo dopo la risoluzione dell'errore, senza considerarlo completato. Dettagli in [[Sicurezza backup e continuita]] e [[GitHub e collaborazione]].
+La sincronizzazione GitHub riguarda la documentazione; nessuna delle 107 attività viene chiusa da questa revisione. OPS-01 resta da fare: il repository non contiene il database privato e non prova un ripristino completo. Il tentativo di audit dell'8 novembre si è fermato all'apertura del plugin, prima di una scansione; riprenderlo dopo la risoluzione dell'errore, senza considerarlo completato. Dettagli in [[Sicurezza backup e continuita]] e [[GitHub e collaborazione]].
