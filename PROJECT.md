@@ -2,7 +2,7 @@
 
 Aggiornato: 12 novembre 2026 (Europe/Berlin).
 
-**Proposta del 12 novembre (ramo `avvio-linux` di satria64, autorizzata dal titolare nella issue #1 e in attesa di revisione):** avvio su Linux, riferimento RustFS pubblico e preparazione protetta; dettagli nella sezione finale. Finché non viene integrata, lo stato seguente resta quello della consegna dell'8 novembre.
+**Proposta del 12 novembre (ramo `avvio-linux` di satria64, autorizzata dal titolare nella issue #1 e in attesa di revisione):** avvio su Linux, riferimento RustFS pubblico e preparazione protetta. Seconda proposta (ramo `correzioni-dati-csv`): dati demo separati dalle scorte reali e import CSV conservativo. Dettagli nelle sezioni finali. Finché non viene integrata, lo stato seguente resta quello della consegna dell'8 novembre.
 
 **Ultimo stato:** codice dell'app allineato alla consegna pubblica dell'8 novembre; revisione del 12 novembre limitata alla documentazione e allo stato effettivo dell'audit. L'audit Standard non è iniziato: il plugin ha restituito un errore prima di creare la scansione. Interfaccia originale conservata; catalogo/inventario collegati al backend, altri moduli dimostrativi. Avvio con `Avvia Ishtar Lab.bat`. Le sezioni datate precedenti restano storia; leggere l'ultimo aggiornamento in fondo.
 
@@ -283,3 +283,15 @@ Proposta di modifica di satria64, autorizzata da Reda Zahloul nella issue #1 (co
 Verifiche in `verifiche/avvio-linux-2026-11-12.json`: preparazione a macchina pulita; avvio in circa 11 s; secondo avvio senza duplicati; arresto e riavvio con dati conservati; import demo; controlli del ponte; foto caricata e riletta con RustFS 1.0.5; ripresa della preparazione con chiavi invariate; 21 verifiche sui segreti; simulazione del ramo Windows; test 7 + 13 + 80 e typecheck API. Catalogo e Inventario visibili in Chrome senza errori. Revisione indipendente in quattro prospettive con verifica avversariale; i rilievi confermati sono stati corretti. Non provati: Windows dopo la modifica, macOS, avvio dopo un riavvio del sistema.
 
 Osservazioni emerse dall'analisi e non corrette in questa proposta: le azioni demo di cassa, ordini e resi modificano le scorte reali nel DB tramite `ishtar:legacy-change`; l'import CSV in modalità «Aggiorna» riporta i prodotti a valori predefiniti (stato bozza, foto e campi assenti dal file); `numberCSV` legge «1.200» come 1,2.
+
+## 12 novembre 2026 — Dati demo e import CSV (versione modificata da satria64)
+
+Seconda proposta di satria64 (ramo `correzioni-dati-csv`, sopra `avvio-linux`), autorizzata da Reda Zahloul nella issue #1 e in attesa di revisione. Riguarda solo il codice del browser in `frontend/ishtar-lab/catalogo/`; bundle originali, licenza e avvisi invariati.
+
+- **Scorte reali e demo separate.** Tutte le azioni del pannello passano da `os()` del kit ed emettono `ishtar:legacy-change`; cassa, nuovo ordine (anche dal menu globale sopra la pagina Prodotti), conversione di bozze e reso ricevuto cambiavano lo stock e l'adattatore lo scriveva nel database. Nuovo `catalogo/sincronizza.mjs`: si scrivono solo le modifiche della pagina Prodotti che non toccano ordini, resi o bozze; per le altre i valori del database tornano nello stato demo e compare un avviso.
+- **Import CSV «Aggiorna» conservativo.** Nuovo `catalogo/importa.mjs`: per uno SKU esistente si parte dal prodotto salvato e cambiano solo le celle piene delle colonne associate; stato, foto, descrizione e campi personalizzati restano; il segnaposto non sostituisce foto vere; flag demo e stato solo con valori espliciti; intestazioni riconosciute anche con accenti e simboli. Il catalogo viene riletto dal database prima dell'anteprima, che mostra la colonna «Modifiche»; le righe invariate non vengono riscritte; per aggiornare non serve più la colonna categoria.
+- **Numeri.** `numberCSV`: «1.200» = 1200, «1.234,50» = 1234,5, «1,200.50» = 1200,5, virgola decimale italiana invariata, cella vuota = non indicato, rifiutati 1e3 e 0x10.
+
+Revisione indipendente (3 prospettive con verifica avversariale): 15 rilievi confermati e corretti, tra cui un campo numerico salvato vuoto che il backend avrebbe rifiutato, numeri ambigui decisi per colonna, foto del file in copertina, conversione di genere, Sì/No, scelte e date, CSV Windows-1252, «Pour» della Home salvato. La prova end-to-end ha trovato anche un blocco della coda dei salvataggi introdotto durante le correzioni, risolto prima della consegna.
+
+Verifiche in `verifiche/correzioni-dati-csv-2026-11-12.json`: 46 test `node --test` (13 CSV, 20 import, 11 sincronizzazione, 2 identità); 18/18 scenari end-to-end in Chrome headless con i bundle reali e catalogo ripristinato identico; sul codice precedente la prova a 15 scenari dava 8/15. Test backend 80/80 e typecheck invariati.

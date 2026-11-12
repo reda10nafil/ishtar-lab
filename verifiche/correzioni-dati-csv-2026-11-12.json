@@ -1,0 +1,73 @@
+{
+  "date": "2026-11-12",
+  "scope": "Correzioni ai dati dimostrativi e all'import CSV del catalogo",
+  "modified_by": "satria64 — versione modificata, autorizzata dal titolare nella issue #1, in attesa di revisione",
+  "branch": "correzioni-dati-csv",
+  "base_branch": "avvio-linux",
+  "base_commit": "7b8617c6e58dea2af9e1ad237de8cef53f8f36f6",
+  "defects": [
+    {
+      "id": "demo-scorte",
+      "before": "cassa, nuovo ordine (anche dal menu globale), conversione di bozze e reso ricevuto cambiavano lo stock di Q.products e catalogo.js lo scriveva nel database",
+      "after": "si scrivono solo modifiche della pagina Prodotti che non toccano ordini, resi o bozze (catalogo/sincronizza.mjs); le altre ripristinano i valori del database nello stato demo con un avviso"
+    },
+    {
+      "id": "csv-aggiorna",
+      "before": "per uno SKU esistente il prodotto veniva ricostruito da valori predefiniti: stato bozza, foto sostituite o cancellate, campi assenti persi, celle vuote a zero; serviva sempre la colonna categoria",
+      "after": "si parte dal prodotto salvato e cambiano solo le celle piene (catalogo/importa.mjs); anteprima con colonna «Modifiche»; righe invariate non riscritte; catalogo riletto dal database prima dell'anteprima"
+    },
+    {
+      "id": "csv-numeri",
+      "before": "«1.200» letto come 1,2; «1,200.50» come 1,2005; cella vuota uguale a 0; accettati 1e3 e 0x10",
+      "after": "gruppi di migliaia con punto o virgola riconosciuti, virgola decimale italiana invariata, cella vuota = non indicato, notazioni non decimali rifiutate"
+    }
+  ],
+  "tests": {
+    "node_test_verifiche": "46/46 (csv 13, importa 20, sincronizza 11, identità 2)",
+    "csv_export_test_csv_py": "13/13",
+    "jest_security": "80/80",
+    "typecheck_api": "0 errori"
+  },
+  "end_to_end": {
+    "tool": "Chrome 153 headless con DevTools Protocol, bundle reali del pannello, istanza locale con 82 articoli DEMO",
+    "scenarios_passed": "18/18",
+    "scenarios": [
+      "A modifica di scorte nella pagina Prodotti salvata e ripristinata",
+      "B nuovo ordine sopra la pagina Prodotti: database invariato e valore reale ripristinato nello stato demo",
+      "C vendita in cassa: database invariato",
+      "D reso ricevuto: database invariato",
+      "E modifica da un'altra pagina: database invariato",
+      "F clic reali su + e − nell'inventario salvati",
+      "G import «Aggiorna»: 1.200 → 1200, scorte aggiornate, stato attivo, foto, descrizione e campo personalizzato conservati",
+      "H «Pour» della Home (solo merce in arrivo) salvato",
+      "I reimportazione con un campo numerico salvato vuoto: nessun errore, valore conservato",
+      "J colonna con punto decimale: «12.375» importato come 12,375",
+      "catalogo identico a prima delle prove"
+    ],
+    "control_on_previous_code": "sul codice precedente (prova a 15 scenari) 8/15: falliscono B, C, D, E e l'import G, che si fermava per «Categoria non riconosciuta»"
+  },
+  "not_tested": [
+    "Windows (le modifiche sono nel solo codice del browser)",
+    "trascinamento fisico di un file da un file manager",
+    "cataloghi oltre 82 articoli"
+  ],
+  "secrets_included": false,
+  "independent_review": {
+    "method": "3 revisori (import e numeri, regola di sincronizzazione contro i bundle, compatibilità) con verifica avversariale; 15 rilievi confermati su 16",
+    "fixed": [
+      "campo numerico salvato vuoto riconvertito in null e rifiutato dal backend (alta)",
+      "celle di soli simboli rifiutate in anteprima",
+      "convenzione numerica decisa per colonna e valori ambigui segnalati",
+      "URL foto del file in copertina, più URL per cella, massimo 30",
+      "genere, Sì/No, scelte e date convertiti",
+      "CSV Windows-1252 di Excel letto e segnalato",
+      "intestazioni e campi personalizzati riconosciuti con nomi normalizzati",
+      "errore reale mostrato se il catalogo non risponde",
+      "salvataggi in coda completati prima di rileggere il catalogo",
+      "«Pour» della Home salvato (solo merce in arrivo da altre pagine)",
+      "avviso demo mostrato dopo il messaggio del pannello",
+      "colonna «Modifiche» coerente con «Aggiorna»"
+    ],
+    "found_by_end_to_end": "coda dei salvataggi bloccata dopo un'esecuzione a vuoto (introdotta con la correzione della coda e corretta prima della consegna)"
+  }
+}
