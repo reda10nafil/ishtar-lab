@@ -124,6 +124,7 @@ Aggiornamento caricato su GitHub, commit d5235b84b5f2078294c953bda5cea9a89c7ba70
 
 ## 2026-11-12 — Avvio su Linux (versione modificata da satria64, proposta)
 
+- Permesso scritto di Reda Zahloul nella issue #1 (12 novembre 2026) per correggere i problemi individuati e proporli con pull request da un fork; licenza, titolarità e avvisi dei terzi invariati.
 - Corretto il riferimento RustFS della consegna: `sha256:d30c5e04…` era l'ID locale dell'immagine (Docker Hub 404) e fermava al pull ogni preparazione nuova. Ora `rustfs/rustfs:1.0.5@sha256:b81d16a9…`, build del 10/11/2026 diversa dall'immagine locale del titolare. Aggiornato anche `tools/prepara-consegna.py`, che include ora i launcher .sh e il nuovo rapporto.
 - Runtime portabile con `backend/infra/processi.mjs` (`/proc` su Linux, `ps` su macOS, PowerShell invariato su Windows). Arresto ordinato con SIGTERM al gruppo e SIGKILL dopo 15 s; stato conservato se l'arresto fallisce; avviso se un processo non riconosciuto risponde sulla 9273; uscita anticipata se l'API termina durante l'avvio; corretti i messaggi con doppia codifica UTF-8.
 - Nuovi `prepara-ishtar-lab.sh`, `avvia-ishtar-lab.sh`, `ferma-ishtar-lab.sh` e `tools/ferma-ishtar-lab.mjs`. `apri-ishtar-lab.mjs` usa python3 fuori da Windows, controlla la configurazione, registra il PID del pannello, lo riusa se già attivo e apre il browser con xdg-open/open. Su Windows resta una sola chiamata a docker info e l'uscita del pannello resta scartata come prima.

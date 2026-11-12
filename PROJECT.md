@@ -2,7 +2,7 @@
 
 Aggiornato: 12 novembre 2026 (Europe/Berlin).
 
-**Proposta del 12 novembre (ramo `avvio-linux` di satria64, in attesa di approvazione del titolare):** avvio su Linux, riferimento RustFS pubblico e preparazione protetta; dettagli nella sezione finale. Finché non viene approvata, lo stato seguente resta quello della consegna dell'8 novembre.
+**Proposta del 12 novembre (ramo `avvio-linux` di satria64, autorizzata dal titolare nella issue #1 e in attesa di revisione):** avvio su Linux, riferimento RustFS pubblico e preparazione protetta; dettagli nella sezione finale. Finché non viene integrata, lo stato seguente resta quello della consegna dell'8 novembre.
 
 **Ultimo stato:** codice dell'app allineato alla consegna pubblica dell'8 novembre; revisione del 12 novembre limitata alla documentazione e allo stato effettivo dell'audit. L'audit Standard non è iniziato: il plugin ha restituito un errore prima di creare la scansione. Interfaccia originale conservata; catalogo/inventario collegati al backend, altri moduli dimostrativi. Avvio con `Avvia Ishtar Lab.bat`. Le sezioni datate precedenti restano storia; leggere l'ultimo aggiornamento in fondo.
 
@@ -273,7 +273,7 @@ Prossimo passo: risolvere l'errore di apertura della scansione prima di riprende
 
 ## 12 novembre 2026 — Avvio su Linux (versione modificata da satria64)
 
-Proposta di modifica di satria64, in attesa di approvazione del titolare. Lavoro svolto su un clone del repository pubblico (ramo `avvio-linux`, base `bf7bf01`) su Ubuntu 26.04, con Docker Engine 29.1.3 e Compose 2.40.3, Node.js 22.23.3, Python 3.14.4 e Bun 1.4.4. Istanza nuova con gli 82 articoli DEMO del CSV della consegna; nessun dato del titolare usato.
+Proposta di modifica di satria64, autorizzata da Reda Zahloul nella issue #1 (commento del 12 novembre 2026) e in attesa di revisione prima dell'integrazione. Licenza Ishtar, titolarità e avvisi dei terzi restano invariati, come richiesto dal permesso. Lavoro svolto su un clone del repository pubblico (ramo `avvio-linux`, base `bf7bf01`) su Ubuntu 26.04, con Docker Engine 29.1.3 e Compose 2.40.3, Node.js 22.23.3, Python 3.14.4 e Bun 1.4.4. Istanza nuova con gli 82 articoli DEMO del CSV della consegna; nessun dato del titolare usato.
 
 - **Preparazione bloccata su ogni PC nuovo, corretta.** Il riferimento RustFS della consegna (`sha256:d30c5e04…`) era l'ID locale dell'immagine e Docker Hub rispondeva 404. Ora è `rustfs/rustfs:1.0.5@sha256:b81d16a9…`, build pubblicata il 10/11/2026 e diversa da `rustfs/rustfs:local-d30c5e04efc4` della copia operativa. Corretta anche la sostituzione in `tools/prepara-consegna.py`. **Non copiare `compose.yaml` nella copia operativa** senza verificare prima i dati RustFS già presenti nel volume.
 - **Runtime portabile.** `backend/infra/processi.mjs` riconosce e arresta i soli processi della copia anche su Linux (`/proc`) e macOS (`ps`); su Windows restano la query PowerShell e `taskkill /T /F`. `runtime.mjs` va sempre riportato insieme a `processi.mjs`.
