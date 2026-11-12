@@ -7,8 +7,8 @@ import { interroga } from "../../utili"
 export const servizioCarte = (req: AuthenticatedMedusaRequest) => req.scope.resolve<CarteRegaloModuleService>(CARTE_REGALO_MODULE)
 
 /** Più richieste sulla stessa risorsa passano una alla volta: il saldo e le decisioni non si sovrappongono. */
-export const inFila = <T>(req: AuthenticatedMedusaRequest, chiave: string, lavoro: () => Promise<T>): Promise<T> =>
-  req.scope.resolve(Modules.LOCKING).execute(chiave, lavoro)
+export const inFila = <T>(req: AuthenticatedMedusaRequest, chiave: string, lavoro: () => Promise<T>, attesaSecondi?: number): Promise<T> =>
+  req.scope.resolve(Modules.LOCKING).execute(chiave, lavoro, attesaSecondi ? { timeout: attesaSecondi } : undefined)
 
 /** L'email resta nei movimenti anche se la persona lascia il team. */
 export async function chi(req: AuthenticatedMedusaRequest): Promise<string> {

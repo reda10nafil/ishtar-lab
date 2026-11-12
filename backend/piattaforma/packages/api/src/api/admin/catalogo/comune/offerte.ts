@@ -95,6 +95,14 @@ export async function leggiOfferte(scope: MedusaContainer, filtri: Record<string
   return (data as RigaOfferta[]).map(normalizza)
 }
 
+/** Deposito dell'azienda, se c'è, e nome con cui crearlo: sola lettura, la creazione avviene dentro il workflow. */
+export async function depositoEsistente(scope: MedusaContainer, aziendaId: string) {
+  const query = scope.resolve(ContainerRegistrationKeys.QUERY)
+  const { data } = await query.graph({ entity: "seller", fields: ["id", "name", "stock_locations.id"], filters: { id: aziendaId } })
+  const azienda = data[0] as { name: string; stock_locations?: ({ id: string } | null)[] } | undefined
+  return { deposito: azienda?.stock_locations?.find(Boolean)?.id ?? null, nome_deposito: `${azienda?.name ?? "Company"} warehouse` }
+}
+
 /** Le aziende invitate non hanno ancora un deposito: il primo nasce quando serve una quantità. */
 export async function depositoAzienda(scope: MedusaContainer, aziendaId: string) {
   const query = scope.resolve(ContainerRegistrationKeys.QUERY)
@@ -109,7 +117,7 @@ export async function depositoAzienda(scope: MedusaContainer, aziendaId: string)
 }
 
 /** Il profilo di spedizione è obbligatorio: si riusa quello dell'azienda, poi quello del negozio. */
-async function profiloSpedizione(scope: MedusaContainer, aziendaId: string) {
+export async function profiloSpedizione(scope: MedusaContainer, aziendaId: string) {
   const query = scope.resolve(ContainerRegistrationKeys.QUERY)
   const unaSola = { take: 1, skip: 0 }
   const leggi = (filtri: Record<string, unknown>) => query.graph({ entity: "offer", fields: ["shipping_profile_id"], filters: filtri, pagination: unaSola })
@@ -130,7 +138,7 @@ export type NuovaOfferta = {
   quantita?: number | null
 }
 
-const metadatiPrezzi = (o: Pick<NuovaOfferta, "prezzo_cessione" | "prezzo_consigliato">) =>
+export const metadatiPrezzi = (o: Pick<NuovaOfferta, "prezzo_cessione" | "prezzo_consigliato">) =>
   Object.fromEntries(Object.entries({ prezzo_cessione: o.prezzo_cessione, prezzo_consigliato: o.prezzo_consigliato }).filter(([, valore]) => valore !== null && valore !== undefined))
 
 export async function creaOfferte(scope: MedusaContainer, aziendaId: string, creataDa: string, righe: NuovaOfferta[]) {
@@ -165,7 +173,7 @@ export async function creaOfferte(scope: MedusaContainer, aziendaId: string, cre
 }
 
 /** Sostituisce solo il prezzo in euro: gli altri prezzi dell'offerta restano com'erano. */
-function prezziAggiornati(offerta: Offerta, prezzo: number | null) {
+export function prezziAggiornati(offerta: Offerta, prezzo: number | null) {
   const inEuro = offerta.prezzi.find((p) => p.currency_code === VALUTA)
   const altri = offerta.prezzi.filter((p) => p.currency_code !== VALUTA).map(({ id, amount, currency_code }) => ({ id, amount, currency_code }))
   if (prezzo === null) return altri
