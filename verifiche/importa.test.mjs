@@ -134,3 +134,16 @@ test('colonne del costo d\'acquisto riconosciute come costo: non diventano campi
   for(const intestazione of ['Prezzo acquisto','Prezzo d\'acquisto','Costo d\'acquisto','Costo unitario','Prezzo fornitore','Costo fornitore','Purchase price','Unit cost'])
     assert.equal(destinazione(intestazione),'cost',intestazione);
 });
+test('campo obbligatorio aggiunto dopo: l\'aggiornamento da CSV di un prodotto esistente non si blocca',()=>{
+  const obbligatori=[{id:'fodera',label:'Fodera',type:'text',category:'',required:true}];
+  const mappatura=['sku','stock'];
+  const aggiornato=prodottoDaRiga(['ISH-1','4'],{mappatura,campi:obbligatori,categorie,esistente:{...esistente,custom:{}}});
+  assert.equal(aggiornato.stock,4);
+  assert.throws(()=>prodottoDaRiga(['ISH-9','4','Nuovo','Borse'],{mappatura:['sku','stock','name','category'],campi:obbligatori,categorie}),/Campo richiesto: Fodera/);
+  assert.throws(()=>prodottoDaRiga(['ISH-1','Pellicce'],{mappatura:['sku','category'],campi:[{...obbligatori[0],category:'Pellicce'}],categorie,esistente:{...esistente,custom:{}}}),/Campo richiesto: Fodera/);
+});
+test('campo obbligatorio valido per tutte le categorie: cambiare categoria nel CSV non lo rende richiesto',()=>{
+  const globale=[{id:'fodera',label:'Fodera',type:'text',category:'',required:true}];
+  const spostato=prodottoDaRiga(['ISH-1','Pellicce'],{mappatura:['sku','category'],campi:globale,categorie,esistente:{...esistente,custom:{}}});
+  assert.equal(spostato.category,'Pellicce');
+});
