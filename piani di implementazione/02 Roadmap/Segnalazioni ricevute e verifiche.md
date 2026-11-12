@@ -24,6 +24,8 @@ Una schermata cita 84 problemi (6 alti, 16 medi e 62 bassi); un'altra riga parla
 | Connettori salvano credenziali ma non sincronizzano tutto | 18 provider più demo nel catalogo statico, con OAuth/prove dove implementati; nessuna sincronizzazione completa attestata dalla consegna | Verificare provider per provider, distinguendo login, test, webhook, import/export e azioni reali |
 | Varianti taglia×colore assenti nella scheda | Adattatore attuale della prima app espone la prima variante; gestione multipla già nel backlog | Progettare variante/SKU/prezzo/scorta/foto e importazione coerenti; provare senza perdere riferimenti |
 
+**Aggiornamento del 12 novembre, proposta di satria64 (PR #2, in attesa di revisione):** RustFS, launcher Linux, comando `python3`, Docker senza Desktop e configurazione incompleta sono trattati nel ramo `avvio-linux`, con le prove in `verifiche/avvio-linux-2026-11-12.json`.
+
 Le foto accennano anche a problemi che possono danneggiare dati reali, ma la relativa lista è tagliata/non disponibile. Non inventare dettagli, gravità o correzioni. Queste righe restano da verificare nel rapporto completo del collaboratore.
 
 ## Prove effettivamente svolte per questa consegna
