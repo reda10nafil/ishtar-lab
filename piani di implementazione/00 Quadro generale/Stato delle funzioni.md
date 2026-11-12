@@ -19,8 +19,8 @@ tags: [ishtar-lab]
 | Branding Ishtar Lab e logo | Applicato | Nessun sottotitolo Ishtar Hub sotto il nome dell'app |
 | Design e navigazione | 28 pagine verificate | Titolo/componenti visibili, non prova dei flussi reali |
 | Prodotti e categorie | Operativo verificato | 82 record DEMO in DB, otto categorie |
-| Creazione/modifica articolo | Operativo verificato | Prodotto temporaneo creato, verificato e rimosso |
-| Campi configurabili | Operativo verificato / parziale | 14 definizioni; campo numerico altezza provato |
+| Creazione/modifica articolo | Operativo verificato | Prodotto temporaneo creato, verificato e rimosso. Dal 12/11 (proposta satria64) salvataggio «tutto o niente» in un solo workflow, provato con guasti provocati; lucchetto per prodotto e SKU |
+| Campi configurabili | Operativo verificato / parziale | 14 definizioni; campo numerico altezza provato. Dal 12/11 (proposta satria64) un obbligatorio aggiunto dopo non blocca i prodotti esistenti |
 | Quantità inventario | Operativo verificato / parziale | Incremento in tabella, riscontro DB e ripristino |
 | Foto locali | Operativo verificato | Upload e lettura PNG dal bucket dedicato |
 | Foto remote | Parziale | Link conservato; download e associazione non verificati |
