@@ -1,6 +1,6 @@
 ---
 title: "Stato delle funzioni"
-updated: 2026-11-07
+updated: 2026-11-12
 type: documentazione-progetto
 tags: [ishtar-lab]
 ---
@@ -13,7 +13,8 @@ tags: [ishtar-lab]
 
 | Area | Stato | Evidenza o limite |
 |---|---|---|
-| Avvio BAT | Operativo verificato a servizi già attivi | Test --no-browser, nessuna API duplicata; avvio a freddo da provare |
+| Avvio BAT | Operativo verificato a servizi già attivi | Test --no-browser, nessuna API duplicata; avvio a freddo da provare. Prova del 7/11 sul codice precedente: da ripetere dopo le modifiche del 12/11 a launcher e preparazione |
+| Avvio su Linux (script .sh) | Operativo verificato su Ubuntu 26.04 il 12/11 | Preparazione a macchina pulita, avvio, arresto e riavvio con dati conservati, import demo e test; macOS e avvio dopo riavvio del sistema non provati |
 | Isolamento servizi | Verificato storicamente | Porte e volumi dedicati, progetto originale preservato |
 | Branding Ishtar Lab e logo | Applicato | Nessun sottotitolo Ishtar Hub sotto il nome dell'app |
 | Design e navigazione | 28 pagine verificate | Titolo/componenti visibili, non prova dei flussi reali |
@@ -39,6 +40,6 @@ tags: [ishtar-lab]
 | Backup completo recuperabile | Non verificato | Snapshot dei file non equivale a backup DB+foto ripristinabile |
 | Licenza personale Ishtar | Testo compilato, perimetro limitato | Titolare Reda Zahloul e recapito presenti; diritti terzi e consegna/accettazione da verificare |
 
-Le prove funzionali qui richiamate sono quelle registrate nelle fasi precedenti del 7 novembre; questa sessione documentale non le ha tutte rieseguite. Numeri e configurazioni sono una fotografia, non un monitoraggio continuo.
+Le prove funzionali qui richiamate sono quelle registrate il 7 novembre e, per l'avvio su Linux, il 12 novembre (verifiche/avvio-linux-2026-11-12.json); non sono state tutte rieseguite. Numeri e configurazioni sono una fotografia, non un monitoraggio continuo.
 
 Per le prove: [[Verifiche e fonti]]. Per gli interventi: [[Backlog completo]].

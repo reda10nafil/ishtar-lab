@@ -12,7 +12,7 @@ Il titolare ha autorizzato il 7 novembre il salvataggio di app e vault su GitHub
 
 Codice del primo pannello e backend, brand operativo, avvio BAT, preparazione su un nuovo PC, documenti legali e questo vault. Restano esclusi credenziali, file .env reali, database/volumi, archivi storici, dati sorgenti privati, dipendenze e cache. Il dataset di prova consegnato ha nomi/fornitore/foto anonimizzati; la copia del titolare non viene alterata.
 
-Il pacchetto Windows contiene sorgenti e BAT: non è un EXE autonomo. Su un nuovo PC servono i prerequisiti e una preparazione iniziale. Non è stato effettuato un test completo su un PC pulito; consultare il README e GUIDA-COLLABORATORE nella radice.
+Il pacchetto Windows contiene sorgenti e BAT: non è un EXE autonomo. Su un nuovo PC servono i prerequisiti e una preparazione iniziale. Non è stato effettuato un test completo su un PC Windows pulito; su Linux la preparazione completa è stata provata il 12 novembre 2026; consultare il README e GUIDA-COLLABORATORE nella radice.
 
 ## Lavorare insieme
 
@@ -30,7 +30,7 @@ Riferimento: verifiche/consegna-github.json nella radice. Link alla release e ha
 
 ## Esito finale verificato
 
-Il repository è pubblico e il download senza autenticazione è stato provato. [Scarica la release](https://github.com/reda10nafil/ishtar-lab/releases/tag/v0.1.0-preview-20261107). Lo ZIP contiene app e vault; non include credenziali né database privato. SHA-256: b221fab00ba60b5050a5224c9d64c3297051e9f6906bdf76aac30ce3c27875b5. Nessun invito inviato. Il bootstrap su PC pulito resta da provare.
+Il repository è pubblico e il download senza autenticazione è stato provato. [Scarica la release](https://github.com/reda10nafil/ishtar-lab/releases/tag/v0.1.0-preview-20261107). Lo ZIP contiene app e vault; non include credenziali né database privato. SHA-256: b221fab00ba60b5050a5224c9d64c3297051e9f6906bdf76aac30ce3c27875b5. Nessun invito inviato. Il bootstrap su PC Windows pulito resta da provare; su Linux è stato provato il 12 novembre 2026.
 
 ## Revisione del 12 novembre 2026
 

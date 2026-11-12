@@ -6,6 +6,8 @@ Il pannello scelto è quello in `../frontend/`, con monogramma Ishtar e nome Ish
 
 Dalla cartella redx aprire **Avvia Ishtar Lab.cmd**. Per fermare solo API e servizi di questa copia: **Ferma backend Ishtar Lab.cmd**. I dati dei nuovi volumi vengono conservati. Il pannello può essere aperto separatamente da **Apri pannello recuperato.cmd**.
 
+Su Linux e macOS, dalla radice: `./avvia-ishtar-lab.sh` e `./ferma-ishtar-lab.sh`; l'arresto ferma anche il pannello avviato dallo script.
+
 | Servizio | Indirizzo/porta locale |
 | --- | --- |
 | Primo pannello Ishtar Lab | http://127.0.0.1:4273/ishtar-lab/#/home |
