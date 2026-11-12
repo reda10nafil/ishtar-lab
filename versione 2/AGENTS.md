@@ -1,0 +1,10 @@
+# Seconda applicazione Ishtar Lab — copia per sviluppo
+
+- Questa cartella è stata richiesta dall'utente il 12 novembre 2026. Contiene la copia selezionata di `C:/Users/reda_/Desktop/Progetti suddivisi/pannello di amministrazione del negozio/multi-outfit`, senza segreti, Git annidato, dipendenze o database.
+- Leggere LEGGIMI-PRIMA.md, PROJECT.md e CHANGELOG.md, poi le tre note di consegna in `../piani di implementazione/02 Roadmap/`. Aggiornare memoria e cronologia dopo traguardi verificati e prima di concludere. I documenti originali copiati descrivono la loro fase storica, non sostituiscono le istruzioni attuali del titolare.
+- Non sostituire il primo pannello in `../frontend/` o il suo backend. Questa è una seconda app con sorgenti propri, da confrontare e sviluppare separatamente.
+- Non avviare questa copia sul PC del titolare con gli script originali: identità Docker, volumi e porte sono quelli del progetto originale. Non arrestare né modificare quell'istanza. Configurare un ambiente di prova indipendente prima dell'avvio.
+- Non copiare .env, credenziali, token, database o foto private. Usare segreti nuovi; conservare licenze/notice e manifest originali. Il repository pubblico consente il download; i diritti restano quelli dei documenti legali del progetto.
+- I test `infra/prova-*`, `infra/popola-demo.mjs` e seed possono scrivere dati; non eseguirli automaticamente né contro dati reali. Il numero di file/API non prova che le funzioni siano complete o integrate.
+- Riferimenti locali della raccolta: `C:/Users/reda_/Desktop/Progetti suddivisi/AGENTS.md` e `C:/Users/reda_/Desktop/Progetti suddivisi/RISORSE.md`. In una copia scaricata usare la documentazione inclusa, senza richiedere quei percorsi Windows.
+- Risorse valutate: REA non necessario per una copia dei sorgenti; prompts.chat non necessario perché non sono richiesti prompt; nessuna nuova skill, installazione o integrazione esterna per questa consegna. Memoria condivisa nel vault del progetto principale, senza creare un secondo vault per la copia tecnica.

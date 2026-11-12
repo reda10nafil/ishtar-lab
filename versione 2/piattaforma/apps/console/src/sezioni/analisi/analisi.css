@@ -1,0 +1,106 @@
+.ana-pila { display: flex; flex-direction: column; gap: 18px; }
+.ana-blocco { min-width: 0; padding: 18px 20px 20px; border-radius: 20px; }
+.ana-blocco--tabella { padding: 0 0 8px; }
+.ana-blocco .graf { height: 300px; }
+.ana-risultato .graf { height: 320px; }
+.ana-blocco--visite .graf { height: 250px; }
+.mk-grafico .graf { height: 208px; }
+
+.ana-due { display: grid; grid-template-columns: minmax(0, 619fr) minmax(0, 495fr); gap: 18px; }
+.ana-pari { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+
+.ana-quote { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--linea); }
+.ana-quote__barra { display: flex; gap: 3px; height: 12px; }
+.ana-quote__barra span { min-width: 3px; border-radius: 4px; }
+.ana-quote__barra:empty { border-radius: 4px; background: var(--sup-2); }
+.ana-quote__legenda { display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--testo-2); font-size: 12.5px; font-weight: 600; }
+.ana-quote__legenda span { display: inline-flex; align-items: center; gap: 6px; }
+.ana-quote__legenda i { width: 10px; height: 10px; border-radius: 3px; }
+
+.ana-scorre { overflow-x: auto; }
+.ana-tabella { width: 100%; margin-top: 14px; border-collapse: collapse; font-size: 13.5px; }
+.ana-tabella th, .ana-tabella td { padding: 12px 20px; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ana-tabella thead th { color: var(--testo-2); font-size: 12px; font-weight: 600; }
+.ana-tabella tbody tr { border-top: 1px solid var(--linea); }
+.ana-tabella tbody th { font-weight: 600; text-align: left; }
+.ana-tabella thead th:first-child { text-align: left; }
+.ana-tabella td { color: var(--testo-2); }
+.ana-tabella td b { color: var(--testo); font-weight: 600; }
+.ana-tabella small { color: var(--testo-2); font-size: 12px; font-weight: 500; }
+
+.ana-classifica { display: flex; flex-direction: column; gap: 14px; }
+.ana-classifica li { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 10px; }
+.ana-classifica li > span:nth-child(2) { display: grid; gap: 5px; min-width: 0; }
+.ana-classifica b { overflow: hidden; font-size: 14px; font-weight: 600; line-height: 20.3px; text-overflow: ellipsis; white-space: nowrap; }
+.ana-classifica em { display: grid; justify-items: end; font-size: 14px; font-style: normal; font-weight: 600; }
+.ana-classifica small { color: var(--testo-2); font-size: 12px; font-weight: 500; }
+.ana-classifica__barra { height: 5px; border-radius: 5px; }
+.ana-classifica__barra i { background: linear-gradient(90deg, var(--serie-negozio), var(--serie-online)); }
+
+.ana-vuoto-blocco { display: grid; justify-items: center; gap: 10px; padding: 26px 18px; color: var(--testo-2); font-size: 13.5px; text-align: center; }
+.ana-vuoto-blocco p { max-width: 380px; }
+
+.ana-traffico-vuoto { display: grid; justify-items: center; align-content: center; gap: 10px; min-height: 270px; padding: 22px; color: var(--testo-2); text-align: center; }
+.ana-traffico-vuoto strong { color: var(--testo); font-size: 17px; font-weight: 600; }
+.ana-traffico-vuoto p { max-width: 460px; font-size: 13.5px; }
+.ana-traffico-vuoto button { margin-top: 6px; min-height: 40px; border-radius: 13px; font-size: 13.5px; }
+
+.ana-griglia-ore { display: grid; grid-template-columns: 30px repeat(8, minmax(0, 1fr)); gap: 4px; align-items: center; }
+.ana-griglia-ore small { color: var(--testo-2); font-size: 11px; font-weight: 600; text-align: center; }
+.ana-griglia-ore i { display: block; height: 46px; border-radius: 8px; background: var(--sup-1); }
+.ana-griglia-ore i.picco { outline: 2px solid var(--testo); outline-offset: 1px; }
+
+.ana-fonti { display: grid; gap: 10px; }
+.ana-fonti__barra { display: block; height: 10px; border-radius: 5px; background: var(--sup-2); }
+.ana-fonti__barra--piena { display: flex; gap: 3px; background: none; }
+.ana-fonti__barra--piena i { height: 10px; border-radius: 4px; }
+.ana-fonti div { display: flex; align-items: center; gap: 8px; color: var(--testo-2); font-size: 13.5px; font-weight: 600; }
+.ana-fonti i { width: 9px; height: 9px; border-radius: 3px; background: var(--sup-3); }
+.ana-fonti b { margin-left: auto; color: var(--testo); }
+.ana-fonti small { width: 34px; color: var(--testo-2); font-size: 12px; text-align: right; }
+.ana-pagine { display: grid; }
+.ana-pagine li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; }
+.ana-pagine li + li { border-top: 1px solid var(--linea); }
+.ana-pagine span { display: grid; min-width: 0; }
+.ana-pagine b { font-size: 14px; font-weight: 600; }
+.ana-pagine small { color: var(--testo-2); font-size: 12px; }
+.ana-pagine em { font-size: 14px; font-style: normal; font-weight: 600; }
+
+.ana-occhiello { margin: 20px 0 8px; color: var(--testo-2); font-size: 11px; font-weight: 700; letter-spacing: 0.88px; line-height: 15.9px; text-transform: uppercase; }
+.ana-comandi .ana-occhiello:first-child { margin-top: 0; }
+
+.ana-report { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 18px; align-items: start; }
+.ana-comandi { padding: 18px 20px 20px; border-radius: 20px; }
+.ana-comandi select { min-height: 44px; padding: 0 13px; border-radius: 13px; font-size: 13.5px; font-weight: 600; }
+.ana-misure { display: flex; flex-direction: column; gap: 4px; }
+.ana-misure button { box-shadow: none; justify-content: flex-start; gap: 10px; min-height: 42px; padding: 0 12px; border: 0; border-radius: 12px; background: none; color: var(--testo-2); font-size: 13.5px; }
+.ana-misure button:hover:not(:disabled) { border: 0; background: var(--sup-1); box-shadow: none; color: var(--testo); }
+.ana-misure button.attiva, .ana-misure button.attiva:hover:not(:disabled) { background: linear-gradient(135deg, var(--accento), var(--accento-2)); color: var(--su-accento); }
+.segmenti--piena { display: flex; width: 100%; }
+.segmenti--piena button { flex: 1; padding: 0 4px; }
+.ana-esporta { margin-top: 20px; min-height: 40px; border-radius: 13px; font-size: 13.5px; }
+
+.ana-risultato { min-width: 0; padding: 18px 20px 20px; border-radius: 20px; transition: opacity 0.2s; }
+.ana-risultato__totale { flex: none; font-size: 26px; font-weight: 600; letter-spacing: -0.5px; }
+.ana-riepiloghi { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 18px; }
+.ana-riepiloghi div { display: grid; gap: 2px; min-width: 0; padding: 12px 14px; border-radius: 14px; background: var(--sup-1); box-shadow: inset 0 0 0 1px var(--linea); }
+.ana-riepiloghi small { color: var(--testo-2); font-size: 12px; font-weight: 600; }
+.ana-riepiloghi b { overflow: hidden; font-size: 14px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.ana-nota { margin-top: 12px; color: var(--testo-2); font-size: 12.5px; }
+
+@media (max-width: 1240px) {
+  .ana-due, .ana-pari { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 860px) {
+  .ana-pila, .ana-due, .ana-pari { gap: 12px; }
+  .ana-blocco, .ana-comandi, .ana-risultato { padding: 16px; border-radius: 18px; }
+  .ana-blocco--tabella { padding: 0 0 8px; }
+  .ana-blocco .graf, .ana-risultato .graf, .ana-blocco--visite .graf, .mk-grafico .graf { height: 230px; }
+  .ana-report { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .ana-misure { flex-direction: row; flex-wrap: wrap; }
+  .ana-misure button { min-height: 38px; }
+  .ana-riepiloghi { grid-template-columns: minmax(0, 1fr); }
+  .ana-griglia-ore i { height: 30px; }
+  .ana-tabella th, .ana-tabella td { padding: 10px 14px; }
+}

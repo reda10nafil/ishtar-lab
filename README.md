@@ -3,6 +3,10 @@
 Pannello locale per catalogo e inventario moda di **Reda Zahloul**, progetto **Ishtar Hub**.
 Questa consegna, resa pubblica su richiesta esplicita del titolare, raccoglie il primo pannello scelto, il backend indipendente e il vault Obsidian.
 
+**Aggiornamento del 12 novembre 2026:** inclusa anche la seconda applicazione in [versione 2](versione%202/LEGGIMI-PRIMA.md), con sorgenti e backend propri. Per il passaggio di lavoro partire dalla [guida tecnica al collaboratore](piani%20di%20implementazione/02%20Roadmap/Consegna%20tecnica%20al%20collaboratore.md). Il backend principale è già in `backend/`: Docker esegue i servizi dati, mentre l'API gira tramite Node sul computer. I launcher non sono ancora portati integralmente su Linux.
+
+Scaricare il ramo main o la nuova consegna `v0.2.0-handoff-20261112` dalla pagina Releases; i vecchi ZIP dell'8 novembre non contengono questa seconda copia. La versione 2 è per sviluppo e confronto, non sostituisce il primo pannello e non è stata avviata in questa sessione.
+
 ## Avvio su questo computer
 
 Se la copia è già configurata, doppio clic su **Avvia Ishtar Lab.bat**.

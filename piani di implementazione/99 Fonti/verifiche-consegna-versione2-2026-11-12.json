@@ -1,0 +1,17 @@
+{
+  "date": "2026-11-12",
+  "scope": "Copia e consegna; nessuna correzione applicativa",
+  "source_files_sha256_verified": 685,
+  "typescript_syntax_files": 529,
+  "javascript_syntax_files": 44,
+  "powershell_syntax_files": 3,
+  "syntax_errors": 0,
+  "main_pure_tests_passed": 7,
+  "vault_markdown_notes": 32,
+  "new_internal_links_missing": 0,
+  "typecheck_executed_version2": false,
+  "version2_dependencies_installed": false,
+  "version2_services_started": false,
+  "linux_bootstrap_tested": false,
+  "external_84_findings_independently_validated": false
+}

@@ -1,0 +1,248 @@
+﻿versione,percorso_api,metodi_esportati,file,verifica
+principale,/admin/assistenza/richieste/:id/messaggi,POST,backend/piattaforma/packages/api/src/api/admin/assistenza/richieste/[id]/messaggi/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/assistenza/richieste/:id,DELETE GET,backend/piattaforma/packages/api/src/api/admin/assistenza/richieste/[id]/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/assistenza/richieste/:id/stato,POST,backend/piattaforma/packages/api/src/api/admin/assistenza/richieste/[id]/stato/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/assistenza/richieste,GET POST,backend/piattaforma/packages/api/src/api/admin/assistenza/richieste/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/avvisi/letti,POST,backend/piattaforma/packages/api/src/api/admin/avvisi/letti/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/avvisi/preferenze,GET POST,backend/piattaforma/packages/api/src/api/admin/avvisi/preferenze/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/avvisi,GET,backend/piattaforma/packages/api/src/api/admin/avvisi/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/carte-regalo/:id/annulla,POST,backend/piattaforma/packages/api/src/api/admin/carte-regalo/[id]/annulla/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/carte-regalo/:id/movimenti,POST,backend/piattaforma/packages/api/src/api/admin/carte-regalo/[id]/movimenti/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/carte-regalo/:id,DELETE GET,backend/piattaforma/packages/api/src/api/admin/carte-regalo/[id]/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/carte-regalo,GET POST,backend/piattaforma/packages/api/src/api/admin/carte-regalo/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/catalogo/blocco,POST,backend/piattaforma/packages/api/src/api/admin/catalogo/blocco/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/catalogo/prodotti/:id,DELETE GET,backend/piattaforma/packages/api/src/api/admin/catalogo/prodotti/[id]/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/catalogo/prodotti/:id/varianti/:variante,DELETE POST,backend/piattaforma/packages/api/src/api/admin/catalogo/prodotti/[id]/varianti/[variante]/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/catalogo/prodotti/:id/varianti,POST,backend/piattaforma/packages/api/src/api/admin/catalogo/prodotti/[id]/varianti/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/catalogo/prodotti,GET POST,backend/piattaforma/packages/api/src/api/admin/catalogo/prodotti/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/catalogo/proposte,GET POST,backend/piattaforma/packages/api/src/api/admin/catalogo/proposte/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/clienti/:id/indirizzi/:indirizzo,DELETE POST,backend/piattaforma/packages/api/src/api/admin/clienti/[id]/indirizzi/[indirizzo]/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/clienti/:id/indirizzi,POST,backend/piattaforma/packages/api/src/api/admin/clienti/[id]/indirizzi/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/clienti/:id,DELETE GET POST,backend/piattaforma/packages/api/src/api/admin/clienti/[id]/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/clienti/gruppi/:id/clienti,POST,backend/piattaforma/packages/api/src/api/admin/clienti/gruppi/[id]/clienti/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/clienti/gruppi/:id,DELETE GET POST,backend/piattaforma/packages/api/src/api/admin/clienti/gruppi/[id]/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/clienti/gruppi,GET POST,backend/piattaforma/packages/api/src/api/admin/clienti/gruppi/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/clienti,GET POST,backend/piattaforma/packages/api/src/api/admin/clienti/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/clienti/segmenti,GET,backend/piattaforma/packages/api/src/api/admin/clienti/segmenti/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/connectors/:id/login,POST,backend/piattaforma/packages/api/src/api/admin/connectors/[id]/login/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/connectors/:id,DELETE POST,backend/piattaforma/packages/api/src/api/admin/connectors/[id]/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/connectors/:id/test,POST,backend/piattaforma/packages/api/src/api/admin/connectors/[id]/test/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/connectors,GET,backend/piattaforma/packages/api/src/api/admin/connectors/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/custom,GET,backend/piattaforma/packages/api/src/api/admin/custom/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/impostazioni/esporta/:tipo,POST,backend/piattaforma/packages/api/src/api/admin/impostazioni/esporta/[tipo]/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/impostazioni/esporta,GET,backend/piattaforma/packages/api/src/api/admin/impostazioni/esporta/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/impostazioni/negozio,POST,backend/piattaforma/packages/api/src/api/admin/impostazioni/negozio/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/impostazioni,GET,backend/piattaforma/packages/api/src/api/admin/impostazioni/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/impostazioni/spedizioni/opzioni/:id,POST,backend/piattaforma/packages/api/src/api/admin/impostazioni/spedizioni/opzioni/[id]/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/impostazioni/spedizioni,GET POST,backend/piattaforma/packages/api/src/api/admin/impostazioni/spedizioni/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/impostazioni/valuta,GET,backend/piattaforma/packages/api/src/api/admin/impostazioni/valuta/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/ingrosso/rivenditori/:id,DELETE GET POST,backend/piattaforma/packages/api/src/api/admin/ingrosso/rivenditori/[id]/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/ingrosso/rivenditori,GET POST,backend/piattaforma/packages/api/src/api/admin/ingrosso/rivenditori/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/ingrosso/trattative/:id/note,POST,backend/piattaforma/packages/api/src/api/admin/ingrosso/trattative/[id]/note/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/ingrosso/trattative/:id/ordine,GET POST,backend/piattaforma/packages/api/src/api/admin/ingrosso/trattative/[id]/ordine/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/ingrosso/trattative/:id,DELETE GET POST,backend/piattaforma/packages/api/src/api/admin/ingrosso/trattative/[id]/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/ingrosso/trattative/:id/sposta,POST,backend/piattaforma/packages/api/src/api/admin/ingrosso/trattative/[id]/sposta/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/ingrosso/trattative,GET POST,backend/piattaforma/packages/api/src/api/admin/ingrosso/trattative/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/ingrosso/varianti,GET,backend/piattaforma/packages/api/src/api/admin/ingrosso/varianti/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/ishtar/catalogo,GET POST,backend/piattaforma/packages/api/src/api/admin/ishtar/catalogo/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/magazzino/articoli/:id,GET,backend/piattaforma/packages/api/src/api/admin/magazzino/articoli/[id]/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/magazzino/articoli/:id/soglia,POST,backend/piattaforma/packages/api/src/api/admin/magazzino/articoli/[id]/soglia/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/magazzino/movimenti,GET,backend/piattaforma/packages/api/src/api/admin/magazzino/movimenti/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/magazzino/riserve/:id,DELETE,backend/piattaforma/packages/api/src/api/admin/magazzino/riserve/[id]/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/magazzino/riserve,GET POST,backend/piattaforma/packages/api/src/api/admin/magazzino/riserve/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/magazzino,GET,backend/piattaforma/packages/api/src/api/admin/magazzino/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/magazzino/scorte-basse,GET,backend/piattaforma/packages/api/src/api/admin/magazzino/scorte-basse/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/magazzino/soglie,GET POST,backend/piattaforma/packages/api/src/api/admin/magazzino/soglie/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/outfit/:id,DELETE GET POST,backend/piattaforma/packages/api/src/api/admin/outfit/[id]/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/outfit/:id/stato,POST,backend/piattaforma/packages/api/src/api/admin/outfit/[id]/stato/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/outfit/catalogo,GET,backend/piattaforma/packages/api/src/api/admin/outfit/catalogo/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/outfit,GET POST,backend/piattaforma/packages/api/src/api/admin/outfit/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/permessi/me,GET,backend/piattaforma/packages/api/src/api/admin/permessi/me/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/registro,GET,backend/piattaforma/packages/api/src/api/admin/registro/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/sconti/codici/:id/duplica,POST,backend/piattaforma/packages/api/src/api/admin/sconti/codici/[id]/duplica/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/sconti/codici/:id,DELETE GET POST,backend/piattaforma/packages/api/src/api/admin/sconti/codici/[id]/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/sconti/codici/:id/stato,POST,backend/piattaforma/packages/api/src/api/admin/sconti/codici/[id]/stato/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/sconti/codici,GET POST,backend/piattaforma/packages/api/src/api/admin/sconti/codici/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/sconti/proposte/:id/approva,POST,backend/piattaforma/packages/api/src/api/admin/sconti/proposte/[id]/approva/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/sconti/proposte/:id/rifiuta,POST,backend/piattaforma/packages/api/src/api/admin/sconti/proposte/[id]/rifiuta/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/sconti/proposte/:id,DELETE,backend/piattaforma/packages/api/src/api/admin/sconti/proposte/[id]/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/sconti/proposte,GET,backend/piattaforma/packages/api/src/api/admin/sconti/proposte/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/team/:id,DELETE POST,backend/piattaforma/packages/api/src/api/admin/team/[id]/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/team/inviti/:id,DELETE POST,backend/piattaforma/packages/api/src/api/admin/team/inviti/[id]/route.ts,inventario statico; permessi e flusso da provare
+principale,/admin/team,GET POST,backend/piattaforma/packages/api/src/api/admin/team/route.ts,inventario statico; permessi e flusso da provare
+principale,/connectors/oauth/callback,GET,backend/piattaforma/packages/api/src/api/connectors/oauth/callback/route.ts,inventario statico; permessi e flusso da provare
+principale,/store/custom,GET,backend/piattaforma/packages/api/src/api/store/custom/route.ts,inventario statico; permessi e flusso da provare
+principale,/vendor/assistenza/richieste/:id/messaggi,POST,backend/piattaforma/packages/api/src/api/vendor/assistenza/richieste/[id]/messaggi/route.ts,inventario statico; permessi e flusso da provare
+principale,/vendor/assistenza/richieste/:id,GET,backend/piattaforma/packages/api/src/api/vendor/assistenza/richieste/[id]/route.ts,inventario statico; permessi e flusso da provare
+principale,/vendor/assistenza/richieste/:id/stato,POST,backend/piattaforma/packages/api/src/api/vendor/assistenza/richieste/[id]/stato/route.ts,inventario statico; permessi e flusso da provare
+principale,/vendor/assistenza/richieste,GET POST,backend/piattaforma/packages/api/src/api/vendor/assistenza/richieste/route.ts,inventario statico; permessi e flusso da provare
+principale,/vendor/avvisi/letti,POST,backend/piattaforma/packages/api/src/api/vendor/avvisi/letti/route.ts,inventario statico; permessi e flusso da provare
+principale,/vendor/avvisi,GET,backend/piattaforma/packages/api/src/api/vendor/avvisi/route.ts,inventario statico; permessi e flusso da provare
+principale,/vendor/catalogo/prodotti/:id,GET POST,backend/piattaforma/packages/api/src/api/vendor/catalogo/prodotti/[id]/route.ts,inventario statico; permessi e flusso da provare
+principale,/vendor/catalogo/prodotti,GET POST,backend/piattaforma/packages/api/src/api/vendor/catalogo/prodotti/route.ts,inventario statico; permessi e flusso da provare
+principale,/vendor/impostazioni/valuta,GET,backend/piattaforma/packages/api/src/api/vendor/impostazioni/valuta/route.ts,inventario statico; permessi e flusso da provare
+principale,/vendor/magazzino/articoli/:id/correzione,POST,backend/piattaforma/packages/api/src/api/vendor/magazzino/articoli/[id]/correzione/route.ts,inventario statico; permessi e flusso da provare
+principale,/vendor/magazzino/articoli/:id,GET,backend/piattaforma/packages/api/src/api/vendor/magazzino/articoli/[id]/route.ts,inventario statico; permessi e flusso da provare
+principale,/vendor/magazzino/articoli/:id/soglia,POST,backend/piattaforma/packages/api/src/api/vendor/magazzino/articoli/[id]/soglia/route.ts,inventario statico; permessi e flusso da provare
+principale,/vendor/magazzino/conteggio,POST,backend/piattaforma/packages/api/src/api/vendor/magazzino/conteggio/route.ts,inventario statico; permessi e flusso da provare
+principale,/vendor/magazzino/movimenti,GET,backend/piattaforma/packages/api/src/api/vendor/magazzino/movimenti/route.ts,inventario statico; permessi e flusso da provare
+principale,/vendor/magazzino/riserve,GET,backend/piattaforma/packages/api/src/api/vendor/magazzino/riserve/route.ts,inventario statico; permessi e flusso da provare
+principale,/vendor/magazzino,GET,backend/piattaforma/packages/api/src/api/vendor/magazzino/route.ts,inventario statico; permessi e flusso da provare
+principale,/vendor/magazzino/scorte-basse,GET,backend/piattaforma/packages/api/src/api/vendor/magazzino/scorte-basse/route.ts,inventario statico; permessi e flusso da provare
+principale,/vendor/magazzino/soglia,GET POST,backend/piattaforma/packages/api/src/api/vendor/magazzino/soglia/route.ts,inventario statico; permessi e flusso da provare
+principale,/vendor/outfit/:id,GET,backend/piattaforma/packages/api/src/api/vendor/outfit/[id]/route.ts,inventario statico; permessi e flusso da provare
+principale,/vendor/outfit,GET,backend/piattaforma/packages/api/src/api/vendor/outfit/route.ts,inventario statico; permessi e flusso da provare
+principale,/vendor/permessi/me,GET,backend/piattaforma/packages/api/src/api/vendor/permessi/me/route.ts,inventario statico; permessi e flusso da provare
+principale,/vendor/sconti/prodotti,GET,backend/piattaforma/packages/api/src/api/vendor/sconti/prodotti/route.ts,inventario statico; permessi e flusso da provare
+principale,/vendor/sconti/proposte/:id,DELETE,backend/piattaforma/packages/api/src/api/vendor/sconti/proposte/[id]/route.ts,inventario statico; permessi e flusso da provare
+principale,/vendor/sconti/proposte,GET POST,backend/piattaforma/packages/api/src/api/vendor/sconti/proposte/route.ts,inventario statico; permessi e flusso da provare
+principale,/vendor/team/ruoli,GET,backend/piattaforma/packages/api/src/api/vendor/team/ruoli/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/analisi/panoramica,GET,versione 2/piattaforma/packages/api/src/api/admin/analisi/panoramica/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/analisi/report,GET,versione 2/piattaforma/packages/api/src/api/admin/analisi/report/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/analisi/traffico,GET,versione 2/piattaforma/packages/api/src/api/admin/analisi/traffico/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/analisi/vendite,GET,versione 2/piattaforma/packages/api/src/api/admin/analisi/vendite/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/assistenza/richieste/:id/messaggi,POST,versione 2/piattaforma/packages/api/src/api/admin/assistenza/richieste/[id]/messaggi/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/assistenza/richieste/:id,DELETE GET,versione 2/piattaforma/packages/api/src/api/admin/assistenza/richieste/[id]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/assistenza/richieste/:id/stato,POST,versione 2/piattaforma/packages/api/src/api/admin/assistenza/richieste/[id]/stato/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/assistenza/richieste,GET POST,versione 2/piattaforma/packages/api/src/api/admin/assistenza/richieste/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/avvisi/letti,POST,versione 2/piattaforma/packages/api/src/api/admin/avvisi/letti/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/avvisi/preferenze,GET POST,versione 2/piattaforma/packages/api/src/api/admin/avvisi/preferenze/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/avvisi/riepilogo,POST,versione 2/piattaforma/packages/api/src/api/admin/avvisi/riepilogo/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/avvisi,GET,versione 2/piattaforma/packages/api/src/api/admin/avvisi/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/carte-regalo/:id/annulla,POST,versione 2/piattaforma/packages/api/src/api/admin/carte-regalo/[id]/annulla/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/carte-regalo/:id/blocco,POST,versione 2/piattaforma/packages/api/src/api/admin/carte-regalo/[id]/blocco/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/carte-regalo/:id/movimenti,POST,versione 2/piattaforma/packages/api/src/api/admin/carte-regalo/[id]/movimenti/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/carte-regalo/:id,DELETE GET,versione 2/piattaforma/packages/api/src/api/admin/carte-regalo/[id]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/carte-regalo/clienti,GET,versione 2/piattaforma/packages/api/src/api/admin/carte-regalo/clienti/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/carte-regalo,GET POST,versione 2/piattaforma/packages/api/src/api/admin/carte-regalo/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/cassa/anteprima,GET,versione 2/piattaforma/packages/api/src/api/admin/cassa/anteprima/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/cassa/clienti,GET,versione 2/piattaforma/packages/api/src/api/admin/cassa/clienti/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/cassa,GET,versione 2/piattaforma/packages/api/src/api/admin/cassa/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/cassa/vendite/:id/annulla,POST,versione 2/piattaforma/packages/api/src/api/admin/cassa/vendite/[id]/annulla/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/cassa/vendite,POST,versione 2/piattaforma/packages/api/src/api/admin/cassa/vendite/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/catalogo/blocco,POST,versione 2/piattaforma/packages/api/src/api/admin/catalogo/blocco/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/catalogo/collezioni,GET,versione 2/piattaforma/packages/api/src/api/admin/catalogo/collezioni/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/catalogo/prodotti/:id,DELETE GET,versione 2/piattaforma/packages/api/src/api/admin/catalogo/prodotti/[id]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/catalogo/prodotti/:id/varianti/:variante,DELETE POST,versione 2/piattaforma/packages/api/src/api/admin/catalogo/prodotti/[id]/varianti/[variante]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/catalogo/prodotti/:id/varianti,POST,versione 2/piattaforma/packages/api/src/api/admin/catalogo/prodotti/[id]/varianti/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/catalogo/prodotti,GET POST,versione 2/piattaforma/packages/api/src/api/admin/catalogo/prodotti/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/catalogo/proposte,GET POST,versione 2/piattaforma/packages/api/src/api/admin/catalogo/proposte/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/clienti/:id/indirizzi/:indirizzo,DELETE POST,versione 2/piattaforma/packages/api/src/api/admin/clienti/[id]/indirizzi/[indirizzo]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/clienti/:id/indirizzi,POST,versione 2/piattaforma/packages/api/src/api/admin/clienti/[id]/indirizzi/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/clienti/:id,DELETE GET POST,versione 2/piattaforma/packages/api/src/api/admin/clienti/[id]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/clienti/gruppi/:id/clienti,POST,versione 2/piattaforma/packages/api/src/api/admin/clienti/gruppi/[id]/clienti/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/clienti/gruppi/:id,DELETE GET POST,versione 2/piattaforma/packages/api/src/api/admin/clienti/gruppi/[id]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/clienti/gruppi,GET POST,versione 2/piattaforma/packages/api/src/api/admin/clienti/gruppi/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/clienti,GET POST,versione 2/piattaforma/packages/api/src/api/admin/clienti/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/clienti/segmenti,GET,versione 2/piattaforma/packages/api/src/api/admin/clienti/segmenti/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/connectors/:id/login,POST,versione 2/piattaforma/packages/api/src/api/admin/connectors/[id]/login/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/connectors/:id,DELETE POST,versione 2/piattaforma/packages/api/src/api/admin/connectors/[id]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/connectors/:id/test,POST,versione 2/piattaforma/packages/api/src/api/admin/connectors/[id]/test/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/connectors,GET,versione 2/piattaforma/packages/api/src/api/admin/connectors/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/custom,GET,versione 2/piattaforma/packages/api/src/api/admin/custom/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/evasioni/:ordine/:azienda/:azione,POST,versione 2/piattaforma/packages/api/src/api/admin/evasioni/[ordine]/[azienda]/[azione]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/evasioni,GET,versione 2/piattaforma/packages/api/src/api/admin/evasioni/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/impostazioni/app/:id,POST,versione 2/piattaforma/packages/api/src/api/admin/impostazioni/app/[id]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/impostazioni/app,GET,versione 2/piattaforma/packages/api/src/api/admin/impostazioni/app/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/impostazioni/esporta/:tipo,POST,versione 2/piattaforma/packages/api/src/api/admin/impostazioni/esporta/[tipo]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/impostazioni/esporta,GET,versione 2/piattaforma/packages/api/src/api/admin/impostazioni/esporta/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/impostazioni/negozio,POST,versione 2/piattaforma/packages/api/src/api/admin/impostazioni/negozio/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/impostazioni,GET,versione 2/piattaforma/packages/api/src/api/admin/impostazioni/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/impostazioni/spedizioni/opzioni/:id,POST,versione 2/piattaforma/packages/api/src/api/admin/impostazioni/spedizioni/opzioni/[id]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/impostazioni/spedizioni,GET POST,versione 2/piattaforma/packages/api/src/api/admin/impostazioni/spedizioni/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/impostazioni/valuta,GET,versione 2/piattaforma/packages/api/src/api/admin/impostazioni/valuta/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/ingrosso/rivenditori/:id,DELETE GET POST,versione 2/piattaforma/packages/api/src/api/admin/ingrosso/rivenditori/[id]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/ingrosso/rivenditori,GET POST,versione 2/piattaforma/packages/api/src/api/admin/ingrosso/rivenditori/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/ingrosso/trattative/:id/note,POST,versione 2/piattaforma/packages/api/src/api/admin/ingrosso/trattative/[id]/note/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/ingrosso/trattative/:id/ordine,GET POST,versione 2/piattaforma/packages/api/src/api/admin/ingrosso/trattative/[id]/ordine/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/ingrosso/trattative/:id,DELETE GET POST,versione 2/piattaforma/packages/api/src/api/admin/ingrosso/trattative/[id]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/ingrosso/trattative/:id/sposta,POST,versione 2/piattaforma/packages/api/src/api/admin/ingrosso/trattative/[id]/sposta/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/ingrosso/trattative,GET POST,versione 2/piattaforma/packages/api/src/api/admin/ingrosso/trattative/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/ingrosso/varianti,GET,versione 2/piattaforma/packages/api/src/api/admin/ingrosso/varianti/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/magazzino/articoli/:id/correzione,POST,versione 2/piattaforma/packages/api/src/api/admin/magazzino/articoli/[id]/correzione/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/magazzino/articoli/:id/ricevi,POST,versione 2/piattaforma/packages/api/src/api/admin/magazzino/articoli/[id]/ricevi/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/magazzino/articoli/:id/rifornimento,POST,versione 2/piattaforma/packages/api/src/api/admin/magazzino/articoli/[id]/rifornimento/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/magazzino/articoli/:id,GET,versione 2/piattaforma/packages/api/src/api/admin/magazzino/articoli/[id]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/magazzino/articoli/:id/soglia,POST,versione 2/piattaforma/packages/api/src/api/admin/magazzino/articoli/[id]/soglia/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/magazzino/movimenti,GET,versione 2/piattaforma/packages/api/src/api/admin/magazzino/movimenti/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/magazzino/riserve/:id,DELETE,versione 2/piattaforma/packages/api/src/api/admin/magazzino/riserve/[id]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/magazzino/riserve,GET POST,versione 2/piattaforma/packages/api/src/api/admin/magazzino/riserve/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/magazzino,GET,versione 2/piattaforma/packages/api/src/api/admin/magazzino/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/magazzino/scorte-basse,GET,versione 2/piattaforma/packages/api/src/api/admin/magazzino/scorte-basse/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/magazzino/soglie,GET POST,versione 2/piattaforma/packages/api/src/api/admin/magazzino/soglie/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/marketing/automazioni/:chiave,POST,versione 2/piattaforma/packages/api/src/api/admin/marketing/automazioni/[chiave]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/marketing/automazioni,GET,versione 2/piattaforma/packages/api/src/api/admin/marketing/automazioni/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/marketing/campagne/:id/duplica,POST,versione 2/piattaforma/packages/api/src/api/admin/marketing/campagne/[id]/duplica/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/marketing/campagne/:id/invia,POST,versione 2/piattaforma/packages/api/src/api/admin/marketing/campagne/[id]/invia/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/marketing/campagne/:id/programma,DELETE POST,versione 2/piattaforma/packages/api/src/api/admin/marketing/campagne/[id]/programma/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/marketing/campagne/:id,DELETE GET POST,versione 2/piattaforma/packages/api/src/api/admin/marketing/campagne/[id]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/marketing/campagne,GET POST,versione 2/piattaforma/packages/api/src/api/admin/marketing/campagne/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/marketing/disiscrizione,GET POST,versione 2/piattaforma/packages/api/src/api/admin/marketing/disiscrizione/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/negozio-online/pagine/:id,DELETE POST,versione 2/piattaforma/packages/api/src/api/admin/negozio-online/pagine/[id]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/negozio-online/pagine,POST,versione 2/piattaforma/packages/api/src/api/admin/negozio-online/pagine/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/negozio-online,GET POST,versione 2/piattaforma/packages/api/src/api/admin/negozio-online/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/negozio-online/vetrina,GET,versione 2/piattaforma/packages/api/src/api/admin/negozio-online/vetrina/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/ordini/:id/annulla,POST,versione 2/piattaforma/packages/api/src/api/admin/ordini/[id]/annulla/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/ordini/:id/avanza,POST,versione 2/piattaforma/packages/api/src/api/admin/ordini/[id]/avanza/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/ordini/:id/incassa,POST,versione 2/piattaforma/packages/api/src/api/admin/ordini/[id]/incassa/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/ordini/:id/note,POST,versione 2/piattaforma/packages/api/src/api/admin/ordini/[id]/note/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/ordini/:id,GET,versione 2/piattaforma/packages/api/src/api/admin/ordini/[id]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/ordini/blocco,POST,versione 2/piattaforma/packages/api/src/api/admin/ordini/blocco/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/ordini/bozze/:id/conferma,POST,versione 2/piattaforma/packages/api/src/api/admin/ordini/bozze/[id]/conferma/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/ordini/bozze/opzioni,GET,versione 2/piattaforma/packages/api/src/api/admin/ordini/bozze/opzioni/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/ordini/bozze,GET POST,versione 2/piattaforma/packages/api/src/api/admin/ordini/bozze/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/ordini/resi/:id/:azione,POST,versione 2/piattaforma/packages/api/src/api/admin/ordini/resi/[id]/[azione]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/ordini/resi,GET POST,versione 2/piattaforma/packages/api/src/api/admin/ordini/resi/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/ordini/riepilogo,GET,versione 2/piattaforma/packages/api/src/api/admin/ordini/riepilogo/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/ordini,GET,versione 2/piattaforma/packages/api/src/api/admin/ordini/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/outfit/:id,DELETE GET POST,versione 2/piattaforma/packages/api/src/api/admin/outfit/[id]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/outfit/:id/stato,POST,versione 2/piattaforma/packages/api/src/api/admin/outfit/[id]/stato/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/outfit/catalogo,GET,versione 2/piattaforma/packages/api/src/api/admin/outfit/catalogo/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/outfit,GET POST,versione 2/piattaforma/packages/api/src/api/admin/outfit/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/permessi/me,GET,versione 2/piattaforma/packages/api/src/api/admin/permessi/me/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/registro,GET,versione 2/piattaforma/packages/api/src/api/admin/registro/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/sconti/codici/:id/duplica,POST,versione 2/piattaforma/packages/api/src/api/admin/sconti/codici/[id]/duplica/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/sconti/codici/:id,DELETE GET POST,versione 2/piattaforma/packages/api/src/api/admin/sconti/codici/[id]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/sconti/codici/:id/stato,POST,versione 2/piattaforma/packages/api/src/api/admin/sconti/codici/[id]/stato/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/sconti/codici,GET POST,versione 2/piattaforma/packages/api/src/api/admin/sconti/codici/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/sconti/proposte/:id/approva,POST,versione 2/piattaforma/packages/api/src/api/admin/sconti/proposte/[id]/approva/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/sconti/proposte/:id/rifiuta,POST,versione 2/piattaforma/packages/api/src/api/admin/sconti/proposte/[id]/rifiuta/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/sconti/proposte/:id,DELETE,versione 2/piattaforma/packages/api/src/api/admin/sconti/proposte/[id]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/sconti/proposte,GET,versione 2/piattaforma/packages/api/src/api/admin/sconti/proposte/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/team/:id,DELETE POST,versione 2/piattaforma/packages/api/src/api/admin/team/[id]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/team/inviti/:id,DELETE POST,versione 2/piattaforma/packages/api/src/api/admin/team/inviti/[id]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/admin/team,GET POST,versione 2/piattaforma/packages/api/src/api/admin/team/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/connectors/oauth/callback,GET,versione 2/piattaforma/packages/api/src/api/connectors/oauth/callback/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/store/custom,GET,versione 2/piattaforma/packages/api/src/api/store/custom/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/analisi/panoramica,GET,versione 2/piattaforma/packages/api/src/api/vendor/analisi/panoramica/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/assistenza/richieste/:id/messaggi,POST,versione 2/piattaforma/packages/api/src/api/vendor/assistenza/richieste/[id]/messaggi/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/assistenza/richieste/:id,GET,versione 2/piattaforma/packages/api/src/api/vendor/assistenza/richieste/[id]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/assistenza/richieste/:id/stato,POST,versione 2/piattaforma/packages/api/src/api/vendor/assistenza/richieste/[id]/stato/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/assistenza/richieste,GET POST,versione 2/piattaforma/packages/api/src/api/vendor/assistenza/richieste/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/avvisi/letti,POST,versione 2/piattaforma/packages/api/src/api/vendor/avvisi/letti/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/avvisi,GET,versione 2/piattaforma/packages/api/src/api/vendor/avvisi/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/catalogo/prodotti/:id,GET POST,versione 2/piattaforma/packages/api/src/api/vendor/catalogo/prodotti/[id]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/catalogo/prodotti,GET POST,versione 2/piattaforma/packages/api/src/api/vendor/catalogo/prodotti/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/evasioni/:ordine/:azione,POST,versione 2/piattaforma/packages/api/src/api/vendor/evasioni/[ordine]/[azione]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/evasioni,GET,versione 2/piattaforma/packages/api/src/api/vendor/evasioni/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/impostazioni/valuta,GET,versione 2/piattaforma/packages/api/src/api/vendor/impostazioni/valuta/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/magazzino/articoli/:id/correzione,POST,versione 2/piattaforma/packages/api/src/api/vendor/magazzino/articoli/[id]/correzione/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/magazzino/articoli/:id/ricevi,POST,versione 2/piattaforma/packages/api/src/api/vendor/magazzino/articoli/[id]/ricevi/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/magazzino/articoli/:id/rifornimento,POST,versione 2/piattaforma/packages/api/src/api/vendor/magazzino/articoli/[id]/rifornimento/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/magazzino/articoli/:id,GET,versione 2/piattaforma/packages/api/src/api/vendor/magazzino/articoli/[id]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/magazzino/articoli/:id/soglia,POST,versione 2/piattaforma/packages/api/src/api/vendor/magazzino/articoli/[id]/soglia/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/magazzino/conteggio,POST,versione 2/piattaforma/packages/api/src/api/vendor/magazzino/conteggio/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/magazzino/movimenti,GET,versione 2/piattaforma/packages/api/src/api/vendor/magazzino/movimenti/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/magazzino/riserve,GET,versione 2/piattaforma/packages/api/src/api/vendor/magazzino/riserve/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/magazzino,GET,versione 2/piattaforma/packages/api/src/api/vendor/magazzino/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/magazzino/scorte-basse,GET,versione 2/piattaforma/packages/api/src/api/vendor/magazzino/scorte-basse/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/magazzino/soglia,GET POST,versione 2/piattaforma/packages/api/src/api/vendor/magazzino/soglia/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/ordini/:id,GET,versione 2/piattaforma/packages/api/src/api/vendor/ordini/[id]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/ordini,GET,versione 2/piattaforma/packages/api/src/api/vendor/ordini/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/outfit/:id,GET,versione 2/piattaforma/packages/api/src/api/vendor/outfit/[id]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/outfit,GET,versione 2/piattaforma/packages/api/src/api/vendor/outfit/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/permessi/me,GET,versione 2/piattaforma/packages/api/src/api/vendor/permessi/me/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/sconti/prodotti,GET,versione 2/piattaforma/packages/api/src/api/vendor/sconti/prodotti/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/sconti/proposte/:id,DELETE,versione 2/piattaforma/packages/api/src/api/vendor/sconti/proposte/[id]/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/sconti/proposte,GET POST,versione 2/piattaforma/packages/api/src/api/vendor/sconti/proposte/route.ts,inventario statico; permessi e flusso da provare
+versione 2,/vendor/team/ruoli,GET,versione 2/piattaforma/packages/api/src/api/vendor/team/ruoli/route.ts,inventario statico; permessi e flusso da provare

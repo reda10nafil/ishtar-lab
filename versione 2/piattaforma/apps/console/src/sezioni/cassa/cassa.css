@@ -1,0 +1,566 @@
+.cassa {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 18px;
+  align-items: start;
+}
+
+.cassa__scaffale { padding: 18px 20px 20px; border-radius: 20px; min-width: 0; }
+
+.cassa__barra-filtri { display: flex; align-items: center; gap: 10px; }
+
+.cassa-cerca { position: relative; display: flex; align-items: center; flex: 0 1 380px; min-width: 0; color: var(--testo-2); }
+.cassa-cerca svg { position: absolute; left: 13px; pointer-events: none; }
+.cassa-cerca input { padding-left: 40px; color: var(--testo); }
+
+.cassa__oggi {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-left: auto;
+  color: var(--testo-2);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cassa__oggi b { color: var(--testo); font-size: 15px; font-weight: 900; }
+
+.cassa__categorie {
+  flex-wrap: nowrap;
+  margin-top: 14px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.cassa__categorie::-webkit-scrollbar { display: none; }
+.cassa__categorie button { flex: none; }
+
+.cassa__griglia {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.cassa__nulla { margin-top: 14px; padding: 40px 20px; color: var(--testo-2); font-size: 14px; text-align: center; }
+
+.cassa-scheda {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 8px;
+  min-height: 0;
+  padding: 12px;
+  border-radius: 16px;
+  background: var(--sup-1);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22), inset 0 0 0 1px var(--linea);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  white-space: normal;
+}
+
+
+.cassa-scheda__nome { font-size: 13.5px; font-weight: 600; line-height: 1.25; }
+.cassa-scheda__piede { display: flex; flex-direction: column; margin-top: auto; }
+.cassa-scheda__piede b { font-size: 14px; font-weight: 700; }
+.cassa-scheda__piede small { color: var(--testo-2); font-size: 12px; font-weight: 500; }
+
+.cassa-scheda__conta {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 7px;
+  border-radius: 99px;
+  background: var(--accento);
+  box-shadow: 0 4px 10px -4px var(--accento);
+  color: var(--su-accento);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* La miniatura è una tessera chiara in entrambi i temi, come sul pannello. */
+.cassa-miniatura {
+  --tinta-1: #fbeaf0;
+  --tinta-2: #f6d3dc;
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  overflow: hidden;
+  background: linear-gradient(155deg, var(--tinta-1), var(--tinta-2));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.7), inset 0 0 0 1px rgb(255 255 255 / 0.4), 0 4px 10px -6px rgb(70 30 42 / 0.35);
+  color: #22181b;
+}
+
+.cassa-miniatura[data-tinta="1"] { --tinta-1: #fdf0e6; --tinta-2: #f6dcc8; }
+.cassa-miniatura[data-tinta="2"] { --tinta-1: #f6efe2; --tinta-2: #eadfca; }
+.cassa-miniatura[data-tinta="3"] { --tinta-1: #eef3f9; --tinta-2: #d3deea; }
+.cassa-miniatura[data-tinta="4"] { --tinta-1: #fbf3da; --tinta-2: #f0e3b8; }
+
+.cassa-miniatura img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.cassa-miniatura b { font-size: 14px; font-weight: 500; }
+.cassa-miniatura i { position: absolute; bottom: 5px; width: 25%; height: 3px; border-radius: 3px; background: rgb(36 23 28 / 0.18); }
+.cassa-miniatura--grande { width: 56px; height: 56px; border-radius: 16px; }
+.cassa-miniatura--piccola { width: 30px; height: 30px; border-radius: 9px; }
+.cassa-miniatura--piccola b { font-size: 10.5px; font-weight: 700; }
+.cassa-miniatura--piccola i { display: none; }
+
+.cassa-volo {
+  position: fixed;
+  z-index: 40;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  box-shadow: 0 6px 16px -6px rgb(0 0 0 / 0.5);
+  pointer-events: none;
+}
+
+.cassa__cestino {
+  position: sticky;
+  top: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 18px 20px 20px;
+  border-radius: 20px;
+}
+
+.cassa-icona {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  min-height: 34px;
+  padding: 0;
+  border-radius: 10px;
+  background: none;
+  box-shadow: none;
+  color: var(--testo);
+}
+
+.cassa-icona.cassa-chiudi { display: none; }
+
+.cassa-svuota {
+  min-height: 32px;
+  margin-top: 3.5px;
+  padding: 0 12px;
+  border-radius: 10px;
+  background: none;
+  box-shadow: none;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.cassa-vuoto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 40px 20px;
+  color: var(--testo-2);
+  text-align: center;
+}
+
+.cassa-vuoto b { margin-top: 4px; color: var(--testo); font-size: 15px; font-weight: 600; }
+.cassa-vuoto p { font-size: 12.5px; font-weight: 500; }
+
+.cassa-vuoto__icona {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 17px;
+  background: var(--sup-2);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22), 0 0 0 1px var(--linea);
+  color: var(--accento-testo);
+}
+
+.cassa-righe { display: flex; flex-direction: column; max-height: 42vh; overflow-y: auto; scrollbar-width: thin; }
+
+.cassa-riga { display: flex; align-items: center; gap: 12px; padding: 10px 0; }
+.cassa-riga + .cassa-riga { border-top: 1px solid var(--linea); }
+
+.cassa-riga__testo { flex: 1; min-width: 0; }
+.cassa-riga__testo b, .cassa-riga__testo small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cassa-riga__testo b { font-size: 14px; font-weight: 600; }
+.cassa-riga__testo small { color: var(--testo-2); font-size: 12px; font-weight: 500; }
+
+.cassa-passo {
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: 2px;
+  height: 36px;
+  padding: 3px;
+  border-radius: 12px;
+  background: var(--sup-1);
+  box-shadow: var(--ombra-sup);
+}
+
+.cassa-passo button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  min-height: 30px;
+  padding: 0;
+  border-radius: 9px;
+  background: none;
+  box-shadow: none;
+}
+
+.cassa-passo output { width: 28px; font-size: 13.5px; font-weight: 700; text-align: center; }
+.cassa-passo .cassa-passo__piu,
+.cassa-passo .cassa-passo__piu:hover:not(:disabled) { background: var(--accento); color: var(--su-accento); }
+
+.cassa-cliente { position: relative; }
+.cassa-cliente .cassa-cerca { flex: auto; }
+
+.cassa-cliente--scelto {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 7px 7px 13px;
+  border-radius: 13px;
+  background: var(--incavo);
+  box-shadow: var(--ombra-sup);
+}
+
+.cassa-cliente--scelto span { flex: 1; min-width: 0; }
+.cassa-cliente--scelto b, .cassa-cliente--scelto small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cassa-cliente--scelto b { font-size: 13.5px; font-weight: 600; }
+.cassa-cliente--scelto small { color: var(--testo-2); font-size: 12px; font-weight: 500; }
+
+.cassa-cliente__elenco {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  left: 0;
+  z-index: 5;
+  display: grid;
+  gap: 2px;
+  padding: 6px;
+  border-radius: 14px;
+  background: var(--modale-1);
+  box-shadow: var(--ombra-modale);
+  backdrop-filter: blur(48px) saturate(2);
+  -webkit-backdrop-filter: blur(48px) saturate(2);
+}
+
+.cassa-cliente__elenco button {
+  display: grid;
+  justify-items: start;
+  gap: 0;
+  width: 100%;
+  min-height: 0;
+  padding: 7px 10px;
+  border-radius: 10px;
+  background: none;
+  box-shadow: none;
+  font-weight: 500;
+  white-space: normal;
+}
+
+.cassa-cliente__elenco b { font-size: 13.5px; font-weight: 600; }
+.cassa-cliente__elenco small { color: var(--testo-2); font-size: 12px; }
+.cassa-cliente__nulla { padding: 8px 10px; color: var(--testo-2); font-size: 13px; }
+
+.cassa-codice { display: flex; align-items: flex-start; gap: 8px; }
+.cassa-codice input { flex: 1; min-width: 0; text-transform: uppercase; }
+.cassa-codice > button { flex: none; }
+.cassa-codice > button:disabled { opacity: 0.45; }
+
+.cassa-applicato {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 8px 0 12px;
+  border-radius: 12px;
+  background: var(--accento-tinta);
+  color: var(--accento-testo);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.cassa-applicato .cassa-icona { width: 24px; min-height: 24px; border-radius: 8px; color: inherit; }
+
+.cassa-totali {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--sup-1);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22), inset 0 0 0 1px rgb(255 255 255 / 0.06), 0 0 0 1px var(--linea);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cassa-totali span { color: var(--testo-2); font-weight: 500; }
+.cassa-totali b { font-weight: 900; text-align: right; }
+.cassa-totali .cassa-totali__fine { padding-top: 6px; border-top: 1px solid var(--linea); color: var(--testo); font-size: 15px; font-weight: 700; }
+.cassa-totali__nulla { color: var(--testo-3); }
+
+.cassa-motivo { color: var(--testo-2); font-size: 12.5px; }
+
+button.cassa-incassa {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 22px;
+  border-radius: 16px;
+  font-size: 15px;
+}
+
+.cassa-incassa:disabled, .incasso .primario:disabled { opacity: 0.45; }
+
+.cassa__bottone { display: none; }
+
+.cassa-taglie { flex-wrap: wrap; }
+.cassa-offerte { display: grid; gap: 6px; }
+
+.cassa-offerta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 14px;
+  font-weight: 500;
+  text-align: left;
+}
+
+.cassa-offerta[aria-checked="true"] { box-shadow: inset 0 0 0 1.5px var(--accento), 0 0 0 4px var(--accento-anello); }
+.cassa-offerta span { display: grid; }
+.cassa-offerta b { font-size: 13.5px; font-weight: 600; }
+.cassa-offerta small { color: var(--testo-2); font-size: 12px; }
+
+.cassa-piede { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+
+.incasso { display: flex; flex-direction: column; gap: 18px; }
+.incasso .cassa-piede { margin-top: 20px; }
+
+.selettore.incasso__scelta { display: flex; }
+.selettore.incasso__scelta button { min-height: 40px; }
+
+.incasso__carta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 0 6px;
+  color: var(--testo-2);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.incasso__carta p { max-width: 340px; }
+
+.incasso__lettore {
+  display: grid;
+  place-items: center;
+  width: 86px;
+  height: 86px;
+  border-radius: 28px;
+  background: var(--sup-2);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22), 0 0 0 1px var(--linea), 0 12px 26px -14px rgb(0 0 0 / 0.6);
+  color: var(--accento-testo);
+}
+
+.incasso__contanti { display: flex; flex-direction: column; gap: 12px; }
+.incasso__tagli { display: flex; gap: 6px; }
+.incasso__tagli button { min-height: 34px; padding: 0 13px; border-radius: 11px; color: var(--testo-1); font-size: 12.5px; }
+
+.incasso__tagli button[aria-pressed="true"],
+.incasso__tagli button[aria-pressed="true"]:hover:not(:disabled) {
+  background: linear-gradient(var(--accento-su), var(--accento) 60%);
+  box-shadow: var(--ombra-primario);
+  color: var(--su-accento);
+}
+
+.incasso__resto { color: var(--testo-2); font-size: 15px; font-weight: 500; }
+.incasso__resto b { color: var(--ok); font-size: 20px; font-weight: 700; }
+
+.incasso__pagato { position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px; padding-bottom: 10px; text-align: center; }
+.incasso__pagato h3 { font-size: 20px; font-weight: 700; letter-spacing: -0.015em; }
+.incasso__pagato > p { font-size: 14px; font-weight: 600; }
+.incasso__pagato > p b { color: var(--ok); font-weight: 700; }
+
+.incasso__spunta {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--ok);
+  color: white;
+  animation: incasso-spunta 0.7s ease-out both;
+}
+
+.incasso__piu {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  color: var(--ok);
+  font-size: 15px;
+  font-weight: 700;
+  opacity: 0;
+  pointer-events: none;
+  animation: incasso-piu 1.75s ease-in-out both;
+}
+
+.incasso__ordine { margin-right: auto; color: var(--testo-2); font-size: 13px; font-weight: 600; }
+
+@keyframes incasso-spunta {
+  0% { transform: scale(0); }
+  52% { transform: scale(1.17) rotate(5deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+@keyframes incasso-piu {
+  0% { opacity: 0; transform: translate(-50%, 6px) scale(0.9); }
+  11% { opacity: 1; transform: translate(-50%, -14px) scale(1.01); }
+  20%, 60% { opacity: 1; transform: translate(-50%, -12px) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -40px) scale(1); }
+}
+
+/* Lo scontrino è carta bianca in entrambi i temi, come in stampa. */
+.scontrino {
+  --carta: #fdfbf9;
+  --inchiostro: #24161f;
+  --inchiostro-2: #6a5961;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: min(320px, 100%);
+  padding: 16px 18px 20px;
+  background: var(--carta);
+  color: var(--inchiostro);
+  font-size: 12.5px;
+  font-weight: 500;
+  text-align: left;
+  border-radius: 4px 4px 0 0;
+  animation: scontrino-esce 0.9s cubic-bezier(0.4, 0, 0.2, 1) both;
+  -webkit-mask: radial-gradient(5px at 50% 100%, transparent 96%, black) bottom / 14px 100% repeat-x;
+  mask: radial-gradient(5px at 50% 100%, transparent 96%, black) bottom / 14px 100% repeat-x;
+}
+
+.scontrino > small { color: var(--inchiostro-2); font-size: 11.5px; text-align: center; }
+.scontrino__negozio { font-size: 15px; font-weight: 700; text-align: center; }
+.scontrino__taglio { margin: 5px 0; border-top: 1px dashed color-mix(in srgb, var(--inchiostro) 30%, transparent); }
+.scontrino__riga { display: flex; justify-content: space-between; gap: 12px; }
+.scontrino__totale { font-size: 15px; font-weight: 700; }
+
+@keyframes scontrino-esce {
+  from { transform: translateY(-20px); }
+  to { transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .incasso__spunta, .incasso__piu, .scontrino { animation: none; }
+  .incasso__piu { display: none; }
+}
+
+@media print {
+  body * { visibility: hidden; }
+  .scontrino, .scontrino * { visibility: visible; }
+  .scontrino {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 80mm;
+    animation: none;
+    -webkit-mask: none;
+    mask: none;
+  }
+}
+
+@media (max-width: 1240px) {
+  .cassa { grid-template-columns: minmax(0, 1fr) 330px; }
+}
+
+@media (max-width: 1000px) {
+  .cassa { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+
+  /* Sul telefono il cestino compare di colpo sopra la barra, come sul pannello. */
+  .cassa__cestino {
+    position: fixed;
+    top: auto;
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    z-index: 14;
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+    border-radius: 18px;
+    background-color: var(--modale-1);
+    visibility: hidden;
+  }
+
+  .cassa__cestino--aperto { visibility: visible; }
+
+  .cassa-icona.cassa-chiudi { display: grid; width: 42px; min-height: 42px; border-radius: 13px; }
+
+  .cassa__bottone {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    z-index: 13;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 54px;
+    padding: 0 8px;
+    border-radius: 99px;
+    background: var(--accento);
+    box-shadow: 0 14px 30px -12px var(--accento);
+    color: var(--su-accento);
+    font-size: 14px;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, 12px);
+    transition: opacity 0.2s, transform 0.2s;
+  }
+
+  .cassa__bottone:hover:not(:disabled) { background: var(--accento); }
+  .cassa__bottone--visibile { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
+
+  .cassa__bottone span {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 99px;
+    background: rgb(255 255 255 / 0.22);
+    font-weight: 700;
+  }
+
+  .cassa__bottone b { padding: 0 14px; font-size: 15px; font-weight: 900; }
+}
+
+@media (max-width: 720px) {
+  .cassa__scaffale { padding: 16px; border-radius: 18px; }
+  .cassa__oggi { display: none; }
+  .cassa-cerca { flex: 1; }
+  .cassa__griglia { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 860px) {
+  .cassa__bottone { bottom: 96px; }
+}
+
+/* La barra in basso sta sopra il contenuto: col cestino aperto si toglie di mezzo. */
+.cassa-con-cestino .barra-basso { visibility: hidden; }

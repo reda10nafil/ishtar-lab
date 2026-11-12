@@ -1,0 +1,53 @@
+/* Pezzi comuni a Shop till e Online shop. */
+
+.canale-testa {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.canale-testa > div:first-child { flex: 1; min-width: 0; }
+.canale-testa h2 { font-size: 15px; font-weight: 600; line-height: 1.25; letter-spacing: -0.005em; }
+.canale-testa p { margin-top: 2px; color: var(--testo-2); font-size: 12.5px; font-weight: 500; }
+
+.canale-campo { display: flex; flex-direction: column; gap: 6px; }
+.canale-campo > span { color: var(--testo-1); font-size: 12.5px; font-weight: 600; }
+.canale-campo small { color: var(--testo-2); font-size: 12px; font-weight: 500; }
+
+/* Le finestre dei canali sono strette come quelle del pannello. */
+.modale:has(.incasso),
+.modale:has(.incasso__pagato),
+.modale:has(.cassa-taglie),
+.modale:has(.negozio-modulo) { width: min(520px, 100%); }
+
+/* Sul telefono le stesse finestre sono fogli dal basso, con la maniglia. */
+@media (max-width: 720px) {
+  .velo:has(.incasso),
+  .velo:has(.incasso__pagato),
+  .velo:has(.cassa-taglie),
+  .velo:has(.negozio-modulo) { align-items: end; padding: 0; }
+
+  .modale:has(.incasso),
+  .modale:has(.incasso__pagato),
+  .modale:has(.cassa-taglie),
+  .modale:has(.negozio-modulo) { width: 100%; padding-top: 8px; border-radius: var(--raggio-xl) var(--raggio-xl) 0 0; }
+
+  .modale:has(.incasso)::after,
+  .modale:has(.incasso__pagato)::after,
+  .modale:has(.cassa-taglie)::after,
+  .modale:has(.negozio-modulo)::after {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    width: 40px;
+    height: 4px;
+    border-radius: 4px;
+    background: var(--linea-forte);
+    content: "";
+    transform: translateX(-50%);
+  }
+
+  /* Le schede dei canali occupano tutta la riga. */
+  .schede:has(a[href="/cassa"]) { display: flex; width: 100%; }
+  .schede:has(a[href="/cassa"]) a { flex: 1; justify-content: center; }
+}

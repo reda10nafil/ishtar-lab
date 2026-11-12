@@ -41,3 +41,7 @@ Il confronto con il ramo main ha confermato che il codice dell'app è già allin
 La release applicativa più recente già pubblicata è [v0.1.1-preview-20261108](https://github.com/reda10nafil/ishtar-lab/releases/tag/v0.1.1-preview-20261108). Il suo ZIP conserva lo snapshot dell'8 novembre; le note successive si trovano nel ramo main. Il manifest della consegna resta riferito al pacchetto, non a ogni revisione documentale.
 
 Per l'esito di questa sincronizzazione consultare PROJECT.md e il rapporto locale verifiche/aggiornamento-github-2026-11-12.json. Nessuna nuova release applicativa viene creata per queste sole note; dati privati e backup completo del database restano fuori dal repository.
+
+## Seconda consegna del 12 novembre
+
+Inclusa la seconda app nella cartella versione 2, mantenendo la prima nella radice. Partire da [[Consegna tecnica al collaboratore]], [[Versione 2 - origine e differenze]] e [[Segnalazioni ricevute e verifiche]]. Il vault include tutte le note esistenti più queste tre guide. La consegna prevista v0.2.0-handoff-20261112 è di sviluppo; controllarne la pubblicazione su GitHub. In alternativa scaricare il ramo main, perché gli ZIP dell'8 novembre non hanno la seconda app. Nessun segreto o DB privato necessario per leggere/sviluppare i sorgenti; accesso di lettura pubblico, modifiche tramite fork/PR.

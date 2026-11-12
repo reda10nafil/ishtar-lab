@@ -1,0 +1,141 @@
+/* Misure rilevate a schermo sul pannello di riferimento, valide solo dentro Settings, Help e Apps. */
+.fedele {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.fedele .riquadro {
+  gap: 0;
+  padding: 18px 20px 20px;
+  border-radius: 20px;
+}
+
+.fedele .riquadro > header { display: block; margin-bottom: 14px; }
+.fedele .riquadro > header:has(> .etichetta) { display: flex; }
+.fedele .riquadro h2 { font-size: 15px; font-weight: 600; line-height: 1.25; letter-spacing: -0.005em; }
+.fedele .riquadro > header p { margin-top: 3px; font-size: 12.5px; line-height: 1.45; }
+
+/* Campi */
+.fedele .modulo { gap: 14px; }
+.fedele .campo { gap: 6px; }
+.fedele .campo > span { color: var(--testo); font-size: 12.5px; font-weight: 600; opacity: 0.88; }
+.fedele .campo small { font-size: 12.5px; }
+
+.fedele input:not([type="checkbox"]),
+.fedele select,
+.fedele textarea {
+  min-height: 44px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 13px;
+  background-color: var(--sup-1);
+  box-shadow: inset 0 0 0 1px var(--linea);
+  color: var(--testo);
+  font-size: 14px;
+  font-weight: 500;
+  transition: box-shadow 0.15s;
+}
+
+.fedele textarea { display: block; padding: 11px 13px; }
+
+.fedele input:not([type="checkbox"]):focus,
+.fedele select:focus,
+.fedele textarea:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 1.5px var(--accento), 0 0 0 3px color-mix(in srgb, var(--accento) 26%, transparent);
+}
+
+.fedele select {
+  padding-right: 34px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--testo-2) 50%),
+    linear-gradient(135deg, var(--testo-2) 50%, transparent 50%);
+  background-position: calc(100% - 19px) 50%, calc(100% - 14px) 50%;
+  background-repeat: no-repeat;
+  background-size: 5px 5px, 5px 5px;
+  appearance: none;
+}
+
+.fedele .griglia-due { gap: 14px 12px; }
+
+/* Pulsanti */
+.fedele .primario,
+.fedele .pulsante-medio {
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 13px;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.fedele .primario { box-shadow: 0 6px 18px color-mix(in srgb, var(--accento) 34%, transparent); }
+
+.fedele .pulsante-piccolo {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 11px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Interruttore */
+.fedele .interruttore { width: 44px; min-height: 26px; height: 26px; border: 0; background: var(--sup-3); }
+.fedele .interruttore::after { top: 3px; left: 3px; width: 20px; height: 20px; transition: transform 0.14s ease-out; }
+.fedele .interruttore[aria-checked="true"] { background: var(--accento); }
+.fedele .interruttore[aria-checked="true"]::after { background: #fff; transform: translateX(18px); }
+
+/* Schede a pillola */
+.fedele .schede {
+  align-self: flex-start;
+  gap: 4px;
+  padding: 4px;
+  border: 0;
+  border-radius: 15px;
+  background: var(--sup-1);
+  box-shadow: inset 0 0 0 1px var(--linea), 0 8px 24px rgb(0 0 0 / 0.12);
+}
+
+.fedele .schede a {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 11px;
+  font-size: 13.5px;
+  font-weight: 600;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.fedele .schede a:hover { color: var(--testo); }
+.fedele .schede a.active { background: var(--sup-3); }
+
+/* Righe di una scheda */
+.impostazioni__elenco { display: grid; }
+.impostazioni__elenco .impostazione + .impostazione { border-top: 1px solid var(--linea); }
+
+.impostazione {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 18px;
+  min-height: 69px;
+  padding: 11px 0;
+}
+
+.impostazione:has(.importo) { padding: 14px 0; }
+
+.impostazione > div:first-child { flex: 1; min-width: 0; }
+.impostazione strong { display: block; font-size: 14px; font-weight: 600; }
+.impostazione p { color: var(--testo-2); font-size: 12.5px; }
+
+@media (max-width: 860px) {
+  .fedele .schede { align-self: stretch; }
+}
+
+@media (max-width: 560px) {
+  .fedele .griglia-due { gap: 14px; }
+}

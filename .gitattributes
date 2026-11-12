@@ -13,3 +13,5 @@
 *.jpg binary
 *.ico binary
 *.woff2 binary
+# La seconda app è uno snapshot verificato: preservare i byte della sorgente.
+"versione 2/**" -text

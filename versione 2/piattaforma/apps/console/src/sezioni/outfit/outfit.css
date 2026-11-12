@@ -1,0 +1,282 @@
+/*
+ * Outfit Studio non esiste nel pannello: usa lo stesso linguaggio visivo. Pulsanti, campi, selettori, pillole e blocchi
+ * vengono dagli stili comuni; qui resta solo ciò che è di questa sezione. Misure prese a schermo sul pannello, a 1440 px.
+ * Unico colore fisso: la carta delle foto, chiara in entrambi i temi come le tessere del pannello.
+ */
+
+.outfit-sezione, .outfit-modale {
+  --outfit-carta: linear-gradient(160deg, #f9e7eb, #f4dee4);
+  --outfit-inchiostro: #5b4650;
+  --outfit-curva: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.outfit-conteggio {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 99px;
+  background: var(--sup-etichetta);
+  font-size: 11.5px;
+  font-style: normal;
+  line-height: 18px;
+  text-align: center;
+}
+
+/* Griglia e carte: 212 x 272 a tutta larghezza, foto 192 x 167. */
+.griglia-outfit {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 18px;
+}
+
+.outfit-scheda {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 10px 10px 14px;
+  border-radius: var(--raggio-l);
+  color: inherit;
+  text-decoration: none;
+  transition: translate 0.36s var(--outfit-curva);
+}
+
+.outfit-scheda:hover { translate: 0 -4px; }
+
+.outfit-scheda--attesa { pointer-events: none; }
+.outfit-scheda--attesa .foto-composta { background: var(--sup-1); box-shadow: none; }
+.outfit-scheda--attesa .outfit-scheda__testo { gap: 8px; }
+.outfit-scheda--attesa span { display: block; width: 72%; height: 11px; border-radius: 6px; background: var(--sup-1); }
+.outfit-scheda--attesa span + span { width: 48%; }
+
+.outfit-scheda__stato { position: absolute; top: 18px; left: 18px; }
+
+.outfit-scheda__stato .etichetta {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 9px;
+  border: 0;
+  background: var(--fondo);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.outfit-scheda__testo { display: grid; flex: 1; align-content: start; gap: 0; padding: 12px 4px 0; }
+.outfit-scheda__testo strong { min-width: 0; overflow: hidden; font-size: 14px; font-weight: 600; line-height: 17.5px; text-overflow: ellipsis; white-space: nowrap; }
+.outfit-scheda__testo > small { overflow: hidden; color: var(--testo-2); font-size: 12px; font-weight: 500; line-height: 17.4px; text-overflow: ellipsis; white-space: nowrap; }
+
+.outfit-scheda__piede { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: auto; padding-top: 10px; }
+.outfit-scheda__prezzo { min-width: 0; overflow: hidden; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+.outfit-chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.outfit-chip::before { width: 6px; height: 6px; border-radius: 50%; background: currentColor; content: ""; }
+.outfit-chip--ok { background: var(--ok-tinta); color: var(--ok); }
+.outfit-chip--attesa { background: var(--attesa-tinta); color: var(--attesa); }
+
+/* Vista elenco. */
+.outfit-tabella__capo { display: flex; align-items: center; gap: 12px; min-width: 200px; }
+.outfit-tabella__capo .foto-composta { flex: none; width: 46px; border-radius: 10px; }
+.outfit-tabella__capo strong { display: block; font-size: 14px; font-weight: 600; }
+.outfit-tabella__capo small { color: var(--testo-2); font-size: 12.5px; }
+
+/* La tela e la foto composta hanno la stessa geometria della tessera del pannello. */
+.foto-composta, .tela {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  isolation: isolate;
+  aspect-ratio: 192 / 167;
+  border-radius: 16px;
+  background: var(--outfit-carta);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.35);
+}
+
+.foto-composta--vuota { display: grid; place-items: center; color: var(--outfit-inchiostro); }
+
+.foto-composta__pezzo, .tela__pezzo {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+}
+
+.foto-composta__pezzo > *, .tela__pezzo > * { grid-area: 1 / 1; }
+.foto-composta__pezzo img, .tela__pezzo img { width: 100%; height: 100%; border-radius: 10px; object-fit: contain; opacity: 0; transition: opacity 0.28s ease; }
+.foto-composta__pezzo img.foto-pronta, .tela__pezzo img.foto-pronta { opacity: 1; }
+
+.pezzo-senza-foto {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  background: rgb(255 255 255 / 0.55);
+  color: var(--outfit-inchiostro);
+  font-weight: 700;
+}
+
+.studio-tela { display: grid; gap: 10px; }
+
+.tela__pezzo {
+  border-radius: 12px;
+  outline-offset: 0;
+  transition: scale 0.22s var(--outfit-curva), box-shadow 0.22s var(--outfit-curva);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.tela--modificabile .tela__pezzo { cursor: grab; touch-action: none; }
+.tela__pezzo img { pointer-events: none; }
+.tela__pezzo--scelto { box-shadow: 0 0 0 2px var(--accento); }
+
+/* Il capo in mano si solleva e segue il puntatore senza ritardi: `translate` non ha transizione. */
+.tela__pezzo--preso {
+  z-index: 40 !important;
+  scale: 1.04;
+  box-shadow: 0 0 0 2px var(--accento), 0 18px 34px -12px rgb(60 20 40 / 0.5);
+  cursor: grabbing !important;
+  will-change: translate;
+}
+
+.tela__strumenti { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.tela__nome { flex: 1 1 100%; min-width: 0; overflow: hidden; color: var(--testo-2); font-size: 12.5px; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Pagina dell'outfit. */
+.studio__barra { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.studio__indietro { display: inline-flex; align-items: center; gap: 6px; color: var(--testo-2); font-size: 13.5px; font-weight: 600; text-decoration: none; }
+.studio__indietro:hover { color: var(--testo); }
+
+.studio__esito { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; color: var(--testo-3); font-size: 12.5px; }
+.studio__esito--errore { color: var(--errore); }
+.studio__riprova { min-height: 32px; padding: 0 12px; border-radius: 10px; font-size: 12.5px; }
+
+.studio {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+}
+
+.studio__colonna { display: grid; gap: 16px; min-width: 0; }
+
+.outfit-sezione .riquadro > header { flex-wrap: nowrap; align-items: center; justify-content: space-between; gap: 10px; }
+.outfit-sezione .riquadro > header > div { min-width: 0; }
+.outfit-sezione .riquadro > header > button { flex: none; min-height: 32px; padding: 0 12px; border-radius: 10px; font-size: 12.5px; }
+.outfit-sezione .riquadro .vuoto { padding-block: 22px; background: none; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.outfit-sezione .riquadro .vuoto::before { content: none; }
+
+/* Tessere numeriche, come nel cassetto del prodotto. */
+.outfit-tessere { display: grid; grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; gap: 10px; margin: 0; }
+.outfit-tessere--quattro { grid-auto-flow: row; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+.outfit-tessere > div { min-width: 0; padding: 12px; border-radius: 14px; background: var(--sup-1); box-shadow: var(--ombra-sup); }
+.outfit-tessere dt { color: var(--testo-2); font-size: 12px; font-weight: 600; line-height: 17px; }
+.outfit-tessere dd { margin: 0; overflow: hidden; font-size: 22px; font-weight: 600; line-height: 32px; letter-spacing: -0.01em; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+.outfit-esito { display: flex; align-items: flex-start; gap: 8px; }
+.outfit-esito svg { flex: none; margin-top: 1px; }
+.outfit-esito ul { margin-top: 2px; font-size: 12.5px; }
+.outfit-esito strong { font-weight: 600; }
+
+.outfit-nota { color: var(--testo-2); font-size: 12.5px; }
+
+/* Andamento degli ultimi giorni: la linea si disegna alla comparsa. */
+.outfit-andamento { display: block; width: 100%; height: 60px; overflow: visible; }
+.outfit-andamento__area { fill: var(--accento-tinta); }
+.outfit-andamento__linea { fill: none; stroke: var(--accento); stroke-width: 1.6; stroke-linejoin: round; stroke-dasharray: 1; animation: outfit-traccia 0.9s var(--outfit-curva) backwards; }
+@keyframes outfit-traccia { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+
+/* Righe con titolo e testo a sinistra, comando a destra. */
+.outfit-etichetta-sezione { color: var(--testo-2); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+
+.outfit-riga { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; padding-block: 14px; border-top: 1px solid var(--linea); }
+.outfit-riga--prima { padding-top: 0; border-top: 0; }
+.outfit-riga__testo { flex: 1 1 200px; min-width: 0; }
+.outfit-riga__testo b { display: block; font-size: 14px; font-weight: 600; }
+.outfit-riga__testo small { display: block; margin-top: 2px; color: var(--testo-2); font-size: 12.5px; }
+.outfit-riga input { flex: none; width: 110px; font-weight: 600; text-align: right; }
+
+.capi-elenco { display: grid; gap: 0; }
+
+.capo-riga { display: flex; gap: 12px; min-width: 0; padding-block: 12px; border-top: 1px solid var(--linea); }
+.capo-riga:first-child { border-top: 0; }
+.capo-riga--scelta .capo-riga__corpo strong { color: var(--accento-testo); }
+.capo-riga__corpo { display: grid; flex: 1; gap: 7px; min-width: 0; }
+.capo-riga__testa { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 6px 10px; }
+.capo-riga__testa .riga__testo { min-width: 140px; }
+.capo-riga__testa strong { overflow-wrap: anywhere; font-size: 14px; font-weight: 600; line-height: 1.25; }
+.capo-riga__testa small { font-size: 12.5px; }
+
+.outfit-sezione .capo-riga__apri { flex: none; align-self: flex-start; width: auto; min-height: 0; padding: 0; border-radius: 10px; background: none; box-shadow: none; }
+.outfit-sezione .capo-riga__apri:hover:not(:disabled) { background: none; }
+.capo-riga__apri .anteprima { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; }
+
+.outfit-sezione .capo-riga__alternativa { justify-self: start; min-height: 32px; padding: 0 12px; border-radius: 10px; color: var(--testo-2); font-size: 12.5px; }
+
+.capo-alternativa { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding: 8px 10px; border-radius: 13px; background: var(--sup-1); }
+.capo-alternativa svg { flex: none; color: var(--testo-3); }
+.capo-alternativa .riga__testo { min-width: 120px; }
+.capo-alternativa strong { overflow-wrap: anywhere; font-size: 13.5px; font-weight: 600; }
+.capo-alternativa small { font-size: 12.5px; }
+
+.taglie { display: flex; flex-wrap: wrap; gap: 4px; }
+.taglie li { padding: 1px 8px; border-radius: 8px; background: var(--sup-1); color: var(--testo-2); font-size: 12px; white-space: nowrap; }
+.taglie li span { color: var(--testo-3); font-variant-numeric: tabular-nums; }
+.taglie__esaurita { color: var(--testo-3) !important; text-decoration: line-through; }
+
+.conti { display: grid; gap: 6px; margin: 0; }
+.conti > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; color: var(--testo-2); }
+.conti dt { font-size: 13.5px; }
+.conti dd { margin: 0; color: var(--testo); font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.conti__totale { padding-top: 6px; border-top: 1px solid var(--linea); }
+.conti__totale dt { color: var(--testo); font-weight: 600; }
+
+.prezzo-carico { display: grid; gap: 10px; padding-top: 14px; border-top: 1px solid var(--linea); }
+
+/* Scelta dal catalogo: serve più spazio del modale normale. */
+.modale:has(.catalogo-capi) { width: min(720px, 100%); }
+.catalogo-capi { display: grid; gap: 12px; min-width: 0; }
+.catalogo-capi__filtri { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 220px); gap: 8px; }
+.catalogo-capi__filtri .cerca { flex: auto; width: 100%; max-width: none; }
+.catalogo-capi__elenco { display: grid; gap: 0; }
+
+.catalogo-capi__voce { display: flex; align-items: center; gap: 12px; min-width: 0; padding-block: 10px; border-top: 1px solid var(--linea); }
+.catalogo-capi__voce:first-child { border-top: 0; }
+.catalogo-capi__voce .anteprima { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; }
+.catalogo-capi__voce .riga__testo { min-width: 0; }
+.catalogo-capi__voce strong { overflow-wrap: anywhere; font-size: 14px; font-weight: 600; }
+.catalogo-capi__voce small { font-size: 12.5px; }
+.catalogo-capi__voce button { flex: none; min-height: 32px; padding: 0 12px; border-radius: 10px; font-size: 12.5px; }
+
+/* Su una colonna sola i risultati vanno in fondo: prima si compone, poi si misura. */
+@media (max-width: 1120px) {
+  .studio { grid-template-columns: minmax(0, 1fr); }
+  .studio__colonna { display: contents; }
+  .studio__risultati { order: 1; }
+}
+
+@media (max-width: 860px) {
+  .griglia-outfit { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .outfit-sezione .cerca { flex: 1 1 100%; max-width: none; }
+  .outfit-sezione .barra-strumenti .spazio { display: none; }
+  .catalogo-capi__filtri { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 460px) {
+  .outfit-sezione .pagina__testa > button { width: 100%; }
+  .outfit-scheda__piede { flex-wrap: wrap; }
+  .catalogo-capi__voce { flex-wrap: wrap; }
+  .catalogo-capi__voce .riga__testo { flex: 1 1 60%; }
+  .catalogo-capi__voce button { flex: 1 1 100%; }
+}

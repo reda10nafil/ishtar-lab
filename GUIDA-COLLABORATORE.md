@@ -1,5 +1,7 @@
 # Lavorare su Ishtar Lab
 
+Per la consegna del 12 novembre leggere prima [Consegna tecnica al collaboratore](piani%20di%20implementazione/02%20Roadmap/Consegna%20tecnica%20al%20collaboratore.md), [Versione 2 - origine e differenze](piani%20di%20implementazione/02%20Roadmap/Versione%202%20-%20origine%20e%20differenze.md) e [Segnalazioni ricevute e verifiche](piani%20di%20implementazione/02%20Roadmap/Segnalazioni%20ricevute%20e%20verifiche.md). Il backend è incluso; non va richiesto l'accesso al database privato del titolare. La seconda app è in `versione 2/`. Le istruzioni Windows sottostanti non costituiscono un porting Linux.
+
 ## Accesso e permessi
 
 Il repository è pubblico per scelta esplicita del titolare e appartiene all'account GitHub del titolare. Il titolare ha precisato di non invitare nessuno. Chiunque può leggere/scaricare i file pubblici; accessi di scrittura non sono stati assegnati.

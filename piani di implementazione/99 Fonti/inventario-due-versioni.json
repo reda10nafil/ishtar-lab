@@ -1,0 +1,968 @@
+{
+  "principale": {
+    "route_files": 98,
+    "route_paths": {
+      "/admin/assistenza/richieste/:id/messaggi": [
+        "POST"
+      ],
+      "/admin/assistenza/richieste/:id": [
+        "GET",
+        "DELETE"
+      ],
+      "/admin/assistenza/richieste/:id/stato": [
+        "POST"
+      ],
+      "/admin/assistenza/richieste": [
+        "GET",
+        "POST"
+      ],
+      "/admin/avvisi/letti": [
+        "POST"
+      ],
+      "/admin/avvisi/preferenze": [
+        "GET",
+        "POST"
+      ],
+      "/admin/avvisi": [
+        "GET"
+      ],
+      "/admin/carte-regalo/:id/annulla": [
+        "POST"
+      ],
+      "/admin/carte-regalo/:id/movimenti": [
+        "POST"
+      ],
+      "/admin/carte-regalo/:id": [
+        "GET",
+        "DELETE"
+      ],
+      "/admin/carte-regalo": [
+        "GET",
+        "POST"
+      ],
+      "/admin/catalogo/blocco": [
+        "POST"
+      ],
+      "/admin/catalogo/prodotti/:id": [
+        "GET",
+        "DELETE"
+      ],
+      "/admin/catalogo/prodotti/:id/varianti/:variante": [
+        "POST",
+        "DELETE"
+      ],
+      "/admin/catalogo/prodotti/:id/varianti": [
+        "POST"
+      ],
+      "/admin/catalogo/prodotti": [
+        "GET",
+        "POST"
+      ],
+      "/admin/catalogo/proposte": [
+        "GET",
+        "POST"
+      ],
+      "/admin/clienti/:id/indirizzi/:indirizzo": [
+        "POST",
+        "DELETE"
+      ],
+      "/admin/clienti/:id/indirizzi": [
+        "POST"
+      ],
+      "/admin/clienti/:id": [
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "/admin/clienti/gruppi/:id/clienti": [
+        "POST"
+      ],
+      "/admin/clienti/gruppi/:id": [
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "/admin/clienti/gruppi": [
+        "GET",
+        "POST"
+      ],
+      "/admin/clienti": [
+        "GET",
+        "POST"
+      ],
+      "/admin/clienti/segmenti": [
+        "GET"
+      ],
+      "/admin/connectors/:id/login": [
+        "POST"
+      ],
+      "/admin/connectors/:id": [
+        "POST",
+        "DELETE"
+      ],
+      "/admin/connectors/:id/test": [
+        "POST"
+      ],
+      "/admin/connectors": [
+        "GET"
+      ],
+      "/admin/custom": [
+        "GET"
+      ],
+      "/admin/impostazioni/esporta/:tipo": [
+        "POST"
+      ],
+      "/admin/impostazioni/esporta": [
+        "GET"
+      ],
+      "/admin/impostazioni/negozio": [
+        "POST"
+      ],
+      "/admin/impostazioni": [
+        "GET"
+      ],
+      "/admin/impostazioni/spedizioni/opzioni/:id": [
+        "POST"
+      ],
+      "/admin/impostazioni/spedizioni": [
+        "GET",
+        "POST"
+      ],
+      "/admin/impostazioni/valuta": [
+        "GET"
+      ],
+      "/admin/ingrosso/rivenditori/:id": [
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "/admin/ingrosso/rivenditori": [
+        "GET",
+        "POST"
+      ],
+      "/admin/ingrosso/trattative/:id/note": [
+        "POST"
+      ],
+      "/admin/ingrosso/trattative/:id/ordine": [
+        "GET",
+        "POST"
+      ],
+      "/admin/ingrosso/trattative/:id": [
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "/admin/ingrosso/trattative/:id/sposta": [
+        "POST"
+      ],
+      "/admin/ingrosso/trattative": [
+        "GET",
+        "POST"
+      ],
+      "/admin/ingrosso/varianti": [
+        "GET"
+      ],
+      "/admin/ishtar/catalogo": [
+        "GET",
+        "POST"
+      ],
+      "/admin/magazzino/articoli/:id": [
+        "GET"
+      ],
+      "/admin/magazzino/articoli/:id/soglia": [
+        "POST"
+      ],
+      "/admin/magazzino/movimenti": [
+        "GET"
+      ],
+      "/admin/magazzino/riserve/:id": [
+        "DELETE"
+      ],
+      "/admin/magazzino/riserve": [
+        "GET",
+        "POST"
+      ],
+      "/admin/magazzino": [
+        "GET"
+      ],
+      "/admin/magazzino/scorte-basse": [
+        "GET"
+      ],
+      "/admin/magazzino/soglie": [
+        "GET",
+        "POST"
+      ],
+      "/admin/outfit/:id": [
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "/admin/outfit/:id/stato": [
+        "POST"
+      ],
+      "/admin/outfit/catalogo": [
+        "GET"
+      ],
+      "/admin/outfit": [
+        "GET",
+        "POST"
+      ],
+      "/admin/permessi/me": [
+        "GET"
+      ],
+      "/admin/registro": [
+        "GET"
+      ],
+      "/admin/sconti/codici/:id/duplica": [
+        "POST"
+      ],
+      "/admin/sconti/codici/:id": [
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "/admin/sconti/codici/:id/stato": [
+        "POST"
+      ],
+      "/admin/sconti/codici": [
+        "GET",
+        "POST"
+      ],
+      "/admin/sconti/proposte/:id/approva": [
+        "POST"
+      ],
+      "/admin/sconti/proposte/:id/rifiuta": [
+        "POST"
+      ],
+      "/admin/sconti/proposte/:id": [
+        "DELETE"
+      ],
+      "/admin/sconti/proposte": [
+        "GET"
+      ],
+      "/admin/team/:id": [
+        "POST",
+        "DELETE"
+      ],
+      "/admin/team/inviti/:id": [
+        "POST",
+        "DELETE"
+      ],
+      "/admin/team": [
+        "GET",
+        "POST"
+      ],
+      "/connectors/oauth/callback": [
+        "GET"
+      ],
+      "/store/custom": [
+        "GET"
+      ],
+      "/vendor/assistenza/richieste/:id/messaggi": [
+        "POST"
+      ],
+      "/vendor/assistenza/richieste/:id": [
+        "GET"
+      ],
+      "/vendor/assistenza/richieste/:id/stato": [
+        "POST"
+      ],
+      "/vendor/assistenza/richieste": [
+        "GET",
+        "POST"
+      ],
+      "/vendor/avvisi/letti": [
+        "POST"
+      ],
+      "/vendor/avvisi": [
+        "GET"
+      ],
+      "/vendor/catalogo/prodotti/:id": [
+        "GET",
+        "POST"
+      ],
+      "/vendor/catalogo/prodotti": [
+        "GET",
+        "POST"
+      ],
+      "/vendor/impostazioni/valuta": [
+        "GET"
+      ],
+      "/vendor/magazzino/articoli/:id/correzione": [
+        "POST"
+      ],
+      "/vendor/magazzino/articoli/:id": [
+        "GET"
+      ],
+      "/vendor/magazzino/articoli/:id/soglia": [
+        "POST"
+      ],
+      "/vendor/magazzino/conteggio": [
+        "POST"
+      ],
+      "/vendor/magazzino/movimenti": [
+        "GET"
+      ],
+      "/vendor/magazzino/riserve": [
+        "GET"
+      ],
+      "/vendor/magazzino": [
+        "GET"
+      ],
+      "/vendor/magazzino/scorte-basse": [
+        "GET"
+      ],
+      "/vendor/magazzino/soglia": [
+        "GET",
+        "POST"
+      ],
+      "/vendor/outfit/:id": [
+        "GET"
+      ],
+      "/vendor/outfit": [
+        "GET"
+      ],
+      "/vendor/permessi/me": [
+        "GET"
+      ],
+      "/vendor/sconti/prodotti": [
+        "GET"
+      ],
+      "/vendor/sconti/proposte/:id": [
+        "DELETE"
+      ],
+      "/vendor/sconti/proposte": [
+        "GET",
+        "POST"
+      ],
+      "/vendor/team/ruoli": [
+        "GET"
+      ]
+    },
+    "modules": [
+      "assistenza",
+      "carte-regalo",
+      "connectors",
+      "ingrosso",
+      "outfit",
+      "permessi",
+      "smtp-notification"
+    ],
+    "connector_ids": [
+      "instagram",
+      "facebook",
+      "tiktok",
+      "pinterest",
+      "google",
+      "linkedin",
+      "x",
+      "whatsapp",
+      "telegram",
+      "sendcloud",
+      "stripe",
+      "fatture-in-cloud",
+      "brevo",
+      "resend",
+      "shopify",
+      "woocommerce",
+      "anthropic",
+      "plausible",
+      "demo"
+    ],
+    "console_tsx_files": 112
+  },
+  "versione 2": {
+    "route_files": 149,
+    "route_paths": {
+      "/admin/analisi/panoramica": [
+        "GET"
+      ],
+      "/admin/analisi/report": [
+        "GET"
+      ],
+      "/admin/analisi/traffico": [
+        "GET"
+      ],
+      "/admin/analisi/vendite": [
+        "GET"
+      ],
+      "/admin/assistenza/richieste/:id/messaggi": [
+        "POST"
+      ],
+      "/admin/assistenza/richieste/:id": [
+        "GET",
+        "DELETE"
+      ],
+      "/admin/assistenza/richieste/:id/stato": [
+        "POST"
+      ],
+      "/admin/assistenza/richieste": [
+        "GET",
+        "POST"
+      ],
+      "/admin/avvisi/letti": [
+        "POST"
+      ],
+      "/admin/avvisi/preferenze": [
+        "GET",
+        "POST"
+      ],
+      "/admin/avvisi/riepilogo": [
+        "POST"
+      ],
+      "/admin/avvisi": [
+        "GET"
+      ],
+      "/admin/carte-regalo/:id/annulla": [
+        "POST"
+      ],
+      "/admin/carte-regalo/:id/blocco": [
+        "POST"
+      ],
+      "/admin/carte-regalo/:id/movimenti": [
+        "POST"
+      ],
+      "/admin/carte-regalo/:id": [
+        "GET",
+        "DELETE"
+      ],
+      "/admin/carte-regalo/clienti": [
+        "GET"
+      ],
+      "/admin/carte-regalo": [
+        "GET",
+        "POST"
+      ],
+      "/admin/cassa/anteprima": [
+        "GET"
+      ],
+      "/admin/cassa/clienti": [
+        "GET"
+      ],
+      "/admin/cassa": [
+        "GET"
+      ],
+      "/admin/cassa/vendite/:id/annulla": [
+        "POST"
+      ],
+      "/admin/cassa/vendite": [
+        "POST"
+      ],
+      "/admin/catalogo/blocco": [
+        "POST"
+      ],
+      "/admin/catalogo/collezioni": [
+        "GET"
+      ],
+      "/admin/catalogo/prodotti/:id": [
+        "GET",
+        "DELETE"
+      ],
+      "/admin/catalogo/prodotti/:id/varianti/:variante": [
+        "POST",
+        "DELETE"
+      ],
+      "/admin/catalogo/prodotti/:id/varianti": [
+        "POST"
+      ],
+      "/admin/catalogo/prodotti": [
+        "GET",
+        "POST"
+      ],
+      "/admin/catalogo/proposte": [
+        "GET",
+        "POST"
+      ],
+      "/admin/clienti/:id/indirizzi/:indirizzo": [
+        "POST",
+        "DELETE"
+      ],
+      "/admin/clienti/:id/indirizzi": [
+        "POST"
+      ],
+      "/admin/clienti/:id": [
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "/admin/clienti/gruppi/:id/clienti": [
+        "POST"
+      ],
+      "/admin/clienti/gruppi/:id": [
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "/admin/clienti/gruppi": [
+        "GET",
+        "POST"
+      ],
+      "/admin/clienti": [
+        "GET",
+        "POST"
+      ],
+      "/admin/clienti/segmenti": [
+        "GET"
+      ],
+      "/admin/connectors/:id/login": [
+        "POST"
+      ],
+      "/admin/connectors/:id": [
+        "POST",
+        "DELETE"
+      ],
+      "/admin/connectors/:id/test": [
+        "POST"
+      ],
+      "/admin/connectors": [
+        "GET"
+      ],
+      "/admin/custom": [
+        "GET"
+      ],
+      "/admin/evasioni/:ordine/:azienda/:azione": [
+        "POST"
+      ],
+      "/admin/evasioni": [
+        "GET"
+      ],
+      "/admin/impostazioni/app/:id": [
+        "POST"
+      ],
+      "/admin/impostazioni/app": [
+        "GET"
+      ],
+      "/admin/impostazioni/esporta/:tipo": [
+        "POST"
+      ],
+      "/admin/impostazioni/esporta": [
+        "GET"
+      ],
+      "/admin/impostazioni/negozio": [
+        "POST"
+      ],
+      "/admin/impostazioni": [
+        "GET"
+      ],
+      "/admin/impostazioni/spedizioni/opzioni/:id": [
+        "POST"
+      ],
+      "/admin/impostazioni/spedizioni": [
+        "GET",
+        "POST"
+      ],
+      "/admin/impostazioni/valuta": [
+        "GET"
+      ],
+      "/admin/ingrosso/rivenditori/:id": [
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "/admin/ingrosso/rivenditori": [
+        "GET",
+        "POST"
+      ],
+      "/admin/ingrosso/trattative/:id/note": [
+        "POST"
+      ],
+      "/admin/ingrosso/trattative/:id/ordine": [
+        "GET",
+        "POST"
+      ],
+      "/admin/ingrosso/trattative/:id": [
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "/admin/ingrosso/trattative/:id/sposta": [
+        "POST"
+      ],
+      "/admin/ingrosso/trattative": [
+        "GET",
+        "POST"
+      ],
+      "/admin/ingrosso/varianti": [
+        "GET"
+      ],
+      "/admin/magazzino/articoli/:id/correzione": [
+        "POST"
+      ],
+      "/admin/magazzino/articoli/:id/ricevi": [
+        "POST"
+      ],
+      "/admin/magazzino/articoli/:id/rifornimento": [
+        "POST"
+      ],
+      "/admin/magazzino/articoli/:id": [
+        "GET"
+      ],
+      "/admin/magazzino/articoli/:id/soglia": [
+        "POST"
+      ],
+      "/admin/magazzino/movimenti": [
+        "GET"
+      ],
+      "/admin/magazzino/riserve/:id": [
+        "DELETE"
+      ],
+      "/admin/magazzino/riserve": [
+        "GET",
+        "POST"
+      ],
+      "/admin/magazzino": [
+        "GET"
+      ],
+      "/admin/magazzino/scorte-basse": [
+        "GET"
+      ],
+      "/admin/magazzino/soglie": [
+        "GET",
+        "POST"
+      ],
+      "/admin/marketing/automazioni/:chiave": [
+        "POST"
+      ],
+      "/admin/marketing/automazioni": [
+        "GET"
+      ],
+      "/admin/marketing/campagne/:id/duplica": [
+        "POST"
+      ],
+      "/admin/marketing/campagne/:id/invia": [
+        "POST"
+      ],
+      "/admin/marketing/campagne/:id/programma": [
+        "POST",
+        "DELETE"
+      ],
+      "/admin/marketing/campagne/:id": [
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "/admin/marketing/campagne": [
+        "GET",
+        "POST"
+      ],
+      "/admin/marketing/disiscrizione": [
+        "GET",
+        "POST"
+      ],
+      "/admin/negozio-online/pagine/:id": [
+        "POST",
+        "DELETE"
+      ],
+      "/admin/negozio-online/pagine": [
+        "POST"
+      ],
+      "/admin/negozio-online": [
+        "GET",
+        "POST"
+      ],
+      "/admin/negozio-online/vetrina": [
+        "GET"
+      ],
+      "/admin/ordini/:id/annulla": [
+        "POST"
+      ],
+      "/admin/ordini/:id/avanza": [
+        "POST"
+      ],
+      "/admin/ordini/:id/incassa": [
+        "POST"
+      ],
+      "/admin/ordini/:id/note": [
+        "POST"
+      ],
+      "/admin/ordini/:id": [
+        "GET"
+      ],
+      "/admin/ordini/blocco": [
+        "POST"
+      ],
+      "/admin/ordini/bozze/:id/conferma": [
+        "POST"
+      ],
+      "/admin/ordini/bozze/opzioni": [
+        "GET"
+      ],
+      "/admin/ordini/bozze": [
+        "GET",
+        "POST"
+      ],
+      "/admin/ordini/resi/:id/:azione": [
+        "POST"
+      ],
+      "/admin/ordini/resi": [
+        "GET",
+        "POST"
+      ],
+      "/admin/ordini/riepilogo": [
+        "GET"
+      ],
+      "/admin/ordini": [
+        "GET"
+      ],
+      "/admin/outfit/:id": [
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "/admin/outfit/:id/stato": [
+        "POST"
+      ],
+      "/admin/outfit/catalogo": [
+        "GET"
+      ],
+      "/admin/outfit": [
+        "GET",
+        "POST"
+      ],
+      "/admin/permessi/me": [
+        "GET"
+      ],
+      "/admin/registro": [
+        "GET"
+      ],
+      "/admin/sconti/codici/:id/duplica": [
+        "POST"
+      ],
+      "/admin/sconti/codici/:id": [
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "/admin/sconti/codici/:id/stato": [
+        "POST"
+      ],
+      "/admin/sconti/codici": [
+        "GET",
+        "POST"
+      ],
+      "/admin/sconti/proposte/:id/approva": [
+        "POST"
+      ],
+      "/admin/sconti/proposte/:id/rifiuta": [
+        "POST"
+      ],
+      "/admin/sconti/proposte/:id": [
+        "DELETE"
+      ],
+      "/admin/sconti/proposte": [
+        "GET"
+      ],
+      "/admin/team/:id": [
+        "POST",
+        "DELETE"
+      ],
+      "/admin/team/inviti/:id": [
+        "POST",
+        "DELETE"
+      ],
+      "/admin/team": [
+        "GET",
+        "POST"
+      ],
+      "/connectors/oauth/callback": [
+        "GET"
+      ],
+      "/store/custom": [
+        "GET"
+      ],
+      "/vendor/analisi/panoramica": [
+        "GET"
+      ],
+      "/vendor/assistenza/richieste/:id/messaggi": [
+        "POST"
+      ],
+      "/vendor/assistenza/richieste/:id": [
+        "GET"
+      ],
+      "/vendor/assistenza/richieste/:id/stato": [
+        "POST"
+      ],
+      "/vendor/assistenza/richieste": [
+        "GET",
+        "POST"
+      ],
+      "/vendor/avvisi/letti": [
+        "POST"
+      ],
+      "/vendor/avvisi": [
+        "GET"
+      ],
+      "/vendor/catalogo/prodotti/:id": [
+        "GET",
+        "POST"
+      ],
+      "/vendor/catalogo/prodotti": [
+        "GET",
+        "POST"
+      ],
+      "/vendor/evasioni/:ordine/:azione": [
+        "POST"
+      ],
+      "/vendor/evasioni": [
+        "GET"
+      ],
+      "/vendor/impostazioni/valuta": [
+        "GET"
+      ],
+      "/vendor/magazzino/articoli/:id/correzione": [
+        "POST"
+      ],
+      "/vendor/magazzino/articoli/:id/ricevi": [
+        "POST"
+      ],
+      "/vendor/magazzino/articoli/:id/rifornimento": [
+        "POST"
+      ],
+      "/vendor/magazzino/articoli/:id": [
+        "GET"
+      ],
+      "/vendor/magazzino/articoli/:id/soglia": [
+        "POST"
+      ],
+      "/vendor/magazzino/conteggio": [
+        "POST"
+      ],
+      "/vendor/magazzino/movimenti": [
+        "GET"
+      ],
+      "/vendor/magazzino/riserve": [
+        "GET"
+      ],
+      "/vendor/magazzino": [
+        "GET"
+      ],
+      "/vendor/magazzino/scorte-basse": [
+        "GET"
+      ],
+      "/vendor/magazzino/soglia": [
+        "GET",
+        "POST"
+      ],
+      "/vendor/ordini/:id": [
+        "GET"
+      ],
+      "/vendor/ordini": [
+        "GET"
+      ],
+      "/vendor/outfit/:id": [
+        "GET"
+      ],
+      "/vendor/outfit": [
+        "GET"
+      ],
+      "/vendor/permessi/me": [
+        "GET"
+      ],
+      "/vendor/sconti/prodotti": [
+        "GET"
+      ],
+      "/vendor/sconti/proposte/:id": [
+        "DELETE"
+      ],
+      "/vendor/sconti/proposte": [
+        "GET",
+        "POST"
+      ],
+      "/vendor/team/ruoli": [
+        "GET"
+      ]
+    },
+    "modules": [
+      "assistenza",
+      "carte-regalo",
+      "connectors",
+      "ingrosso",
+      "marketing",
+      "negozio-online",
+      "outfit",
+      "permessi",
+      "smtp-notification"
+    ],
+    "connector_ids": [
+      "instagram",
+      "facebook",
+      "tiktok",
+      "pinterest",
+      "google",
+      "linkedin",
+      "x",
+      "whatsapp",
+      "telegram",
+      "sendcloud",
+      "stripe",
+      "fatture-in-cloud",
+      "brevo",
+      "resend",
+      "shopify",
+      "woocommerce",
+      "anthropic",
+      "plausible",
+      "demo"
+    ],
+    "console_tsx_files": 163
+  },
+  "date": "2026-11-12",
+  "scope": "Inventario statico dei file presenti; non prova funzionalita, autorizzazioni o account collegati.",
+  "only_versione2_routes": [
+    "/admin/analisi/panoramica",
+    "/admin/analisi/report",
+    "/admin/analisi/traffico",
+    "/admin/analisi/vendite",
+    "/admin/avvisi/riepilogo",
+    "/admin/carte-regalo/:id/blocco",
+    "/admin/carte-regalo/clienti",
+    "/admin/cassa",
+    "/admin/cassa/anteprima",
+    "/admin/cassa/clienti",
+    "/admin/cassa/vendite",
+    "/admin/cassa/vendite/:id/annulla",
+    "/admin/catalogo/collezioni",
+    "/admin/evasioni",
+    "/admin/evasioni/:ordine/:azienda/:azione",
+    "/admin/impostazioni/app",
+    "/admin/impostazioni/app/:id",
+    "/admin/magazzino/articoli/:id/correzione",
+    "/admin/magazzino/articoli/:id/ricevi",
+    "/admin/magazzino/articoli/:id/rifornimento",
+    "/admin/marketing/automazioni",
+    "/admin/marketing/automazioni/:chiave",
+    "/admin/marketing/campagne",
+    "/admin/marketing/campagne/:id",
+    "/admin/marketing/campagne/:id/duplica",
+    "/admin/marketing/campagne/:id/invia",
+    "/admin/marketing/campagne/:id/programma",
+    "/admin/marketing/disiscrizione",
+    "/admin/negozio-online",
+    "/admin/negozio-online/pagine",
+    "/admin/negozio-online/pagine/:id",
+    "/admin/negozio-online/vetrina",
+    "/admin/ordini",
+    "/admin/ordini/:id",
+    "/admin/ordini/:id/annulla",
+    "/admin/ordini/:id/avanza",
+    "/admin/ordini/:id/incassa",
+    "/admin/ordini/:id/note",
+    "/admin/ordini/blocco",
+    "/admin/ordini/bozze",
+    "/admin/ordini/bozze/:id/conferma",
+    "/admin/ordini/bozze/opzioni",
+    "/admin/ordini/resi",
+    "/admin/ordini/resi/:id/:azione",
+    "/admin/ordini/riepilogo",
+    "/vendor/analisi/panoramica",
+    "/vendor/evasioni",
+    "/vendor/evasioni/:ordine/:azione",
+    "/vendor/magazzino/articoli/:id/ricevi",
+    "/vendor/magazzino/articoli/:id/rifornimento",
+    "/vendor/ordini",
+    "/vendor/ordini/:id"
+  ],
+  "only_main_routes": [
+    "/admin/ishtar/catalogo"
+  ]
+}

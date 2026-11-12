@@ -1,0 +1,104 @@
+/* Pannello degli avvisi: stessa larghezza e stessa composizione del pannello di riferimento. */
+.campanella + .tendina__pannello {
+  width: min(380px, calc(100vw - 24px));
+  max-height: min(70vh, 460px);
+  padding: 6px;
+}
+
+.notifiche__testa {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 10px 8px;
+  border-bottom: 0;
+}
+
+.notifiche__testa strong { font-size: 14px; font-weight: 600; }
+
+.notifiche__testa button {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accento);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.notifiche__testa button:hover:not(:disabled) { background: none; opacity: 0.8; }
+
+.notifiche__elenco {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notifiche__elenco li { animation: notifiche-voce 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.notifiche__elenco li:nth-child(2) { animation-delay: 40ms; }
+.notifiche__elenco li:nth-child(3) { animation-delay: 80ms; }
+.notifiche__elenco li:nth-child(4) { animation-delay: 120ms; }
+.notifiche__elenco li:nth-child(5) { animation-delay: 160ms; }
+.notifiche__elenco li:nth-child(n + 6) { animation-delay: 200ms; }
+
+@keyframes notifiche-voce {
+  from { opacity: 0; transform: translateX(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+.tendina__pannello a.notifiche__voce {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 0;
+  padding: 10px;
+  border-radius: 13px;
+  font-weight: 500;
+  white-space: normal;
+}
+
+.notifiche__icona {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: var(--sup-2);
+}
+
+.notifiche__voce--info .notifiche__icona { color: var(--blu); }
+.notifiche__voce--attesa .notifiche__icona { color: var(--attesa); }
+.notifiche__voce--errore .notifiche__icona { color: var(--errore); }
+
+.notifiche__testo { display: grid; gap: 1px; min-width: 0; }
+.notifiche__testo strong { overflow-wrap: anywhere; font-size: 13.5px; font-weight: 600; line-height: 1.35; }
+.notifiche__testo small { overflow-wrap: anywhere; color: var(--testo-2); font-size: 12.5px; line-height: 1.4; }
+.notifiche__testo time { color: var(--testo-3); font-size: 12px; }
+
+.notifiche__punto {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: var(--accento);
+  vertical-align: 1px;
+}
+
+/* Su telefono la campanella non sta sul bordo: il pannello si aggancia alla testata, così resta nello schermo. */
+@media (max-width: 560px) {
+  .tendina:has(> .campanella) { position: static; }
+
+  .campanella + .tendina__pannello {
+    top: calc(100% + 8px);
+    right: 0;
+    left: 0;
+    width: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notifiche__elenco li { animation: none; }
+}

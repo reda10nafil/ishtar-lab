@@ -1,0 +1,165 @@
+.impostazioni__moduli {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  max-width: 920px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.impostazioni__nota { color: var(--testo-2); font-size: 12.5px; }
+
+.impostazioni__iva {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--linea);
+}
+
+.impostazioni__iva strong { display: block; font-size: 14px; font-weight: 600; }
+.impostazioni__iva p { color: var(--testo-2); font-size: 12.5px; }
+
+.impostazioni__piede { display: flex; justify-content: flex-end; padding-top: 6px; }
+
+/* Spedizioni: importo con il simbolo davanti, salvato all'uscita dal campo */
+.impostazione__destra { display: flex; flex: none; align-items: center; gap: 14px; }
+
+.importo {
+  position: relative;
+  display: block;
+  flex: none;
+  width: 120px;
+}
+
+.importo span {
+  position: absolute;
+  top: 0;
+  left: 13px;
+  color: var(--testo-2);
+  font-size: 13px;
+  line-height: 44px;
+  pointer-events: none;
+}
+
+.importo em {
+  position: absolute;
+  top: 0;
+  right: 13px;
+  color: var(--testo-2);
+  font-size: 13px;
+  font-style: normal;
+  line-height: 44px;
+  pointer-events: none;
+}
+
+.fedele .importo input { width: 100%; padding-left: 28px; font-weight: 600; text-align: right; }
+.fedele .importo--giorni input { padding-right: 48px; padding-left: 13px; }
+
+.impostazioni__conteggio {
+  margin-left: 4px;
+  color: var(--testo-3);
+  font-weight: 400;
+}
+
+/* Aspetto: le anteprime mostrano un tema preciso, quindi non seguono quello attivo. */
+.impostazioni__temi {
+  --ante-chiaro-fondo: #f7ecea;
+  --ante-chiaro-blocco: #fdf8f4;
+  --ante-chiaro-accento: #eebfca;
+  --ante-scuro-fondo: #120c10;
+  --ante-scuro-blocco: #2b2025;
+  --ante-scuro-accento: #bf8f9b;
+  --ante-scuro-linea: #8a7a80;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.impostazioni__temi button {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  justify-content: stretch;
+  gap: 8px;
+  padding: 10px 10px 12px;
+  border: 1px solid var(--linea);
+  border-radius: 16px;
+  background: var(--sup-1);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: left;
+  white-space: normal;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.impostazioni__temi button[aria-checked="true"] {
+  border-color: var(--accento);
+  box-shadow: 0 0 0 1px var(--accento);
+}
+
+.impostazioni__temi strong { padding-left: 4px; font-weight: 600; }
+
+.tema-anteprima {
+  display: grid;
+  grid-template-columns: 26% minmax(0, 1fr);
+  grid-template-rows: 22px minmax(0, 1fr);
+  gap: 8px 16px;
+  height: 84px;
+  padding: 8px;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.tema-anteprima i { display: block; border-radius: 7px; }
+.tema-anteprima i:first-child { grid-row: 1 / 3; }
+
+.tema-anteprima--chiaro { background: var(--ante-chiaro-fondo); }
+.tema-anteprima--chiaro i { background: var(--ante-chiaro-blocco); }
+.tema-anteprima--chiaro i:last-child { background: var(--ante-chiaro-accento); }
+
+.tema-anteprima--scuro { background: var(--ante-scuro-fondo); }
+.tema-anteprima--scuro i { background: var(--ante-scuro-blocco); box-shadow: inset 0 0 0 1px var(--ante-scuro-linea); }
+.tema-anteprima--scuro i:last-child { background: var(--ante-scuro-accento); }
+
+.tema-anteprima--sistema { background: linear-gradient(90deg, var(--ante-chiaro-fondo) 50%, var(--ante-scuro-fondo) 50%); }
+/* La barra parte a un terzo dell'anteprima: la metà dell'anteprima cade al 25% della barra. */
+.tema-anteprima--sistema i { background: linear-gradient(90deg, var(--ante-chiaro-blocco) 25%, var(--ante-scuro-linea) 25%); }
+.tema-anteprima--sistema i:first-child { background: var(--ante-chiaro-blocco); }
+.tema-anteprima--sistema i:last-child { background: linear-gradient(90deg, var(--ante-chiaro-accento) 25%, var(--ante-scuro-accento) 25%); }
+
+.segmento {
+  display: inline-flex;
+  flex: none;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 12px;
+  background: var(--sup-1);
+  box-shadow: inset 0 0 0 1px var(--linea);
+}
+
+.segmento button {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: var(--testo-2);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.segmento button[aria-pressed="true"] { background: var(--sup-3); color: var(--testo); }
+
+@media (max-width: 860px) {
+  .impostazione--menu { display: none; }
+}
+
+@media (max-width: 560px) {
+  .impostazioni__piede button { width: 100%; }
+  .impostazioni__temi { grid-template-columns: minmax(0, 1fr); }
+  .impostazione__destra { gap: 10px; }
+  .importo { width: 104px; }
+}
