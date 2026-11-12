@@ -36,7 +36,8 @@ tags: [ishtar-lab]
 | Sconti, gift card e ingrosso | Demo + codice backend | Richiedono integrazione e prove specifiche |
 | Campagne e automazioni | Demo | Nessun invio o attività periodica attivata |
 | Vetrina online | Anteprima demo | Non un sito pubblicato né un editor operativo |
-| Connettori OAuth/API | Codice presente | Nessun account reale/sync verificato qui |
+| Connettori OAuth/API | Codice presente | Nessun account reale/sync verificato qui. Dal 12/11 (proposta satria64) una credenziale illeggibile è segnalata senza bloccare elenco e rinnovo; tag AES-GCM a 16 byte |
+| Costo d'acquisto e negozio online | Corretto il 12/11 (proposta satria64) | Costo solo con il permesso sui margini; scheda interna Ishtar fuori da `/store`; script di pulizia per i prodotti già salvati da eseguire una volta |
 | Ricerca mercato | Proposta | Mancano acquisizione, matching e storico delle fonti |
 | Backup completo recuperabile | Non verificato | Snapshot dei file non equivale a backup DB+foto ripristinabile |
 | Licenza personale Ishtar | Testo compilato, perimetro limitato | Titolare Reda Zahloul e recapito presenti; diritti terzi e consegna/accettazione da verificare |
