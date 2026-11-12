@@ -2,8 +2,10 @@ import fs from "node:fs"
 import path from "node:path"
 import react from "@vitejs/plugin-react"
 import { defineConfig, type Plugin } from "vite"
+import { intestazioniSicure, richiestaLocale } from "./accesso-locale.mjs"
 
 const BACKEND = "http://127.0.0.1:9273"
+const PORTA = 5283
 const CREDENZIALI = path.resolve(__dirname, "../../../.credenziali-locali.env")
 
 function leggiCredenziali() {
@@ -22,8 +24,8 @@ function accessoLocale(): Plugin {
     apply: "serve",
     configureServer(server) {
       server.middlewares.use("/__accesso-locale", async (req, res) => {
-        // Solo le pagine dell'app stessa: un altro sito aperto nel browser non può chiederlo.
-        if (req.headers["sec-fetch-site"] !== "same-origin") {
+        // Solo le pagine dell'app stessa aperte su questo PC: né un altro sito né un nome esterno che punta a 127.0.0.1.
+        if (!richiestaLocale(req.headers, PORTA)) {
           res.statusCode = 403
           res.end()
           return
@@ -52,6 +54,6 @@ function accessoLocale(): Plugin {
 
 export default defineConfig({
   plugins: [react(), accessoLocale()],
-  server: { host: "localhost", port: 5283, strictPort: true },
-  preview: { host: "localhost", port: 5283, strictPort: true },
+  server: { host: "localhost", port: PORTA, strictPort: true, headers: intestazioniSicure },
+  preview: { host: "localhost", port: PORTA, strictPort: true, headers: intestazioniSicure },
 })
