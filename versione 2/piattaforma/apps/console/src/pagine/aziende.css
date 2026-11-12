@@ -1,0 +1,110 @@
+.aziende-tessere {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.azienda-tessera {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 14px;
+  min-height: 72px;
+  height: 72px;
+  padding: 13px 16px;
+  border-radius: 20px;
+  color: var(--testo);
+  font-weight: 500;
+  text-align: left;
+}
+
+.azienda-tessera[aria-pressed="true"] { border-color: var(--accento); }
+
+.azienda-tessera__icona {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  background: color-mix(in srgb, currentcolor 14%, transparent);
+}
+
+.azienda-tessera b { display: block; font-size: 22px; font-weight: 600; line-height: 24.2px; }
+.azienda-tessera small { display: block; color: var(--testo-2); font-size: 12.5px; font-weight: 600; line-height: 20px; white-space: nowrap; }
+
+.tono--ok { color: var(--ok); }
+.tono--attesa { color: var(--attesa); }
+.tono--errore { color: var(--errore); }
+.tono--neutro { color: var(--testo-2); }
+
+.aziende-blocco .blocco__testa .cerca { flex: 0 1 280px; min-width: 0; }
+.aziende-blocco .blocco__testa .cerca input { min-height: 38px; height: 38px; padding-block: 0; }
+
+.aziende {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 0 8px 8px;
+}
+
+.azienda {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px;
+  border-radius: 14px;
+  transition: background-color 0.16s;
+}
+
+.azienda:hover { background: var(--sup-1); }
+
+.azienda__testo { flex: 1; min-width: 0; }
+.azienda__testo strong { display: block; overflow: hidden; font-size: 14px; font-weight: 600; line-height: 20.3px; text-overflow: ellipsis; white-space: nowrap; }
+.azienda__testo small { display: block; overflow: hidden; color: var(--testo-2); font-size: 12px; font-weight: 500; line-height: 17.4px; text-overflow: ellipsis; white-space: nowrap; }
+
+.azienda__dati { flex: none; text-align: right; }
+.azienda__dati b { display: block; font-size: 14px; font-weight: 700; line-height: 20.3px; }
+.azienda__dati small { display: block; color: var(--testo-2); font-size: 12px; font-weight: 500; line-height: 17.4px; }
+
+.azienda .tendina { flex: none; }
+
+/* Le righe entrano con un movimento proprio: quella col menu aperto deve restare sopra le altre. */
+.azienda:has(.tendina__pannello) { position: relative; z-index: 5; }
+
+.azienda .azienda__puntini {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  min-height: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  box-shadow: none;
+  color: var(--testo-2);
+}
+
+.azienda .azienda__puntini:hover { background: var(--sup-2); color: var(--testo); }
+
+.azienda .tendina__pannello {
+  width: 220px;
+  padding: 6px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--modale-2) 96%, transparent);
+}
+
+@media (max-width: 1100px) {
+  .aziende { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 760px) {
+  .aziende-tessere { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .azienda-tessera { gap: 10px; min-height: 63px; height: 63px; padding: 12px; }
+  .azienda-tessera__icona { width: 36px; height: 36px; }
+  .azienda-tessera b { font-size: 18px; line-height: 20px; }
+  .azienda-nuova { width: 100%; }
+  .aziende-blocco .blocco__testa { flex-wrap: wrap; }
+  .aziende-blocco .blocco__testa .cerca { flex-basis: 100%; }
+}

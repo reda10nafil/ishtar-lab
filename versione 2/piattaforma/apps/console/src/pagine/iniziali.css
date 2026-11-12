@@ -1,0 +1,32 @@
+/* Le tinte chiare restano uguali nei due temi: il testo scuro si legge su entrambi. */
+.iniziali {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  color: #22181b;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.iniziali--tonda { border-radius: 50%; }
+.iniziali--1 { background: rgb(246 214 222); }
+.iniziali--2 { background: rgb(249 220 203); }
+.iniziali--3 { background: rgb(245 230 189); }
+.iniziali--4 { background: rgb(220 230 242); }
+.iniziali--5 { background: rgb(240 227 211); }
+
+.iniziali__punto {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ok);
+  box-shadow: 0 0 0 2px var(--modale-2);
+}

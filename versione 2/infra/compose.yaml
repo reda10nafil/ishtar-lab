@@ -1,0 +1,59 @@
+# Servizi locali di Multi Outfit, separati da Postiz, ChatbotX e n8n.
+# Tutte le porte sono legate a 127.0.0.1: nulla e raggiungibile dalla rete.
+name: multi-outfit
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "127.0.0.1:55500:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "127.0.0.1:56500:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  storage:
+    # Archivio compatibile S3 per foto e video (RustFS, lo stesso motore gia usato da ChatbotX).
+    image: rustfs/rustfs:local-d30c5e04efc4
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      RUSTFS_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
+      RUSTFS_SECRET_KEY: ${STORAGE_SECRET_KEY}
+      RUSTFS_CONSOLE_ENABLE: "true"
+    ports:
+      - "127.0.0.1:59500:9000"
+      - "127.0.0.1:59501:9001"
+    volumes:
+      - storage_data:/data
+
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:58500:8025"
+      - "127.0.0.1:51500:1025"
+
+volumes:
+  postgres_data:
+  redis_data:
+  storage_data:

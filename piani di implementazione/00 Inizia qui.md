@@ -1,11 +1,13 @@
 ---
 title: "Ishtar Lab - Inizia qui"
-updated: 2026-11-07
+updated: 2026-11-12
 type: documentazione-progetto
 tags: [ishtar-lab, indice]
 ---
 
 # Ishtar Lab - Inizia qui
+
+**Consegna al collaboratore del 12 novembre:** partire da [[Consegna tecnica al collaboratore]], poi [[Versione 2 - origine e differenze]] e [[Segnalazioni ricevute e verifiche]]. Il backend principale è incluso nel repository; `versione 2/` contiene l'altra applicazione con sorgenti e backend propri. L'avvio Linux resta da adattare. Le foto dell'analisi esterna non costituiscono un rapporto verificato qui.
 
 Questo vault raccoglie **a cosa serve Ishtar Lab, come è costruito, cosa funziona davvero e cosa manca**. Fotografia documentale del 7 novembre 2026; non viene modificata l'interfaccia né attivata alcuna funzione futura.
 

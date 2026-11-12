@@ -50,3 +50,7 @@ La dichiarazione MIT nel manifest API resta invariata. Un eventuale cambiamento 
 3. Fare l'inventario delle licenze delle esatte versioni distribuite, inclusi font, immagini, dipendenze e moduli Enterprise. La sola presenza di un package non equivale ad autorizzazione a ogni funzione.
 4. Preparare un pacchetto pulito di sorgenti e istruzioni, senza dati, segreti o archivio storico; allegare termini e avvisi originali.
 5. Registrare manifest, hash e accettazione, senza affermare che l'app intera sia di proprietà esclusiva di Ishtar.
+
+## Seconda applicazione inclusa il 12 novembre 2026
+
+La cartella versione 2 è uno snapshot dei sorgenti Ishtar Lab/Multi Outfit della raccolta del titolare. I manifest e gli avvisi upstream sono conservati. La copia non estende la licenza personale Ishtar a materiali già dichiarati sotto altre licenze, né certifica la titolarità di ogni componente. Valgono le esclusioni e le verifiche dei terzi già descritte; segreti, dati e database non fanno parte della consegna.
