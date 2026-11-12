@@ -6,3 +6,11 @@ test('CSV italiano e ritorni a capo nella descrizione',()=>assert.deepEqual(pars
 test('intestazioni duplicate e colonne mancanti rifiutate',()=>{assert.throws(()=>parseCSV('SKU,SKU\nA,B'));assert.throws(()=>parseCSV('SKU,Nome\nA'));});
 test('virgolette non chiuse rifiutate',()=>assert.throws(()=>parseCSV('SKU,Nome\nA,"errore')));
 test('numeri italiani, zero e valori non finiti',()=>{assert.equal(numberCSV('1.234,50'),1234.5);assert.equal(numberCSV('0'),0);assert.throws(()=>numberCSV('Infinity'));assert.throws(()=>numberCSV('-2'));});
+test('migliaia con il punto all’italiana',()=>{assert.equal(numberCSV('1.200'),1200);assert.equal(numberCSV('12.500'),12500);assert.equal(numberCSV('1.234.567'),1234567);assert.equal(numberCSV('€ 1.200'),1200);});
+test('decimali con il punto e formato inglese',()=>{assert.equal(numberCSV('89.9'),89.9);assert.equal(numberCSV('145.00'),145);assert.equal(numberCSV('0.500'),0.5);assert.equal(numberCSV('1.2345'),1.2345);assert.equal(numberCSV('1,200.50'),1200.5);assert.equal(numberCSV('1,234,567'),1234567);});
+test('virgola decimale italiana invariata',()=>{assert.equal(numberCSV('12,50'),12.5);assert.equal(numberCSV('1.234,50'),1234.5);assert.equal(numberCSV('1 200,5'),1200.5);});
+test('cella vuota distinta dallo zero',()=>{assert.equal(numberCSV(''),null);assert.equal(numberCSV('  '),null);assert.equal(numberCSV('0'),0);});
+test('notazioni non decimali rifiutate',()=>{assert.throws(()=>numberCSV('1e3'));assert.throws(()=>numberCSV('0x10'));assert.throws(()=>numberCSV('12abc'));assert.throws(()=>numberCSV('1.2.3,4,5'));});
+test('separatore iniziale e segno più accettati, gruppi misti errati rifiutati',()=>{assert.equal(numberCSV('.5'),0.5);assert.equal(numberCSV(',5'),0.5);assert.equal(numberCSV('+5'),5);assert.throws(()=>numberCSV('1.2,5'));assert.throws(()=>numberCSV('12,34.5'));});
+test('celle con solo simboli rifiutate invece di diventare vuote',()=>{assert.throws(()=>numberCSV('€'));assert.throws(()=>numberCSV('-'));});
+test('convenzione di colonna applicata',()=>{assert.equal(numberCSV('12.375','punto'),12.375);assert.equal(numberCSV('1,000','punto'),1000);assert.equal(numberCSV('1.200','virgola'),1200);assert.equal(numberCSV('12,5','virgola'),12.5);});
