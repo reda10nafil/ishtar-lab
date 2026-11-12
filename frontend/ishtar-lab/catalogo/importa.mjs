@@ -7,7 +7,8 @@ export const normalizza=s=>String(s??'').normalize('NFD').replace(/[̀-ͯ]/g,'')
   .replace(/\([^)]*\)/g,' ').replace(/[^a-z0-9/]+/g,' ').trim();
 const ALIAS={sku:'sku','codice articolo':'sku',nome:'name','nome prodotto':'name',name:'name',titolo:'name',title:'name',
   descrizione:'description',description:'description','prezzo vendita':'price',prezzo:'price',price:'price',
-  'costo acquisto':'cost',costo:'cost',cost:'cost','quantita stock':'stock','quantita disponibile':'stock',quantita:'stock',
+  'costo acquisto':'cost',costo:'cost',cost:'cost','prezzo acquisto':'cost','prezzo d acquisto':'cost','costo d acquisto':'cost',
+  'costo unitario':'cost','prezzo fornitore':'cost','costo fornitore':'cost','purchase price':'cost','unit cost':'cost','quantita stock':'stock','quantita disponibile':'stock',quantita:'stock',
   stock:'stock',scorte:'stock',giacenza:'stock',categoria:'category',category:'category','taglia/variante':'size',taglia:'size',
   size:'size',genere:'gender',destinazione:'gender',gender:'gender',colore:'color',color:'color',materiale:'material',
   material:'material',composizione:'material','link foto':'photos',foto:'photos',immagine:'photos',immagini:'photos',

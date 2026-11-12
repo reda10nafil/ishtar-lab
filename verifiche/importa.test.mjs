@@ -130,3 +130,7 @@ test('intestazioni usate dal pannello e campi personalizzati riconosciuti',()=>{
   assert.equal(destinazione('Dati dimostrativi'),'demo');assert.equal(destinazione('Immagini'),'photos');assert.equal(destinazione('Status'),'skip');
   assert.equal(normalizza('Altezza (cm)'),normalizza('altezza  (CM)'));
 });
+test('colonne del costo d\'acquisto riconosciute come costo: non diventano campi personalizzati',()=>{
+  for(const intestazione of ['Prezzo acquisto','Prezzo d\'acquisto','Costo d\'acquisto','Costo unitario','Prezzo fornitore','Costo fornitore','Purchase price','Unit cost'])
+    assert.equal(destinazione(intestazione),'cost',intestazione);
+});
