@@ -24,3 +24,7 @@ Il CSV originale è di giugno e non prova la giacenza attuale. SKU-URL, nomi man
 Trascinamento fisico da Esplora file, avvio Windows a freddo/Docker spento, ripristino completo DB+foto, concorrenza e salvataggi parziali, grande catalogo, accessibilità completa e uso multiutente/remoto. I controlli delle fasi precedenti restano riferimenti storici, non monitoraggio.
 
 Non sono blocchi da aggiungere all'app: sono informazioni mancanti o prove da completare. [[Roadmap per fasi]] indica l'ordine consigliato.
+
+## Ripresa con il collaboratore — 12 novembre 2026
+
+Backend e seconda app sono disponibili come sorgenti; restano da adattare l'avvio Linux e la preparazione con configurazioni parziali, da verificare il pull RustFS e da ottenere il rapporto completo dell'analisi esterna. I problemi fotografati non vengono dichiarati tutti confermati. Leggere [[Consegna tecnica al collaboratore]], [[Versione 2 - origine e differenze]] e [[Segnalazioni ricevute e verifiche]] prima di fondere modifiche tra le due basi.

@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.*
+!.env.template
+.medusa/
+dist/
+build/
+.turbo/
+*.log
+.credenziali-locali.env
+.log/
+.cache/

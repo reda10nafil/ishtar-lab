@@ -122,6 +122,14 @@ Aggiornamento caricato su GitHub, commit d5235b84b5f2078294c953bda5cea9a89c7ba70
 - Aggiornate memoria e note del vault su GitHub, sicurezza e backlog; nessuna attività di prodotto dichiarata completata. Sette test CSV/identità superati nella copia di consegna.
 - Revisione limitata alla documentazione del ramo principale; pacchetto applicativo dell'8 novembre e relativo manifest conservati. Esito della pubblicazione e commit nel rapporto locale `verifiche/aggiornamento-github-2026-11-12.json`.
 
+## 2026-11-12 — Consegna della seconda applicazione e guida backend
+
+- Su richiesta dell'utente copiata la seconda app Ishtar Lab/Multi Outfit in versione 2: 685 file sorgenti identici con hash, senza segreti, DB, dipendenze o build. Originale non modificato né avviato/arrestato.
+- Aggiunti memoria, istruzioni e modelli di configurazione non operativi. Preservati manifest/licenze upstream; nessuna fusione con il backend della prima app.
+- Preparati inventari delle due basi (98/149 file route) e tre guide nel vault: passaggio tecnico, origine/differenze e segnalazioni ricevute. Chiarito API su Node host, servizi dati in Docker, limiti Linux e rischio di configurazione parziale. Nessuna nuova funzione o correzione dichiarata.
+- Aggiornati indice, istruzioni, README e riferimenti della roadmap. Conversazione e fotografie private escluse; 84 problemi segnalati esternamente non convertiti in rilievi autonomamente confermati.
+- Pubblicazione, controlli e pacchetto della consegna tracciati nel rapporto locale verifiche/consegna-versione2-2026-11-12.json. Nessun invito o invio di credenziali al collaboratore.
+
 ## 2026-11-12 — Avvio su Linux (versione modificata da satria64, proposta)
 
 - Permesso scritto di Reda Zahloul nella issue #1 (12 novembre 2026) per correggere i problemi individuati e proporli con pull request da un fork; licenza, titolarità e avvisi dei terzi invariati.

@@ -43,3 +43,11 @@ PROJECT.md, CHANGELOG.md, AGENTS.md, .ai-style-rules.md, PIANO-INVENTARIO.md, LI
 | [Shopify, webhook](https://shopify.dev/docs/apps/build/webhooks) | Meccanismo di aggiornamento se Shopify viene scelto come canale |
 
 Le integrazioni proposte non obbligano a scegliere Google o Shopify: sono riferimenti concreti. Versioni e termini API vanno ricontrollati al momento dell'implementazione. Nessuna ricerca di mercato effettiva è stata eseguita per produrre questi piani.
+
+## Consegna al collaboratore — 12 novembre 2026
+
+- versione 2/MANIFEST-ORIGINE.json nella radice del progetto: hash di 685 file copiati dalla seconda app, con controlli di integrità prima/dopo; documentazione aggiunta separatamente.
+- [[inventario-api-due-versioni.csv]]: metodi/percorso/file delle 98+149 route custom rilevate staticamente, non elenco dei soli endpoint framework né prova autorizzazioni.
+- [[inventario-due-versioni.json]]: moduli, provider, TSX console e differenze dei percorsi. Foto dell'analisi esterna conservate fuori dalla consegna pubblica.
+- [[Consegna tecnica al collaboratore]], [[Versione 2 - origine e differenze]], [[Segnalazioni ricevute e verifiche]]: guida, limiti e distinzione tra affermazioni esterne e controlli locali.
+- Rapporto locale verifiche/consegna-versione2-2026-11-12.json: esito effettivo di pubblicazione e controlli. Nessun avvio di servizi o test mutante della seconda app.

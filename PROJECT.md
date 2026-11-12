@@ -2,9 +2,9 @@
 
 Aggiornato: 12 novembre 2026 (Europe/Berlin).
 
-**Proposta del 12 novembre (ramo `avvio-linux` di satria64, autorizzata dal titolare nella issue #1 e in attesa di revisione):** avvio su Linux, riferimento RustFS pubblico e preparazione protetta; dettagli nella sezione finale. Finché non viene integrata, lo stato seguente resta quello della consegna dell'8 novembre.
+**Proposta del 12 novembre (ramo `avvio-linux` di satria64, autorizzata dal titolare nella issue #1 e in attesa di revisione):** avvio su Linux, riferimento RustFS pubblico e preparazione protetta; dettagli nella sezione finale. Finché non viene integrata, lo stato seguente resta quello delle consegne del titolare.
 
-**Ultimo stato:** codice dell'app allineato alla consegna pubblica dell'8 novembre; revisione del 12 novembre limitata alla documentazione e allo stato effettivo dell'audit. L'audit Standard non è iniziato: il plugin ha restituito un errore prima di creare la scansione. Interfaccia originale conservata; catalogo/inventario collegati al backend, altri moduli dimostrativi. Avvio con `Avvia Ishtar Lab.bat`. Le sezioni datate precedenti restano storia; leggere l'ultimo aggiornamento in fondo.
+**Ultimo stato:** consegna al collaboratore ampliata con la seconda app in `versione 2/`, sorgenti backend e tre nuove guide nel vault. Prima app conservata, nessuna correzione applicativa applicata in questa consegna. Stato di pubblicazione e verifiche nel rapporto `verifiche/consegna-versione2-2026-11-12.json`; leggere l'ultimo aggiornamento in fondo. Il tentativo locale di audit dell'8 novembre non è iniziato; l'analisi esterna fotografata è distinta.
 
 ## Obiettivo e ambito
 
@@ -270,6 +270,21 @@ Questa revisione aggiorna la documentazione del ramo principale; non genera una 
 
 Prossimo passo: risolvere l'errore di apertura della scansione prima di riprendere l'audit richiesto; poi seguire le priorità del vault. Il backup completo di DB/foto con ripristino provato resta da realizzare: il repository pubblico non lo sostituisce.
 
+## 12 novembre 2026 — Seconda app e consegna tecnica al collaboratore
+
+Richiesta successiva dell'utente: condividere il backend, tutti i piani e una copia dell'altra applicazione dalla raccolta principale, sotto il nome `versione 2`, nello stesso GitHub. Le correzioni applicative saranno curate dal collaboratore. Interpretazione verificata sulle fonti: l'altra app è `pannello di amministrazione del negozio/multi-outfit`, il cui README la chiama Ishtar Lab; non è il motore Site to Desktop né il frontend recuperato.
+
+Copiati 685 file selezionati in `versione 2/`, identici con SHA-256 della sorgente prima/dopo e della destinazione. Nessun launcher/hook/seed eseguito, sorgente e servizi originali intatti. Manifest `versione 2/MANIFEST-ORIGINE.json`. Esclusi Git annidato, env/credenziali (anche template originali), database, dipendenze, cache, log e build. Aggiunti modelli esplicitamente non operativi, memoria e istruzioni della copia. Regola .gitattributes per preservare anche i byte CRLF della sorgente nella consegna.
+
+Il backend principale era già incluso. L'API è Node host; Docker esegue PostgreSQL/Redis/S3/email. Non è un servizio remoto condiviso dal solo upload. Versione 2: 149 file route, 9 directory moduli, 163 TSX console; prima base: 98, 7, 112. Seconda base con 52 percorsi ulteriori, marketing e negozio-online; API /admin/ishtar/catalogo presente soltanto nella prima. Nessuna fusione automatica tra backend.
+
+Tre nuove note nel vault (ora 32 note Markdown) spiegano architettura, configurazione, porte, accesso pubblico/fork/PR, problemi Linux, rischio di rigenerazione segreti, differenze e triage delle segnalazioni. Inventari statici in piani di implementazione/99 Fonti. Le cinque immagini ricevute sono fonti private non caricate su GitHub. Il numero di 84 problemi appartiene all'analisi esterna fotografata: rapporto completo non disponibile, non verificato autonomamente qui e distinto dal tentativo locale Codex Security fallito.
+
+Risorse condivise: AGENTS.md/RISORSE.md della raccolta consultati; REA e prompts.chat non necessari per copia e inventario. Riutilizzati Python standard, Git e controlli locali; nessuna nuova installazione. Ambiente della seconda copia predisposto come sorgenti per sviluppo, non come nuova istanza attiva. Avvio completo e Linux restano da provare; il collaboratore deve isolare identità, volumi e porte prima dei test.
+
+La consegna per GitHub usa la copia pulita consegne/Ishtar-Lab. Esito effettivo, commit, verifiche e pacchetto sono registrati localmente in verifiche/consegna-versione2-2026-11-12.json. I manifest dei pacchetti precedenti restano storici; non vanno riscritti come se descrivessero la nuova revisione. Nessun invito, messaggio diretto o accesso a credenziali del titolare viene effettuato.
+
+Prossimo passo: il collaboratore salva il proprio lavoro, legge Consegna tecnica al collaboratore e confronta la base usata nell'analisi con la nuova consegna; poi ambiente separato, rapporto completo, verifica dei problemi e PR con test/migrazioni/rollback. Nessuna delle 107 attività è chiusa dalla copia.
 
 ## 12 novembre 2026 — Avvio su Linux (versione modificata da satria64)
 

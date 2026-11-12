@@ -1,0 +1,348 @@
+/* Pulsanti, campi, pillole, modali. Gli stati di passaggio sono immediati, come sul pannello. */
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 13px;
+  background: var(--sup-1);
+  box-shadow: var(--ombra-sup);
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) { background: var(--sup-2); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+button.primario {
+  background: linear-gradient(var(--accento-su), var(--accento) 60%);
+  box-shadow: var(--ombra-primario);
+  color: var(--su-accento);
+  font-weight: 600;
+}
+
+button.primario:hover:not(:disabled) { background: linear-gradient(var(--accento-su), var(--accento) 60%); filter: brightness(1.05); }
+button.pericolo { color: var(--errore); }
+button.larga { width: 100%; }
+
+.icona-pulsante { width: 40px; min-height: 40px; padding: 0; font-size: 14px; font-weight: 500; }
+.icona-pulsante--piatta { background: none; box-shadow: none; }
+
+input, textarea, select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 13px;
+  background-color: var(--incavo);
+  box-shadow: var(--ombra-sup);
+  outline: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+textarea { padding-block: 11px; }
+
+input[type="checkbox"], input[type="radio"] { width: auto; min-height: 0; box-shadow: none; accent-color: var(--accento); }
+input[type="color"] { padding: 4px; }
+input[type="file"] { padding-block: 9px; }
+
+select {
+  padding-right: 34px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--testo-2) 50%), linear-gradient(135deg, var(--testo-2) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%;
+  background-repeat: no-repeat;
+  background-size: 5px 5px;
+  appearance: none;
+  cursor: pointer;
+}
+
+input:focus, textarea:focus, select:focus, .focus {
+  box-shadow: inset 0 0 0 1.5px var(--accento), 0 0 0 4px var(--accento-anello);
+}
+
+select option { background: var(--fondo); color: var(--testo); }
+.scelta-ruolo { width: auto; min-width: 190px; }
+input::placeholder, textarea::placeholder { color: var(--testo-3); }
+textarea { resize: vertical; }
+
+.campo { display: flex; flex-direction: column; gap: 6px; }
+.campo > span { color: var(--testo-2); font-size: 12.5px; font-weight: 600; }
+.campo small { color: var(--testo-3); font-size: 12px; }
+
+.modulo { display: grid; gap: 14px; }
+.griglia-due { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+
+/* Selettore a segmenti: la pillola scorre, vedi src/movimenti/selettori.ts. */
+.selettore {
+  position: relative;
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 13px;
+  background: var(--sup-1);
+  box-shadow: var(--ombra-sup);
+}
+
+.selettore__pillola {
+  position: absolute;
+  inset: 0;
+  background: var(--pillola);
+  box-shadow: var(--ombra-pillola);
+  pointer-events: none;
+}
+
+.selettore button {
+  position: relative;
+  flex: 1;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 10px;
+  background: none;
+  box-shadow: none;
+  color: var(--testo-2);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.selettore button:hover:not(:disabled) { background: none; color: var(--testo); }
+.selettore button.attivo { background: var(--pillola); box-shadow: var(--ombra-pillola); color: var(--testo); }
+.selettore[data-pillola] button.attivo { background: none; box-shadow: none; }
+
+.selettore em {
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 99px;
+  background: var(--sup-etichetta);
+  color: var(--testo-1);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.selettore--stretto { align-self: flex-start; }
+
+/* Filtri a pillola. */
+.filtri { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.filtri button {
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 13px;
+  border-radius: 11px;
+  color: var(--testo-1);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.filtri button:hover:not(:disabled) { color: var(--testo); }
+
+.filtri button.attivo, .filtri button.attivo:hover:not(:disabled) {
+  background: linear-gradient(var(--accento-su), var(--accento) 60%);
+  box-shadow: var(--ombra-primario);
+  color: var(--su-accento);
+}
+
+.filtri em {
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 99px;
+  background: var(--sup-etichetta);
+  color: inherit;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.filtri button.attivo em { background: rgb(255 255 255 / 0.25); }
+
+/* Stati a pillola. */
+.etichetta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  padding: 0 9px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.etichetta--ok { background: var(--ok-tinta); color: var(--ok); }
+.etichetta--attesa { background: var(--attesa-tinta); color: var(--attesa); }
+.etichetta--errore { background: var(--errore-tinta); color: var(--errore); }
+.etichetta--info { background: var(--blu-tinta); color: var(--blu); }
+.etichetta--neutro { background: var(--sup-etichetta); color: var(--testo-1); }
+
+.avviso-stato {
+  padding: 11px 14px;
+  border-radius: 13px;
+  background: var(--incavo);
+  box-shadow: var(--ombra-sup);
+  color: var(--testo-2);
+  font-size: 13.5px;
+}
+
+/* Il caricamento compare solo se dura: niente lampi di testo quando i dati arrivano subito. */
+.avviso-stato--carico { animation: comparsa-lenta 0.2s 0.5s both; }
+@keyframes comparsa-lenta { from { opacity: 0; } }
+
+.avviso-stato--errore { background: var(--errore-tinta); color: var(--errore); }
+.avviso-stato--ok { background: var(--ok-tinta); color: var(--ok); }
+.avviso-stato--attesa { background: var(--attesa-tinta); color: var(--attesa); }
+.testo-errore { color: var(--errore) !important; }
+
+.velo {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: var(--velo);
+  backdrop-filter: blur(10px) saturate(1.4);
+  -webkit-backdrop-filter: blur(10px) saturate(1.4);
+}
+
+.modale {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(780px, 100%);
+  max-height: calc(100vh - 40px);
+  border-radius: var(--raggio-xl);
+  background-color: var(--modale-1);
+  box-shadow: var(--ombra-modale);
+  outline: none;
+  backdrop-filter: blur(48px) saturate(2);
+  -webkit-backdrop-filter: blur(48px) saturate(2);
+}
+
+.modale header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 22px 22px 6px 24px;
+}
+
+.modale h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.015em; }
+.modale header p { margin-top: 4px; color: var(--testo-2); font-size: 12.5px; }
+
+.modale__corpo {
+  display: grid;
+  gap: 14px;
+  padding: 14px 24px 22px;
+  overflow-y: auto;
+}
+
+.modale__piede {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--linea);
+}
+
+.modale__piede a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--testo-2);
+  font-size: 13px;
+}
+
+.spazio { flex: 1; }
+
+.anteprima {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: var(--sup-1);
+  object-fit: cover;
+}
+
+.anteprima--vuota {
+  display: grid;
+  place-items: center;
+  color: var(--testo-2);
+  font-weight: 700;
+}
+
+.nascosto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+@media (max-width: 560px) {
+  .griglia-due { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Lettere del titolo: salgono da sotto la riga. */
+.titolo-lettere { display: block; }
+.parola {
+  display: inline-block;
+  margin-bottom: -0.08em;
+  padding-bottom: 0.08em;
+  overflow: hidden;
+  vertical-align: top;
+}
+.lettera { display: inline-block; }
+.cifra { font-variant-numeric: tabular-nums; }
+
+.scorciatoie { display: grid; gap: 0; margin: 0; }
+.scorciatoie > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 38px; }
+.scorciatoie dt { font-weight: 600; }
+.scorciatoie dd { display: flex; align-items: center; gap: 6px; margin: 0; color: var(--testo-2); font-size: 12.5px; }
+.tendina__pannello .tasto { margin-left: auto; }
+.tendina__pannello > button.pericolo { color: var(--errore); }
+.tendina__pannello > button.pericolo svg { color: inherit; }
+
+/* I pulsanti principali della testata seguono un poco il puntatore. */
+.pagina__testa button.primario, .testata__nuovo { transition: translate 0.45s var(--curva-fuori3); }
+
+/* Caselle di spunta come il pannello. */
+input[type="checkbox"] {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  min-height: 0;
+  padding: 0;
+  border-radius: 6px;
+  background: var(--spunta-fondo);
+  box-shadow: inset 0 0 0 1.5px var(--linea-forte);
+  appearance: none;
+  cursor: pointer;
+}
+
+input[type="checkbox"]::before {
+  width: 12px;
+  height: 12px;
+  background: var(--su-accento);
+  clip-path: polygon(14% 52%, 0 66%, 38% 100%, 100% 24%, 86% 10%, 38% 72%);
+  content: "";
+  opacity: 0;
+}
+
+input[type="checkbox"]:checked, input[type="checkbox"]:indeterminate { background: var(--accento); box-shadow: none; }
+input[type="checkbox"]:checked::before { opacity: 1; }
+input[type="checkbox"]:focus { box-shadow: inset 0 0 0 1.5px var(--linea-forte); }
+input[type="checkbox"]:checked:focus { box-shadow: none; }
