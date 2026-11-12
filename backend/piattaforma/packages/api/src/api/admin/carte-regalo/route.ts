@@ -1,7 +1,8 @@
 import type { AuthenticatedMedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { z } from "@medusajs/framework/zod"
 import { invalido, valida } from "../../utili"
-import { chi, schedaCarta, servizioCarte, statoCarta } from "./comune"
+import { filtroRicerca } from "../../../modules/carte-regalo/ricerca"
+import { chi, puoVedereCodice, schedaCarta, servizioCarte, statoCarta } from "./comune"
 
 const MASSIMO = 1000
 
@@ -20,7 +21,8 @@ export async function GET(req: AuthenticatedMedusaRequest, res: MedusaResponse) 
   const limite = Math.min(Number(req.query.limit) || 20, 100)
   const salto = Number(req.query.offset) || 0
 
-  const carte = await servizioCarte(req).listCartas(q ? ({ q } as object) : {}, { order: { created_at: "DESC" }, take: MASSIMO })
+  // Con la sola lettura la ricerca non guarda il codice (modules/carte-regalo/ricerca.ts).
+  const carte = await servizioCarte(req).listCartas(filtroRicerca(q, puoVedereCodice(req)), { order: { created_at: "DESC" }, take: MASSIMO })
   const conStato = carte.map((c) => ({ carta: c, stato: statoCarta(c) }))
   const filtrate = stato ? conStato.filter((c) => c.stato === stato) : conStato
   const conteggi = { tutte: conStato.length, attiva: 0, esaurita: 0, scaduta: 0, annullata: 0 }

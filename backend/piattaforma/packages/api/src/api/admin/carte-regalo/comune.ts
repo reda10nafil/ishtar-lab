@@ -41,7 +41,7 @@ export function statoCarta(carta: Pick<Carta, "stato" | "saldo" | "scadenza">): 
 }
 
 /** Il codice vale come denaro: chi ha solo la lettura ne vede le ultime quattro cifre. */
-const puoVedereCodice = (req: AuthenticatedMedusaRequest) => {
+export const puoVedereCodice = (req: AuthenticatedMedusaRequest) => {
   const diritto = (req as unknown as { permissions?: Record<string, string> }).permissions?.sconti
   return diritto === "edit" || diritto === "manage"
 }
