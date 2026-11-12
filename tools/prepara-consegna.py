@@ -18,7 +18,7 @@ ROOT_FILES = {"README.md", "GUIDA-COLLABORATORE.md", "AGENTS.md", "PROJECT.md", 
               "avvia_pannello.py", "catalog_bridge.py"}
 PROOFS = {"qa-catalogo-operativo.json", "pagine-ripristinate.json", "avvio-bat.json",
           "integrita-design.json", "csv.test.mjs", "dashboard-ripristinata.jpg",
-          "consegna-github.json"}
+          "consegna-github.json", "avvio-linux-2026-11-12.json"}
 
 def permitted(p):
     rel = p.relative_to(ROOT)
@@ -31,7 +31,7 @@ def permitted(p):
     if p.suffix.lower() in {".log", ".zip", ".sql", ".dump", ".pem", ".key", ".pfx", ".p12", ".pyc"}:
         return False
     if len(parts) == 1:
-        return name in ROOT_FILES or p.suffix.lower() in {".bat", ".cmd"}
+        return name in ROOT_FILES or p.suffix.lower() in {".bat", ".cmd", ".sh"}
     top = parts[0]
     if top == "backend":
         return True
@@ -67,11 +67,12 @@ def main():
             dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, dest)
             copied.append(rel.as_posix())
-    # Il tag locale dell'archivio è sostituito nella sola consegna dal medesimo digest pubblico.
+    # Il tag locale dell'archivio è sostituito nella sola consegna da un riferimento pubblico scaricabile.
+    # L'ID locale d30c5e04... non è un digest del registro (Docker Hub risponde 404): usare tag + digest.
     compose = DEST / "backend/infra/compose.yaml"
     text = compose.read_text("utf-8")
     text = text.replace("rustfs/rustfs:local-d30c5e04efc4",
-                        "rustfs/rustfs@sha256:d30c5e04efc48cea32dfcf9550ccc5a01840564bc99c113d1a04471d43d4872f")
+                        "rustfs/rustfs:1.0.5@sha256:b81d16a90ee25bd9511280127ca1471788c6e874cf0f0da759645f46b2dc1d74")
     compose.write_text(text, encoding="utf-8")
     # Dataset espressamente demo: nessun link remoto, fornitore o nome della sorgente privata.
     demo = DEST / "frontend/catalogo/inventario-demo.csv"

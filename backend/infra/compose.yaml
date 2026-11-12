@@ -38,7 +38,11 @@ services:
 
   storage:
     # Archivio compatibile S3 per foto e video (RustFS, lo stesso motore gia usato da ChatbotX).
-    image: rustfs/rustfs@sha256:d30c5e04efc48cea32dfcf9550ccc5a01840564bc99c113d1a04471d43d4872f
+    # Riferimento pubblico verificato il 12/11/2026 (tag 1.0.5, digest dell'indice amd64/arm64).
+    # Il precedente sha256:d30c5e04... era l'ID locale dell'immagine, non un digest del registro.
+    # È una build diversa da rustfs/rustfs:local-d30c5e04efc4 della copia operativa: non copiare questo
+    # file in quella copia senza verificare prima la compatibilità dei dati già presenti nel volume.
+    image: rustfs/rustfs:1.0.5@sha256:b81d16a90ee25bd9511280127ca1471788c6e874cf0f0da759645f46b2dc1d74
     restart: unless-stopped
     command: ["server", "/data", "--console-address", ":9001"]
     environment:
