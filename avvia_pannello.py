@@ -16,10 +16,18 @@ URL = f"http://{HOST}:{PORT}/ishtar-lab/#/home"
 IDENTIFIER = "redx-pannello-recuperato-2026-11-06"
 
 
+def indirizzo_canonico(host, percorso):
+    """Il ponte accetta solo l'host 127.0.0.1:4273: chi apre localhost:4273 viene reindirizzato lì."""
+    if str(host).lower() == f"localhost:{PORT}":
+        return f"http://{HOST}:{PORT}{percorso}"
+    return None
+
+
 class Handler(SimpleHTTPRequestHandler):
     extensions_map = {
         **SimpleHTTPRequestHandler.extensions_map,
         ".js": "text/javascript",
+        ".mjs": "text/javascript",
         ".css": "text/css",
         ".svg": "image/svg+xml",
         ".woff2": "font/woff2",
@@ -31,6 +39,12 @@ class Handler(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self):
+        canonico = indirizzo_canonico(self.headers.get("Host", ""), self.path)
+        if canonico:
+            self.send_response(302)
+            self.send_header("Location", canonico)
+            self.end_headers()
+            return
         if self.path.startswith("/api/"):
             handle_catalog(self)
             return
