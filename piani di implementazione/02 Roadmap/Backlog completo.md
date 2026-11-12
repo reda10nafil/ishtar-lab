@@ -126,3 +126,7 @@ Il criterio di completamento di ciascuna riga si trova nella nota di categoria. 
 ## Verifica del 12 novembre 2026
 
 La sincronizzazione GitHub riguarda la documentazione; nessuna delle 107 attività viene chiusa da questa revisione. OPS-01 resta da fare: il repository non contiene il database privato e non prova un ripristino completo. Il tentativo di audit dell'8 novembre si è fermato all'apertura del plugin, prima di una scansione; riprenderlo dopo la risoluzione dell'errore, senza considerarlo completato. Dettagli in [[Sicurezza backup e continuita]] e [[GitHub e collaborazione]].
+
+## Consegna della seconda applicazione
+
+Le guide [[Consegna tecnica al collaboratore]], [[Versione 2 - origine e differenze]] e [[Segnalazioni ricevute e verifiche]] accompagnano lo snapshot versione 2. Questo aggiunge fonti utili per le 107 attività, non ne dimostra l'implementazione nella prima UI. Nessuna riga viene chiusa automaticamente; prima confrontare API/schema e verificare i problemi su un ambiente separato.

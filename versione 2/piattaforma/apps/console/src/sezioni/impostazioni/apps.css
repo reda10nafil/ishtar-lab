@@ -1,0 +1,140 @@
+/* Apps: stessa griglia e stesse schede del pannello di riferimento. */
+.apps__barra { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+
+.fedele .apps__selettore {
+  display: inline-flex;
+  flex: none;
+  gap: 4px;
+  padding: 4px;
+  border: 0;
+  border-radius: 15px;
+  background: var(--sup-1);
+  box-shadow: inset 0 0 0 1px var(--linea), 0 8px 24px rgb(0 0 0 / 0.12);
+}
+
+.fedele .apps__selettore button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 11px;
+  background: none;
+  color: var(--testo-2);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.fedele .apps__selettore button.attivo { background: var(--sup-3); color: var(--testo); }
+
+.fedele .apps__selettore em {
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 99px;
+  background: var(--sup-2);
+  color: var(--testo-2);
+  font-size: 11.5px;
+  font-style: normal;
+  line-height: 20px;
+  text-align: center;
+}
+
+.fedele .apps__selettore button.attivo em { background: var(--accento); color: var(--su-accento); }
+
+.apps__barra .cerca { flex: 0 1 280px; min-width: 200px; }
+.fedele .apps__barra .cerca input { padding-left: 36px; min-height: 40px; }
+
+.fedele .apps__filtri { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.fedele .apps__filtri button {
+  min-height: 34px;
+  padding: 0 13px;
+  border-radius: 11px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.fedele .apps__filtri button:hover:not(.attivo) { color: var(--testo); }
+
+.fedele .apps__filtri button.attivo {
+  border-color: transparent;
+  background: var(--accento);
+  color: var(--su-accento);
+}
+
+.fedele .griglia-connettori {
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 19px;
+}
+
+.fedele .connettore {
+  gap: 10px;
+  padding: 18px 17px 17px;
+  border-radius: 20px;
+}
+
+.fedele .connettore:hover { transform: translateY(-4px); }
+.fedele .connettore header { align-items: center; gap: 12px; }
+.fedele .connettore header > div { flex: 1; min-width: 0; }
+.fedele .connettore h3 { font-size: 14px; font-weight: 600; line-height: 1.3; letter-spacing: 0; }
+.fedele .connettore small { display: block; color: var(--testo-2); font-size: 12px; }
+.fedele .connettore p { color: var(--testo-2); font-size: 13.5px; line-height: 1.45; }
+.fedele .connettore__icona { width: 44px; height: 44px; border-radius: 13px; font-size: 20px; }
+.fedele .connettore footer { min-height: 34px; }
+.fedele .connettore__accesso { color: var(--testo); font-size: 13.5px; font-weight: 600; }
+
+.fedele .connettore__stato {
+  min-height: 34px;
+  padding: 0;
+  color: var(--ok);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.fedele .connettore__stato--errore { color: var(--errore); }
+
+.apps__piede-sinistra { display: inline-flex; align-items: center; gap: 8px; min-width: 0; color: var(--testo-2); font-size: 12.5px; }
+
+.fedele .connettore--spenta header,
+.fedele .connettore--spenta p { opacity: 0.62; }
+
+.apps__voto {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  color: var(--attesa);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.apps__azioni { display: inline-flex; flex: none; align-items: center; gap: 2px; }
+
+.apps__annulla p { display: flex; align-items: center; gap: 10px; }
+.apps__annulla span { flex: 1; }
+
+.apps__annulla button {
+  min-height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.fedele .apps__togli,
+.fedele .apps__gestisci {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 0;
+  background: none;
+  color: var(--errore);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.fedele .apps__gestisci { color: var(--testo-2); }
