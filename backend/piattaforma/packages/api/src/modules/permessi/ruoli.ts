@@ -53,6 +53,7 @@ export const RUOLI_ADMIN: Ruolo[] = [
       "orders.refunds": "manage",
       customers: "edit",
       customer_groups: "view",
+      conversazioni: "edit",
       evasioni: "manage",
       magazzino: "manage",
       inventory_items: "edit",
@@ -191,7 +192,7 @@ type Area = { id: string; etichetta: string; permessi: string[] }
 export const AREE_ADMIN: Area[] = [
   { id: "ordini", etichetta: "Orders and till", permessi: ["orders", "evasioni", "cassa", "ingrosso"] },
   { id: "prodotti", etichetta: "Products and inventory", permessi: ["products", "magazzino"] },
-  { id: "clienti", etichetta: "Customers", permessi: ["customers"] },
+  { id: "clienti", etichetta: "Customers", permessi: ["customers", "conversazioni"] },
   { id: "sconti", etichetta: "Discounts and marketing", permessi: ["sconti", "marketing"] },
   { id: "analisi", etichetta: "Analytics and margins", permessi: ["analisi", "margini"] },
   { id: "impostazioni", etichetta: "Settings and team", permessi: ["impostazioni", "users", "connettori", "registro"] },

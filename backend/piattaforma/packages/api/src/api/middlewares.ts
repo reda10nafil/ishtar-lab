@@ -14,6 +14,7 @@ import { rotteMarketing } from "./rotte/marketing"
 import { rotteImpostazioni } from "./rotte/impostazioni"
 import { rotteAssistenza } from "./rotte/assistenza"
 import { rotteAvvisi } from "./rotte/avvisi"
+import { rotteConversazioni } from "./rotte/conversazioni"
 import { permesso } from "./rotte/permesso"
 
 /** Le rotte di Ishtar Lab dichiarano qui il permesso richiesto: il limite vive sul server. */
@@ -48,5 +49,6 @@ export default defineMiddlewares({
     ...rotteImpostazioni,
     ...rotteAssistenza,
     ...rotteAvvisi,
+    ...rotteConversazioni,
   ],
 })
