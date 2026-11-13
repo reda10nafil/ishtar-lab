@@ -372,3 +372,16 @@ test('ricerca dei clienti da collegare: righe e numero totale', async () => {
   assert.deepEqual(await casella.cercaClienti('giulia'), {righe: [{id: 'cus_1', nome: 'Giulia'}], conteggio: 23});
 });
 
+
+test('risposte rapide: si applica solo la lettura più recente', async () => {
+  const server = fintoServer(), prima = rinviato(), seconda = rinviato();
+  let n = 0;
+  server.su('GET', '/api/risposte-rapide', () => (++n === 1 ? prima.promessa : seconda.promessa));
+  const casella = crea(server);
+  const a = casella.caricaRapide(), b = casella.caricaRapide();
+  seconda.risolvi({risposte: [{id: 'rrap_1', titolo: 'Spedizione', testo: 'In 24 ore'}, {id: 'rrap_2', titolo: 'Nuova', testo: 'Appena aggiunta'}]});
+  await b;
+  prima.risolvi({risposte: [{id: 'rrap_1', titolo: 'Spedizione', testo: 'In 24 ore'}]});
+  await a;
+  assert.deepEqual(casella.istantanea().rapide.righe.map(r => r.id), ['rrap_1', 'rrap_2']);
+});

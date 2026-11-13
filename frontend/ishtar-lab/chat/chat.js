@@ -183,7 +183,8 @@ function Elenco({s, scheda, id, larghezza}) {
   }
   return h('section', {className: 'card card--flush chat__elenco', 'aria-label': 'Conversations'},
     h('div', {className: 'chat__strumenti'},
-      h(Ricerca, {value: q, onChange: cambiaQ, placeholder: 'Search chats'}),
+      // Il ponte accetta parametri fino a 200 caratteri.
+      h(Ricerca, {value: q, onChange: v => cambiaQ(v.slice(0, 200)), placeholder: 'Search chats'}),
       h('select', {className: 'select chat__canale', value: filtri.canale, 'aria-label': 'Channel', onChange: e => casella.filtra({canale: e.target.value})},
         h('option', {value: ''}, 'All channels'),
         CANALI.map(c => h('option', {key: c, value: c}, etichettaCanale(c))))),
@@ -257,7 +258,7 @@ function Aperta({s, scheda, id, conv, dati, larghezza}) {
   };
   const riprendi = id_client => {
     const ripreso = casella.scarta(id_client);
-    if (ripreso) scrivi(attuale.current ? `${attuale.current}\n${ripreso}` : ripreso);
+    if (ripreso) scrivi((attuale.current ? `${attuale.current}\n${ripreso}` : ripreso).slice(0, MASSIMO_RISPOSTA));
   };
   const messaggi = dati ? unisci(dati.messaggi, s.inSospeso, id, s.rimandate) : [];
   const adesso = Date.now();
@@ -283,9 +284,9 @@ function Aperta({s, scheda, id, conv, dati, larghezza}) {
         larghezza !== 'tre' && h('button', {type: 'button', className: 'btn btn--sm', 'aria-label': 'Customer', onClick: () => apriCassetto({title: 'Customer', body: () => h(SchedaCliente, {idConversazione: id})})},
           h(Icona, {name: 'user'}), h('span', {className: 'chat-etichetta'}, 'Customer')),
         chiusa
-          ? h('button', {type: 'button', className: 'btn btn--sm', 'aria-label': 'Reopen', onClick: () => casella.cambiaStato(id, 'aperta')}, h(Icona, {name: 'refresh'}), h('span', {className: 'chat-etichetta'}, 'Reopen'))
+          ? h('button', {type: 'button', className: 'btn btn--sm', 'aria-label': 'Reopen chat', onClick: () => casella.cambiaStato(id, 'aperta')}, h(Icona, {name: 'refresh'}), h('span', {className: 'chat-etichetta'}, 'Reopen'))
           // Mentre una risposta parte la chat non si chiude: un esito negativo finirebbe fra le chiuse senza che nessuno lo veda.
-          : h('button', {type: 'button', className: 'btn btn--sm', 'aria-label': 'Close', disabled: !dati || inviando, onClick: chiudi}, h(Icona, {name: 'check'}), h('span', {className: 'chat-etichetta'}, 'Close')))),
+          : h('button', {type: 'button', className: 'btn btn--sm', 'aria-label': 'Close chat', disabled: !dati || inviando, onClick: chiudi}, h(Icona, {name: 'check'}), h('span', {className: 'chat-etichetta'}, 'Close')))),
     s.aperta.errore && dati && h('p', {className: 'chat-avviso', role: 'alert'}, `Not updated: ${s.aperta.errore}`),
     dati ? h(Registro, {messaggi, conversazione_id: id, riprendi, chiusa, adesso})
       : s.aperta.errore ? h(Vuoto, {icon: 'alert', title: 'Chats are offline', body: `${s.aperta.errore} Trying again…`})

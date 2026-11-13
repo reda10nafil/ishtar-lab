@@ -233,6 +233,17 @@ class Casella(ConAPIFinta):
             self.assertTrue(richiesta.risposta().get("message"))
             self.assertEqual(FintaAPI.ricevute, [], f"{metodo} {percorso}")
 
+    def test_casella_solo_dal_pannello(self):
+        # Altre origini (CSRF), richieste da un altro sito della stessa macchina o senza l'intestazione del pannello: 403.
+        percorso = f"/api/conversazioni/{CONV}/messaggi"
+        for intestazioni in ({"Origin": "http://127.0.0.1:9999"}, {"Origin": "null"}, {"Sec-Fetch-Site": "same-site"},
+                             {"Sec-Fetch-Site": "cross-site"}, {"X-Ishtar-Local": "0"}, {"Host": "localhost:4273"}):
+            FintaAPI.ricevute = []
+            richiesta = Richiesta(path=percorso, command="POST", headers={"Content-Type": "application/json", **intestazioni}, corpo=b"{}")
+            ponte.handle(richiesta)
+            self.assertEqual(richiesta.stato, 403, str(intestazioni))
+            self.assertEqual(FintaAPI.ricevute, [], str(intestazioni))
+
     def test_casella_corpo_json_e_limite(self):
         percorso = f"/api/conversazioni/{CONV}/messaggi"
         self.assertEqual(self.chiedi("POST", percorso, b"x", tipo="text/plain").stato, 415)
@@ -265,6 +276,7 @@ class Server(unittest.TestCase):
             for intestazioni in (pagina, ponte_headers):
                 self.assertEqual(intestazioni.get("X-Frame-Options"), "DENY")
                 self.assertEqual(intestazioni.get("Content-Security-Policy"), "frame-ancestors 'none'")
+                self.assertEqual(intestazioni.get("X-Content-Type-Options"), "nosniff")
             self.assertEqual(pagina.get("Cache-Control"), "no-cache")
             self.assertEqual(ponte_headers.get("Cache-Control"), "no-store")
         finally:

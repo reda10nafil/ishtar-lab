@@ -41,6 +41,7 @@ class Handler(SimpleHTTPRequestHandler):
         # Nessun altro sito può mostrare il pannello in una cornice (clic nascosti su conversazioni, «Close», collegamenti).
         self.send_header("X-Frame-Options", "DENY")
         self.send_header("Content-Security-Policy", "frame-ancestors 'none'")
+        self.send_header("X-Content-Type-Options", "nosniff")
         super().end_headers()
 
     def do_GET(self):

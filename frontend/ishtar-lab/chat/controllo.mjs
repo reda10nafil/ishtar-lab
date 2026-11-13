@@ -28,7 +28,7 @@ export function creaCasella({richiesta, ambiente, nuovoId}) {
   const iscritti = new Set();
   const bozze = new Map();
   // Numero dell'ultima lettura partita per tipo: si applica solo quella (le altre sono superate).
-  const turno = {elenco: 0, conteggi: 0, dettaglio: 0, schede: {}};
+  const turno = {elenco: 0, conteggi: 0, dettaglio: 0, rapide: 0, schede: {}};
   const letteInCorso = new Set(), letteFatte = new Set();
   // Ultimo messaggio di ogni conversazione nell'ultima lettura del server applicata (ultimo_visto delle scritture).
   const visti = new Map();
@@ -302,13 +302,16 @@ export function creaCasella({richiesta, ambiente, nuovoId}) {
     return {righe, conteggio: dati.conteggio ?? righe.length};
   }
 
+  // Solo l'ultima lettura partita: una più vecchia (per esempio quella all'apertura della finestra) non toglie dall'elenco
+  // la risposta rapida appena salvata.
   async function caricaRapide() {
+    const n = ++turno.rapide;
     try {
       const dati = await richiesta('/api/risposte-rapide');
-      cambia({rapide: {righe: dati.risposte ?? [], caricate: true, errore: null}});
+      if (n === turno.rapide) cambia({rapide: {righe: dati.risposte ?? [], caricate: true, errore: null}});
       return true;
     } catch (errore) {
-      cambia({rapide: {...stato.rapide, caricate: true, errore: testoErrore(errore)}});
+      if (n === turno.rapide) cambia({rapide: {...stato.rapide, caricate: true, errore: testoErrore(errore)}});
       return false;
     }
   }
