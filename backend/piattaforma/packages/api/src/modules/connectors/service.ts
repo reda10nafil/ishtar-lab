@@ -147,6 +147,26 @@ export default class ConnectorsModuleService extends MedusaService({ ConnectorAc
     return esito
   }
 
+  /**
+   * Credenziali di un servizio collegato, per i canali della casella dei clienti (lettura dei messaggi e invio delle
+   * risposte). Solo lato server: nessuna rotta le restituisce. Null se il servizio non è collegato, è in errore (fino a
+   * una nuova prova dalla console) o le credenziali non si leggono più.
+   */
+  async credenzialiCollegate(id: string): Promise<{ valori: Valori; token?: Token; account: string | null } | null> {
+    servizioOErrore(id)
+    const conto = await this.conto(id)
+    if (!conto || conto.status !== "collegato") return null
+    const segreti = this.leggiSegretiSicuri(conto.secret)
+    return segreti ? { valori: segreti.valori, token: segreti.token, account: conto.account_label ?? null } : null
+  }
+
+  /** Un canale che ha trovato il servizio inutilizzabile (token rifiutato, webhook di un altro sistema): si vede nella console. */
+  async segnaErrore(id: string, messaggio: string) {
+    servizioOErrore(id)
+    const conto = await this.conto(id)
+    if (conto) await this.updateConnectorAccounts({ id: conto.id, status: "errore", last_error: messaggio, last_checked_at: new Date() })
+  }
+
   async scollega(id: string) {
     servizioOErrore(id)
     const conto = await this.conto(id)
