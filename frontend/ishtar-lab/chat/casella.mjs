@@ -153,3 +153,49 @@ export function testoErrore(errore) {
 
 /** Id di una risposta: il server riconosce un invio ripetuto con lo stesso id e non lo manda due volte. */
 export const nuovoId = () => crypto.randomUUID().replaceAll('-', '');
+
+// Email ----------------------------------------------------------------------------------------------------------------
+
+const PREFISSI = /^\s*(?:(?:re|r|rif|aw|sv|antw)\s*(?:\[\d+\])?\s*:\s*)+/i;
+const minuscolo = indirizzo => String(indirizzo ?? '').trim().toLowerCase();
+
+/** Oggetto della risposta email: un solo «Re: » davanti. È la regola del server, che decide l'oggetto vero. */
+export function oggettoRisposta(oggetto) {
+  const resto = String(oggetto ?? '').replace(PREFISSI, '').trim();
+  return `Re: ${resto || 'Your message'}`;
+}
+
+/** Ultimo messaggio del cliente, in ordine di arrivo (anche un segnaposto senza dettagli): la risposta continua il suo filo. */
+export function ultimaEmail(messaggi) {
+  for (let i = (messaggi?.length ?? 0) - 1; i >= 0; i--) if (messaggi[i]?.direzione === 'entrata') return messaggi[i];
+  return null;
+}
+
+/** Avviso quando l'email chiede di rispondere a un altro indirizzo: le risposte vanno sempre a chi l'ha mandata. */
+export function avvisoRispondiA(messaggio, mittente) {
+  const altro = messaggio?.email?.reply_to?.trim();
+  if (!altro || minuscolo(altro) === minuscolo(mittente)) return null;
+  return `This email asks to reply to ${altro}. Replies go to ${mittente}, the sender's address.`;
+}
+
+/** Clienti con lo stesso indirizzo email (uguale, senza maiuscole): una proposta solo se è uno solo, altrimenti l'elenco. */
+export function clienteConEmail(clienti, indirizzo) {
+  const cercato = minuscolo(indirizzo);
+  const elenco = cercato ? (clienti ?? []).filter(c => minuscolo(c?.email) === cercato) : [];
+  return {proposta: elenco.length === 1 ? elenco[0] : null, elenco};
+}
+
+/** Esito della verifica del mittente detto in chiaro: DMARC verifica il dominio, non la persona. */
+export const testoVerifica = verifica => (verifica === 'verificato'
+  ? "The sender's domain is verified (DMARC)"
+  : "The sender's address is not verified: it can be forged");
+
+const misura = byte => (byte >= 1024 * 1024 ? `${(byte / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(byte / 1024))} KB`);
+
+/** Testo intero di un'email con le citazioni, seguito dalle righe degli allegati come nel testo mostrato di solito. */
+export function testoCompleto(m) {
+  const completo = m?.email?.testo_completo;
+  if (!completo) return m?.testo ?? '';
+  const allegati = (m.email.allegati ?? []).map(a => `[Attachment: ${a.nome}, ${misura(a.byte)}]`).join('\n');
+  return [completo, allegati].filter(Boolean).join('\n\n');
+}

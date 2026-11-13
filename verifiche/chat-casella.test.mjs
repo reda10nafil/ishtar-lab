@@ -5,6 +5,7 @@ const {default: assert} = await import('node:assert/strict');
 const {
   etichettaCanale, etichettaStato, nomeContatto, quandoElenco, quandoMessaggio, soldi, statoOrdine,
   percorsoElenco, unisci, ultimoVisto, statoRisposta, testoErrore, nuovoId,
+  oggettoRisposta, ultimaEmail, avvisoRispondiA, clienteConEmail, testoVerifica, testoCompleto,
 } = await import('../frontend/ishtar-lab/chat/casella.mjs');
 
 // Venerdì 13 novembre 2026, 15:30 a Roma.
@@ -156,4 +157,61 @@ test('risposta incerta già rimandata come nuova: nessun altro «Send again»', 
   const [riga] = unisci(server, [], 'conv_1', [id]);
   assert.equal(riga.rimandata, true);
   assert.deepEqual(statoRisposta(riga, ADESSO), {testo: 'Not confirmed: sent again as a new message.', tono: 'warn', azione: null});
+});
+
+test('email: oggetto della risposta con un solo «Re:», la stessa regola del server', () => {
+  assert.equal(oggettoRisposta('Ordine 12'), 'Re: Ordine 12');
+  assert.equal(oggettoRisposta('RE: R: Re: Ordine 12'), 'Re: Ordine 12');
+  assert.equal(oggettoRisposta('AW: Sv: RIF: Spedizione'), 'Re: Spedizione');
+  assert.equal(oggettoRisposta('Re[2]: Antw: Reso'), 'Re: Reso');
+  assert.equal(oggettoRisposta('Recensione del prodotto'), 'Re: Recensione del prodotto');
+  assert.equal(oggettoRisposta(''), 'Re: Your message');
+  assert.equal(oggettoRisposta(null), 'Re: Your message');
+});
+
+test("email: l'ultima email del cliente, anche senza dettagli (segnaposto), e l'avviso sul Reply-To", () => {
+  const dettagli = {oggetto: 'Re: Ordine', reply_to: 'altro@example.com', verifica: 'verificato', allegati: [], testo_completo: null};
+  const messaggi = [
+    {id: 'a', direzione: 'entrata', testo: 'Prima', email: {...dettagli, reply_to: null}},
+    {id: 'b', direzione: 'entrata', testo: 'Seconda', email: dettagli},
+    {id: 'c', direzione: 'uscita', testo: 'Risposta', email: {oggetto: 'Re: Ordine', reply_to: null, verifica: null, allegati: [], testo_completo: null}},
+    {locale: true, id_client: 'x'.repeat(32), testo: 'In partenza', fase: 'invio'},
+  ];
+  assert.equal(ultimaEmail(messaggi).id, 'b');
+  assert.equal(ultimaEmail([...messaggi, {id: 'd', direzione: 'entrata', testo: '[This email could not be read: open it in your mail app]'}]).id, 'd');
+  assert.equal(ultimaEmail([]), null);
+  assert.equal(ultimaEmail(undefined), null);
+  assert.equal(avvisoRispondiA(messaggi[1], 'giulia@example.com'),
+    "This email asks to reply to altro@example.com. Replies go to giulia@example.com, the sender's address.");
+  assert.equal(avvisoRispondiA(messaggi[0], 'giulia@example.com'), null);
+  assert.equal(avvisoRispondiA({email: {reply_to: ' Giulia@Example.com '}}, 'giulia@example.com'), null);
+  assert.equal(avvisoRispondiA(null, 'giulia@example.com'), null);
+});
+
+test('email: cliente con lo stesso indirizzo (senza maiuscole); con più clienti nessuna proposta, solo l’elenco', () => {
+  const giulia = {id: 'cus_1', email: 'Giulia@Example.com'};
+  const omonima = {id: 'cus_2', email: ' giulia@example.com'};
+  const simile = {id: 'cus_3', email: 'giulia@example.com.evil'};
+  const senza = {id: 'cus_4', email: null};
+  assert.deepEqual(clienteConEmail([giulia, simile, senza], ' giulia@EXAMPLE.com'), {proposta: giulia, elenco: [giulia]});
+  assert.deepEqual(clienteConEmail([giulia, omonima, simile], 'giulia@example.com'), {proposta: null, elenco: [giulia, omonima]});
+  assert.deepEqual(clienteConEmail([simile, senza], 'giulia@example.com'), {proposta: null, elenco: []});
+  assert.deepEqual(clienteConEmail([giulia], ''), {proposta: null, elenco: []});
+  assert.deepEqual(clienteConEmail(undefined, 'giulia@example.com'), {proposta: null, elenco: []});
+});
+
+test('email: verifica del mittente detta in chiaro, «verificato» solo con DMARC', () => {
+  assert.equal(testoVerifica('verificato'), "The sender's domain is verified (DMARC)");
+  for (const v of ['non_verificato', 'sconosciuto', null, undefined, 'boh']) assert.equal(testoVerifica(v), "The sender's address is not verified: it can be forged");
+});
+
+test('email: testo intero con le citazioni, con gli allegati come nel testo mostrato', () => {
+  const m = {
+    testo: 'Va bene\n\n[Attachment: foto.jpg, 2 KB]\n[Attachment: video.mp4, 3.5 MB]',
+    email: {testo_completo: 'Va bene\n> Il pacco parte domani.', allegati: [{nome: 'foto.jpg', byte: 2048}, {nome: 'video.mp4', byte: 3.5 * 1024 * 1024}]},
+  };
+  assert.equal(testoCompleto(m), 'Va bene\n> Il pacco parte domani.\n\n[Attachment: foto.jpg, 2 KB]\n[Attachment: video.mp4, 3.5 MB]');
+  assert.equal(testoCompleto({testo: 'Va bene', email: {testo_completo: 'Va bene\n> citato', allegati: [{nome: 'n.txt', byte: 10}]}}), 'Va bene\n> citato\n\n[Attachment: n.txt, 1 KB]');
+  assert.equal(testoCompleto({testo: 'Solo testo'}), 'Solo testo');
+  assert.equal(testoCompleto({testo: 'x', email: {testo_completo: null, allegati: []}}), 'x');
 });

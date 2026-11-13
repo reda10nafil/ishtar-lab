@@ -9,7 +9,7 @@ import {richiesta} from './api.mjs';
 import {creaCasella} from './controllo.mjs';
 import {
   etichettaCanale, etichettaStato, nomeContatto, quandoElenco, quandoMessaggio, soldi, statoOrdine, unisci, statoRisposta,
-  testoErrore, nuovoId,
+  testoErrore, nuovoId, oggettoRisposta, ultimaEmail, avvisoRispondiA, clienteConEmail, testoVerifica, testoCompleto,
 } from './casella.mjs';
 import {attesaRiprova} from '../catalogo/collegamento.mjs';
 
@@ -177,7 +177,7 @@ function Elenco({s, scheda, id, larghezza}) {
       ? h(Vuoto, {icon: 'search', title: 'No chats match', body: 'Try another name or word.'})
       : scheda === 'closed'
         ? h(Vuoto, {icon: 'chat', title: 'No closed chats'})
-        : h(Vuoto, {icon: 'chat', title: 'No open chats', body: "When a customer writes to the shop's Telegram bot, the chat appears here."});
+        : h(Vuoto, {icon: 'chat', title: 'No open chats', body: "When a customer writes to the shop's Telegram bot or mailbox, the chat appears here."});
   } else {
     corpo = h('ul', {className: 'chat__righe'}, righe.map(r => h(Riga, {key: r.id, r, scheda, attiva: r.id === id, adesso, esito: s.esiti[r.id]})));
   }
@@ -265,6 +265,10 @@ function Aperta({s, scheda, id, conv, dati, larghezza}) {
   // Risposte da sistemare (non partite, rifiutate o non confermate): la chiusura chiede conferma e la chat chiusa lo dice.
   const daSistemare = messaggi.filter(m => ['riprova', 'rimanda', 'modifica'].includes(statoRisposta(m, adesso)?.azione)).length;
   const inviando = s.inSospeso.some(r => r.conversazione_id === id && r.fase === 'invio');
+  // Email: la risposta continua il filo dell'ultima email del cliente e va sempre a chi l'ha mandata.
+  const email = conv.canale === 'email';
+  const ultima = email ? ultimaEmail(messaggi) : null;
+  const rispondiA = email ? avvisoRispondiA(ultima, dati?.identita?.recapito) : null;
   const chiudi = async () => {
     if (daSistemare) {
       const una = daSistemare === 1;
@@ -296,6 +300,9 @@ function Aperta({s, scheda, id, conv, dati, larghezza}) {
         h('button', {type: 'button', className: 'btn btn--sm', onClick: () => casella.cambiaStato(id, 'aperta')}, 'Reopen'))
       : h(Fragment, null,
         h(Rapide, {righe: s.rapide.righe, errore: s.rapide.errore, inserisci}),
+        email && dati && h('div', {className: 'chat-email'},
+          rispondiA && h('p', {className: 'chat-avviso', role: 'note'}, rispondiA),
+          h('p', {className: 'chat-email__oggetto'}, 'Subject: ', h('b', null, oggettoRisposta(ultima?.email?.oggetto ?? conv.oggetto)))),
         h('form', {className: 'chat-scrivi', onSubmit: e => { e.preventDefault(); manda(); }},
           h('textarea', {
             ref: area, className: 'textarea chat-scrivi__testo', value: testo, maxLength: MASSIMO_RISPOSTA, rows: 1, disabled: !dati,
@@ -342,6 +349,7 @@ function Registro({messaggi, conversazione_id, riprendi, chiusa, adesso}) {
 }
 
 function Bolla({m, adesso, conversazione_id, riprendi, chiusa}) {
+  const [citato, cambiaCitato] = useState(false);
   const fuori = m.locale || m.direzione === 'uscita';
   const stato = statoRisposta(m, adesso);
   const riprova = () => (m.id_client ? casella.riprova({id_client: m.id_client, testo: m.testo, conversazione_id}) : rimanda());
@@ -359,7 +367,9 @@ function Bolla({m, adesso, conversazione_id, riprendi, chiusa}) {
   }
   const chi = fuori ? m.autore_nome || 'You' : null;
   return h('li', {className: `chat-bolla ${fuori ? 'chat-bolla--fuori' : 'chat-bolla--dentro'}`},
-    h('p', {className: 'chat-bolla__testo'}, m.testo),
+    h('p', {className: 'chat-bolla__testo'}, citato ? testoCompleto(m) : m.testo),
+    m.email?.testo_completo && h('button', {type: 'button', className: 'chat-bolla__citato', 'aria-expanded': citato, onClick: () => cambiaCitato(!citato)},
+      citato ? 'Hide quoted text' : 'Show quoted text'),
     h('div', {className: 'chat-bolla__piede'},
       h('small', null, [chi, quandoMessaggio(m.quando, adesso)].filter(Boolean).join(' · ')),
       stato && h('small', {className: `chat-stato chat-stato--${stato.tono}`}, stato.testo)),
@@ -394,6 +404,9 @@ function SchedaCliente({idConversazione}) {
     return h('div', {className: 'chat-scheda'},
       h('div', {className: 'chat-scheda__testa'}, h(Avatar, {name: contatto, size: 'lg'}), h('b', null, contatto), h('small', null, canale)),
       h('p', {className: 'chat-scheda__nota'}, 'Not linked to a shop customer.'),
+      identita.canale === 'email' && identita.recapito && h(PropostaEmail, {
+        key: identita.recapito, idConversazione, indirizzo: identita.recapito, verifica: ultimaEmail(dati.messaggi)?.email?.verifica,
+      }),
       h('p', {className: 'chat-aiuto'}, 'Link this chat to a shop customer to see their details and orders.'),
       h('button', {type: 'button', className: 'btn btn--primary', onClick: () => apriCollega(idConversazione, contatto, etichettaCanale(identita.canale))}, h(Icona, {name: 'user'}), 'Link to customer'));
   }
@@ -436,6 +449,33 @@ function SchedaCliente({idConversazione}) {
         h('b', {className: 'chat-ordine__totale'}, soldi(o.totale, o.valuta)));
     })) : h('p', {className: 'chat-aiuto'}, 'No orders yet.'),
     h('button', {type: 'button', className: 'btn btn--sm chat-scheda__scollega', onClick: () => scollega(nome)}, 'Unlink'));
+}
+
+// Cliente del negozio con lo stesso indirizzo email del mittente: una proposta se è uno solo, l'elenco se sono di più.
+// La conferma dice se il dominio del mittente è verificato: un indirizzo non verificato si può falsificare.
+function PropostaEmail({idConversazione, indirizzo, verifica}) {
+  const [esito, cambiaEsito] = useState({proposta: null, elenco: []});
+  useEffect(() => {
+    let valida = true;
+    casella.cercaClienti(indirizzo).then(({righe}) => valida && cambiaEsito(clienteConEmail(righe, indirizzo)), () => {});
+    return () => { valida = false; };
+  }, [indirizzo]);
+  if (!esito.elenco.length) return null;
+  const collega = async cliente => {
+    const nome = nomeCliente(cliente);
+    const si = await conferma({title: 'Link this chat?', ok: 'Link', body: `${testoVerifica(verifica)}. Link this chat to ${nome} (${cliente.email.trim()})?`});
+    if (si) casella.collega(idConversazione, cliente.id);
+  };
+  if (esito.proposta) {
+    return h('div', {className: 'chat-proposta'},
+      h('p', null, `This email address belongs to ${nomeCliente(esito.proposta)}`),
+      h('button', {type: 'button', className: 'btn btn--sm btn--primary', onClick: () => collega(esito.proposta)}, h(Icona, {name: 'user', size: 'sm'}), 'Link'));
+  }
+  return h('div', {className: 'chat-proposta'},
+    h('p', null, `${esito.elenco.length} customers use this email address: link the right one.`),
+    h('ul', {className: 'chat-cerca__righe'}, esito.elenco.map(c => h('li', {key: c.id},
+      h('span', {className: 'cell__text'}, h('b', null, nomeCliente(c)), h('small', null, [c.telefono, c.citta].filter(Boolean).join(' · ') || c.email)),
+      h('button', {type: 'button', className: 'btn btn--sm', onClick: () => collega(c)}, 'Link')))));
 }
 
 function apriCollega(idConversazione, contatto, canale) {
