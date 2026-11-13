@@ -13,7 +13,8 @@
 /* Elenco */
 .chat__strumenti { display: flex; gap: 8px; padding: 12px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
 .chat__strumenti .inwrap { flex: 1 1 140px; min-width: 0; max-width: none; }
-.chat__canale { flex: 0 0 124px; width: 124px; }
+/* Larghezza del testo più lungo («All channels»): una misura fissa lo tagliava sul telefono. */
+.chat__canale { flex: 0 0 auto; width: auto; }
 .chat__scorri { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 .chat__righe { list-style: none; margin: 0; padding: 6px; }
 .chat-riga {
@@ -54,6 +55,12 @@
 .chat-bolla__piede { display: flex; gap: 8px; flex-wrap: wrap; color: var(--muted); font-size: var(--fs-2xs); }
 .chat-bolla--fuori .chat-bolla__piede { justify-content: flex-end; }
 .chat-bolla__motivo { color: var(--muted); font-size: var(--fs-2xs); }
+.chat-bolla__citato {
+  align-self: flex-start; padding: 2px 0; border: 0; background: none; color: var(--accent-text); font: inherit;
+  font-size: var(--fs-2xs); font-weight: 600; cursor: pointer;
+}
+.chat-bolla__citato:hover { text-decoration: underline; }
+.chat-bolla__avviso { color: var(--warn); font-size: var(--fs-2xs); font-weight: 600; max-width: 100%; }
 .chat-bolla__azioni { display: flex; gap: 6px; flex-wrap: wrap; }
 .chat-nuovi { position: sticky; bottom: 4px; align-self: center; list-style: none; }
 .chat-stato--good { color: var(--good); }
@@ -63,6 +70,14 @@
 .chat-rapide { display: flex; gap: 6px; padding: 8px 14px 0; overflow-x: auto; scrollbar-width: thin; }
 .chat-rapide .chip { flex: none; max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
 .chat-scrivi { display: flex; gap: 8px; align-items: flex-end; padding: 10px 14px 14px; }
+/* «Send» alto quanto la casella di scrittura su una riga (il pulsante del kit è 4 px più basso). */
+.chat-scrivi .btn { height: 44px; }
+.chat-email { display: flex; flex-direction: column; gap: 6px; padding: 8px 14px 0; }
+.chat-email .chat-avviso { margin: 0; overflow-wrap: anywhere; }
+.chat-email__oggetto {
+  margin: 0; color: var(--muted); font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.chat-email__oggetto b { color: var(--ink-2); font-weight: 600; }
 .chat-scrivi__testo {
   flex: 1; height: auto; min-height: 44px; max-height: 160px; padding: 11px 13px; resize: none; line-height: 1.4;
   field-sizing: content; color: var(--ink);
@@ -88,6 +103,12 @@
 .chat-scheda__contatti a { display: inline-flex; gap: 6px; align-items: center; color: var(--accent-text); overflow-wrap: anywhere; }
 .chat-scheda__nota { margin: 0; color: var(--ink-2); white-space: pre-wrap; overflow-wrap: anywhere; }
 .chat-scheda__scollega { align-self: center; margin-top: 6px; }
+.chat-proposta {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 10px 12px; border-radius: var(--r-sm);
+  background: var(--accent-soft);
+}
+.chat-proposta p { margin: 0; overflow-wrap: anywhere; }
+.chat-proposta ul { align-self: stretch; }
 .chat-ordini { list-style: none; margin: 0; padding: 0; }
 .chat-ordine { display: flex; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
 .chat-ordine .cell__text { flex: 1; display: flex; flex-direction: column; }

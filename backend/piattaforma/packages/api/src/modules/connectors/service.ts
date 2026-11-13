@@ -1,7 +1,7 @@
 import { MedusaError, MedusaService } from "@medusajs/framework/utils"
 import { ConnectorAccount } from "./models/connector-account"
 import { OauthState } from "./models/oauth-state"
-import { catalogoAttivo, trovaServizio, valoriValidi, type Servizio, type Token, type Valori } from "./catalogo"
+import { catalogoAttivo, segretoDaRiscrivere, trovaServizio, valoriValidi, type Servizio, type Token, type Valori } from "./catalogo"
 import { cifra, controllaChiave, decifra } from "./crypto"
 import { eseguiProva } from "./prova"
 import { creaPkce, creaStato, improntaStato, rinnovaToken, scambiaCodice, urlAutorizzazione } from "./oauth"
@@ -26,6 +26,11 @@ function servizioOErrore(id: string): Servizio {
   const servizio = trovaServizio(id)
   if (!servizio) throw new MedusaError(MedusaError.Types.NOT_FOUND, "Unknown service")
   return servizio
+}
+
+/** Le credenziali salvate sono ancora quelle usate (ogni valore usato coincide con quello salvato)? */
+export function stessiValori(salvati: Record<string, string> | undefined, usati: Record<string, string>): boolean {
+  return Boolean(salvati) && Object.entries(usati).every(([chiave, valore]) => salvati![chiave] === valore)
 }
 
 export default class ConnectorsModuleService extends MedusaService({ ConnectorAccount, OauthState }) {
@@ -112,6 +117,10 @@ export default class ConnectorsModuleService extends MedusaService({ ConnectorAc
     const conto = await this.conto(id)
     // Credenziali illeggibili: si riparte dai valori inseriti ora (per i servizi con login serve un nuovo accesso).
     const precedenti = (conto ? this.leggiSegretiSicuri(conto.secret) : null) ?? { valori: {} as Valori }
+    if (conto && segretoDaRiscrivere(servizio, precedenti.valori, inseriti)) {
+      const segreti = servizio.campi.filter((c) => c.segreto).map((c) => c.etichetta.toLowerCase()).join(" and ")
+      throw new MedusaError(MedusaError.Types.INVALID_DATA, `Enter the ${segreti} again to change these settings`)
+    }
     const noti = new Set(servizio.campi.map((c) => c.chiave))
     const pulito: Valori = { ...precedenti.valori }
     for (const [k, v] of Object.entries(inseriti)) {
@@ -165,11 +174,16 @@ export default class ConnectorsModuleService extends MedusaService({ ConnectorAc
    * console. Con `token` l'errore vale solo se le credenziali salvate sono ancora quelle usate: un token appena cambiato
    * e verificato non torna in errore per la risposta arrivata al token vecchio.
    */
-  async segnaErrore(id: string, messaggio: string, token?: string) {
+  /**
+   * Mette il connettore in errore con un messaggio fisso. `usati`: le credenziali con cui è fallita la chiamata (per
+   * Telegram il token): se nel frattempo sono cambiate, l'errore riguarda quelle vecchie e il connettore non si tocca.
+   */
+  async segnaErrore(id: string, messaggio: string, usati?: string | Record<string, string>) {
     servizioOErrore(id)
     const conto = await this.conto(id)
     if (!conto) return
-    if (token !== undefined && this.leggiSegretiSicuri(conto.secret)?.valori.bot_token !== token) return
+    const controllo = typeof usati === "string" ? { bot_token: usati } : usati
+    if (controllo !== undefined && !stessiValori(this.leggiSegretiSicuri(conto.secret)?.valori, controllo)) return
     await this.updateConnectorAccounts({ id: conto.id, status: "errore", last_error: messaggio, last_checked_at: new Date() })
   }
 

@@ -67,7 +67,7 @@ La ricognizione del 13 novembre (codice di v1 e v2, documentazione ufficiale dei
 |---|---|---|
 | 1 | Nucleo delle conversazioni nel backend, API per la casella, permesso, risposte rapide; canale Telegram (lettura a intervalli e invio) | un bot Telegram di prova del negozio, creato con @BotFather e usato solo per i clienti, con il token inserito da Marco nella console › Connettori › Telegram |
 | 2 | Pagina «Chats» nel primo pannello con la scheda cliente, attraverso il ponte (fatta il 13/11: [[CRM omnicanale - piano tappa 2]]) | niente |
-| 3 | Email: lettura IMAP della casella del negozio, risposte via SMTP nello stesso filo | una casella email di prova con IMAP attivo e password per app, inserita da Marco nella console |
+| 3 | Email: lettura IMAP della casella del negozio, risposte via SMTP nello stesso filo (fatta il 13/11: [[CRM omnicanale - piano tappa 3]]) | una casella email di prova con IMAP attivo e password per app, inserita da Marco nella console |
 | 4 | Chat del sito: rotte pubbliche per il negozio, aggiornamento in tempo reale, piccolo widget | il sito del negozio su cui provarla |
 | 5 | WhatsApp, Instagram, Messenger: webhook firmati, finestra di 24 ore, modelli WhatsApp | app Meta per sviluppatori, portafoglio business, numero di prova WhatsApp, Pagina Facebook e profilo Instagram professionale di prova, un indirizzo HTTPS pubblico |
 | 6 | Connettori per spedizioni (Sendcloud), pagamenti (Stripe), Google Analytics e Search Console per SEO e GEO | account di prova dei servizi scelti |
@@ -76,4 +76,4 @@ Ogni tappa è una pull request con test, prove dal vivo, revisione avversariale 
 
 ## Lasciato a chi costruisce
 
-Nomi interni, struttura dei file, messaggi dell'interfaccia (in inglese come il resto della console), intervalli di lettura, limiti di lunghezza: decisi nei piani di ogni tappa. Piani: [[CRM omnicanale - piano tappa 1]], [[CRM omnicanale - piano tappa 2]].
+Nomi interni, struttura dei file, messaggi dell'interfaccia (in inglese come il resto della console), intervalli di lettura, limiti di lunghezza: decisi nei piani di ogni tappa. Piani: [[CRM omnicanale - piano tappa 1]], [[CRM omnicanale - piano tappa 2]], [[CRM omnicanale - piano tappa 3]].

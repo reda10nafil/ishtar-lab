@@ -29,7 +29,6 @@
     "cloud:prebuild": "mercurjs codegen"
   },
   "dependencies": {
-    "ipaddr.js": "2.2.0",
     "@medusajs/admin-sdk": "2.22.3",
     "@medusajs/admin-shared": "2.22.3",
     "@medusajs/cli": "2.22.3",
@@ -42,7 +41,10 @@
     "@mercurjs/core": "2.4.1",
     "@mercurjs/types": "2.4.1",
     "http-proxy-middleware": "3.0.7",
-    "nodemailer": "7"
+    "imapflow": "2.11.0",
+    "ipaddr.js": "2.2.0",
+    "nodemailer": "10.5.0",
+    "postal-mime": "4.2.1"
   },
   "devDependencies": {
     "@acme/admin": "*",

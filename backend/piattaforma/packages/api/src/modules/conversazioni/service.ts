@@ -1,10 +1,14 @@
 import { InjectTransactionManager, MedusaContext, MedusaError, MedusaService } from "@medusajs/framework/utils"
 import type { Context, InferTypeOf } from "@medusajs/framework/types"
 import { Conversazione } from "./models/conversazione"
+import { Cursore } from "./models/cursore"
 import { Identita } from "./models/identita"
 import { Messaggio } from "./models/messaggio"
 import { RispostaRapida } from "./models/risposta-rapida"
-import { chiaveInArrivo, chiaveUscita, decidiInvio, estratto, filtroNuoviDopo, statoDopo, statoDopoFallimento, type Decisione } from "./regole"
+import { idClientDaMessageId } from "./canali/email-regole"
+import {
+  chiaveInArrivo, chiaveUscita, decidiInvio, estratto, filtroNuoviDopo, ORDINE_MESSAGGI, statoDopo, statoDopoFallimento, type Decisione,
+} from "./regole"
 import type { InArrivo } from "./tipi"
 
 export type MessaggioDTO = InferTypeOf<typeof Messaggio>
@@ -23,7 +27,7 @@ const unicita = (errore: unknown) => ERRORE_UNICITA.test(String((errore as Error
 
 // Le chiavi finiscono in «a» o in «e»: per le parole in «o» il plurale dei tipi (Messaggioes) e quello a runtime
 // (Messaggios) sono diversi, e i metodi generati non esisterebbero.
-export default class ConversazioniModuleService extends MedusaService({ Conversazione, Battuta: Messaggio, Identita, RispostaRapida }) {
+export default class ConversazioniModuleService extends MedusaService({ Conversazione, Battuta: Messaggio, Identita, RispostaRapida, Cursore }) {
   /**
    * Messaggio di un cliente arrivato da un canale. Messaggio, identità e conversazione si scrivono in una sola
    * transazione: un guasto a metà non lascia un messaggio registrato in una conversazione mai aggiornata (la rilettura lo
@@ -49,7 +53,9 @@ export default class ConversazioniModuleService extends MedusaService({ Conversa
     const [gia] = await this.listBattutas({ chiave_unica: chiave }, { take: 1 }, contesto)
     if (gia) return { conversazione_id: gia.conversazione_id, messaggio_id: gia.id, nuovo: false }
 
-    const identita = await this.identitaPer(e, contesto)
+    // Un'email che non passa DMARC può essere falsa: non cambia il nome del contatto né l'oggetto della conversazione.
+    const sospetta = (e.dettagli as { verifica?: string } | null | undefined)?.verifica === "non_verificato"
+    const identita = await this.identitaPer(e, contesto, !sospetta)
     const [ultima] = await this.listConversaziones({ identita_id: identita.id }, { order: { ultimo_messaggio_il: "DESC" }, take: 1 }, contesto)
     const conversazione = ultima ?? (await this.createConversaziones({
       canale: e.canale,
@@ -69,6 +75,7 @@ export default class ConversazioniModuleService extends MedusaService({ Conversa
       chiave_unica: chiave,
       id_esterno: e.id_messaggio,
       stato_consegna: "ricevuto",
+      dettagli: e.dettagli ?? null,
     }, contesto)
 
     // Un messaggio arrivato in ritardo (più vecchio dell'ultimo) non sposta l'anteprima.
@@ -77,16 +84,31 @@ export default class ConversazioniModuleService extends MedusaService({ Conversa
       id: conversazione.id,
       stato: statoDopo(conversazione.stato, "entrata"),
       non_letti: conversazione.non_letti + 1,
-      ...(piuVecchio ? {} : { ultimo_messaggio_il: e.quando, ultimo_estratto: estratto(e.testo) }),
+      ...(piuVecchio ? {} : { ultimo_messaggio_il: e.quando, ultimo_estratto: estratto(e.testo), ...(e.oggetto && !sospetta ? { oggetto: e.oggetto } : {}) }),
     }, contesto)
     return { conversazione_id: conversazione.id, messaggio_id: messaggio.id, nuovo: true }
   }
 
+  /** Punto di lettura salvato di un canale (null: mai letto). */
+  async leggiCursore(canale: string, account: string, cartella: string): Promise<{ uidvalidity: string; ultimo_uid: number } | null> {
+    const [c] = await this.listCursores({ canale, account, cartella }, { take: 1 })
+    return c ? { uidvalidity: c.uidvalidity, ultimo_uid: Number(c.ultimo_uid) } : null
+  }
+
+  /** Salva il punto di lettura (solo il job di lettura, sotto il suo lucchetto, scrive il cursore del suo canale). */
+  async salvaCursore(canale: string, account: string, cartella: string, valore: { uidvalidity: string; ultimo_uid: number }): Promise<void> {
+    const dati = { uidvalidity: valore.uidvalidity, ultimo_uid: String(valore.ultimo_uid) }
+    const [c] = await this.listCursores({ canale, account, cartella }, { take: 1 })
+    if (c) await this.updateCursores({ id: c.id, ...dati })
+    else await this.createCursores({ canale, account, cartella, ...dati })
+  }
+
   /** Identità del contatto per canale e account: creata la prima volta, nome e recapito aggiornati se il canale li cambia. */
-  private async identitaPer(e: InArrivo, contesto: Context) {
+  private async identitaPer(e: InArrivo, contesto: Context, aggiorna = true) {
     const filtro = { canale: e.canale, account: e.account, id_contatto: e.id_contatto }
     const [esistente] = await this.listIdentitas(filtro, { take: 1 }, contesto)
     if (!esistente) return this.createIdentitas({ ...filtro, nome: e.nome, recapito: e.recapito }, contesto)
+    if (!aggiorna) return esistente
     const cambi = {
       ...(e.nome && e.nome !== esistente.nome ? { nome: e.nome } : {}),
       ...(e.recapito && e.recapito !== esistente.recapito ? { recapito: e.recapito } : {}),
@@ -175,6 +197,26 @@ export default class ConversazioniModuleService extends MedusaService({ Conversa
     return { messaggio: inCoda, decisione }
   }
 
+  /**
+   * Ultimo messaggio del cliente nella conversazione, in ordine di arrivo: le sue intestazioni dicono a cosa si risponde.
+   * Si salta un'email che non passa DMARC (forse falsa): la risposta non ne prende oggetto e filo.
+   */
+  async ultimoInArrivo(conversazione_id: string): Promise<MessaggioDTO | null> {
+    const ultimi = await this.listBattutas({ conversazione_id, direzione: "entrata" }, { order: ORDINE_MESSAGGI, take: 20 })
+    return ultimi.find((m) => (m.dettagli as { verifica?: string } | null)?.verifica !== "non_verificato") ?? null
+  }
+
+  /**
+   * Intestazioni di una risposta email, salvate prima del tentativo: il Message-ID (anche come `id_esterno`) riconosce i
+   * rimbalzi e, se l'invio resta incerto, dice quale email cercare nella posta inviata.
+   */
+  async dettagliUscita(
+    messaggio_id: string,
+    dettagli: { message_id: string; in_reply_to: string | null; references: string[]; oggetto: string }
+  ): Promise<void> {
+    await this.updateBattutas({ id: messaggio_id, id_esterno: dettagli.message_id, dettagli })
+  }
+
   /** Si sta per chiamare il canale: da qui una risposta rimasta in coda forse è arrivata. */
   async segnaTentativo(messaggio_id: string): Promise<void> {
     await this.updateBattutas({ id: messaggio_id, tentato_il: new Date() })
@@ -190,6 +232,33 @@ export default class ConversazioniModuleService extends MedusaService({ Conversa
     const messaggio = await this.updateBattutas({ id: messaggio_id, stato_consegna: esito.stato, errore: esito.errore }, contesto)
     const conversazione = await this.retrieveConversazione(messaggio.conversazione_id, {}, contesto)
     await this.updateConversaziones({ id: conversazione.id, stato: statoDopoFallimento(conversazione.stato) }, contesto)
+  }
+
+  /**
+   * Rimbalzo di una nostra email (rapporto «Action: failed»): la risposta con quel Message-ID non è arrivata. Diventa
+   * «fallita» con il motivo del server; la conversazione torna al team anche se era chiusa, con un segno da leggere, perché
+   * il rimbalzo arriva quando nessuno la guarda. Si ignora un rapporto che non riguarda una nostra risposta, il suo
+   * destinatario o il suo ultimo tentativo (uno più vecchio, riletto dopo un cambio di UIDVALIDITY).
+   */
+  @InjectTransactionManager()
+  async segnaRimbalzo(
+    message_id: string,
+    motivo: string,
+    { destinatari, quando }: { destinatari: string[]; quando: Date },
+    @MedusaContext() contesto: Context = {}
+  ): Promise<boolean> {
+    const id_client = idClientDaMessageId(message_id)
+    if (!id_client) return false
+    const [risposta] = await this.listBattutas({ chiave_unica: chiaveUscita(id_client), direzione: "uscita" }, { take: 1 }, contesto)
+    if (!risposta || (risposta.id_esterno && risposta.id_esterno !== message_id)) return false
+    if (!["inviato", "incerto", "fallito"].includes(risposta.stato_consegna)) return false
+    // Due minuti di tolleranza per gli orologi del server di posta e dell'API.
+    if (risposta.tentato_il && new Date(quando).getTime() < new Date(risposta.tentato_il).getTime() - 2 * 60_000) return false
+    const conversazione = await this.retrieveConversazione(risposta.conversazione_id, { relations: ["identita"] }, contesto)
+    if (!destinatari.includes(conversazione.identita.id_contatto.toLowerCase())) return false
+    await this.updateBattutas({ id: risposta.id, stato_consegna: "fallito", errore: `The email was not delivered: ${motivo}` }, contesto)
+    await this.updateConversaziones({ id: conversazione.id, stato: "aperta", non_letti: conversazione.non_letti + 1 }, contesto)
+    return true
   }
 
   /**

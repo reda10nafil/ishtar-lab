@@ -1,3 +1,6 @@
+import type { EsitoProva } from "./prova"
+import { provaCasella } from "../conversazioni/canali/email-connessioni"
+
 /**
  * Catalogo dei servizi collegabili. Ogni voce descrive come si accede e come provare il collegamento.
  * `confermato: false` indica che indirizzi o metodo non sono stati riscontrati nella documentazione
@@ -12,6 +15,8 @@ export type Campo = {
   segnaposto?: string
   aiuto?: string
   facoltativo?: boolean
+  /** Server o account a cui vanno i campi segreti: cambiarlo richiede di riscriverli (non vanno a un server nuovo da soli). */
+  legatoAlSegreto?: boolean
 }
 
 export type Valori = Record<string, string>
@@ -53,6 +58,8 @@ export type Servizio = {
   iscrizione?: string
   oauth?: ConfigOAuth
   prova?: (valori: Valori, token?: Token) => RichiestaProva
+  /** Prova che non è una richiesta HTTP (per esempio login IMAP e SMTP della casella email): ha la precedenza su `prova`. */
+  provaPersonalizzata?: (valori: Valori) => Promise<EsitoProva>
   valida?: (valori: Valori) => string | null
   /** Area che verrà usata solo con le vendite, l'ultima fase. */
   fase?: "vendite"
@@ -327,6 +334,52 @@ export const CATALOGO: Servizio[] = [
     }),
   },
   {
+    id: "casella_email",
+    nome: "Shop mailbox",
+    fornitore: "IMAP / SMTP",
+    categoria: "email",
+    descrizione:
+      "The shop's email address: customer emails appear in Chats and replies go out in the same thread. Works with Gmail, Aruba, Libero, Register.it, iCloud and Yahoo; Outlook and Microsoft 365 are not supported yet.",
+    accesso: "chiave",
+    campi: [
+      { chiave: "indirizzo", etichetta: "Email address", segreto: false, segnaposto: "shop@example.com", aiuto: "The address customers write to", legatoAlSegreto: true },
+      { chiave: "nome", etichetta: "Sender name", segreto: false, facoltativo: true, segnaposto: "Ishtar Hub", aiuto: "Shown to customers next to the address" },
+      { chiave: "utente", etichetta: "Username", segreto: false, facoltativo: true, aiuto: "Leave empty to use the email address", legatoAlSegreto: true },
+      {
+        chiave: "password",
+        etichetta: "Password",
+        segreto: true,
+        aiuto: "Gmail, iCloud and Yahoo: an app password (needs two-step verification). Aruba, Libero and Register.it: the mailbox password",
+      },
+      { chiave: "imap_host", etichetta: "IMAP server", segreto: false, segnaposto: "imap.gmail.com", aiuto: "Aruba: imaps.aruba.it · Libero: imapmail.libero.it", legatoAlSegreto: true },
+      { chiave: "imap_porta", etichetta: "IMAP port", segreto: false, facoltativo: true, segnaposto: "993", legatoAlSegreto: true },
+      { chiave: "smtp_host", etichetta: "SMTP server", segreto: false, segnaposto: "smtp.gmail.com", aiuto: "Aruba: smtps.aruba.it · Libero: smtp.libero.it", legatoAlSegreto: true },
+      { chiave: "smtp_porta", etichetta: "SMTP port", segreto: false, facoltativo: true, segnaposto: "465", aiuto: "465 (SSL) or 587 (STARTTLS)", legatoAlSegreto: true },
+      {
+        chiave: "server_verifica",
+        etichetta: "Sender check server",
+        segreto: false,
+        facoltativo: true,
+        segnaposto: "mx.google.com",
+        aiuto: "Optional: the name your mail server writes in Authentication-Results, to tell customers' real addresses from forged ones",
+      },
+    ],
+    documentazione: "https://support.google.com/mail/answer/7126229",
+    confermato: true,
+    valida: (v) => {
+      if (!/^[^\s@<>()",;:]+@[^\s@<>()",;:]+\.[a-z0-9-]{2,}$/i.test(v.indirizzo?.trim() ?? "")) return "Enter a valid email address"
+      for (const campo of ["imap_host", "smtp_host"]) {
+        if (!/^[a-z0-9.-]+$/i.test(v[campo]?.trim() ?? "")) return "Enter only the server name, for example imap.gmail.com"
+      }
+      for (const campo of ["imap_porta", "smtp_porta"]) {
+        const porta = v[campo]?.trim()
+        if (porta && (!/^\d{1,5}$/.test(porta) || Number(porta) < 1 || Number(porta) > 65535)) return "Ports are numbers, for example 993"
+      }
+      return null
+    },
+    provaPersonalizzata: (valori) => provaCasella(valori),
+  },
+  {
     id: "sendcloud",
     nome: "Sendcloud",
     fornitore: "Sendcloud",
@@ -453,7 +506,7 @@ export const CATALOGO: Servizio[] = [
     descrizione: "Import products and orders from a WordPress site.",
     accesso: "chiave",
     campi: [
-      { chiave: "site", etichetta: "Site address", segreto: false, segnaposto: "https://yourshop.com" },
+      { chiave: "site", etichetta: "Site address", segreto: false, segnaposto: "https://yourshop.com", legatoAlSegreto: true },
       { chiave: "consumer_key", etichetta: "Consumer key", segreto: false },
       { chiave: "consumer_secret", etichetta: "Consumer secret", segreto: true },
     ],
@@ -549,4 +602,15 @@ export function valoriValidi(servizio: Servizio, valori: Valori): string | null 
     if (valore && valore.length > 4096) return `${campo.etichetta} is too long`
   }
   return servizio.valida?.(valori) ?? null
+}
+
+/**
+ * Vero se i valori inseriti cambiano un server o un account legato ai campi segreti senza riscriverli: il segreto salvato
+ * andrebbe da solo al server nuovo, scelto da chi modifica (che i segreti non li vede).
+ */
+export function segretoDaRiscrivere(servizio: Servizio, salvati: Valori | undefined, inseriti: Record<string, unknown>): boolean {
+  if (!salvati) return false
+  const scritto = (chiave: string) => typeof inseriti[chiave] === "string" && (inseriti[chiave] as string).trim() !== ""
+  const cambiato = servizio.campi.some((c) => c.legatoAlSegreto && scritto(c.chiave) && (inseriti[c.chiave] as string).trim() !== (salvati[c.chiave] ?? ""))
+  return cambiato && servizio.campi.some((c) => c.segreto && !scritto(c.chiave))
 }
