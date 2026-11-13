@@ -26,7 +26,8 @@ export async function richiesta(percorso, {metodo = 'GET', corpo, fetch: prendi}
   try {
     dati = await risposta.json();
   } catch {
-    throw new ErroreRichiesta(`Request failed (${risposta.status})`, {stato: risposta.status});
+    // Corpo illeggibile: con una risposta riuscita la scrittura può essere avvenuta, l'esito non si conosce (stato 0).
+    throw new ErroreRichiesta(`Request failed (${risposta.status})`, {stato: risposta.ok ? 0 : risposta.status});
   }
   if (!risposta.ok) throw new ErroreRichiesta(dati?.message || `Request failed (${risposta.status})`, {stato: risposta.status, codice: dati?.code, dati});
   return dati;

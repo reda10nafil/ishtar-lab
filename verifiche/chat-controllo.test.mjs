@@ -42,13 +42,13 @@ function fintoServer() {
 
 function ambiente(extra = {}) {
   const avvisi = [];
-  const stato = {visibile: true, inPrimoPiano: true, vista: 'conv_A', ...extra};
+  const stato = {visibile: true, inPrimoPiano: true, vista: 'conv_A', inFondo: true, ...extra};
   return {
     avvisi, stato,
     adesso: () => ADESSO,
     visibile: () => stato.visibile,
     inPrimoPiano: () => stato.inPrimoPiano,
-    vista: () => ({id: stato.vista}),
+    vista: () => ({id: stato.vista, inFondo: stato.inFondo}),
     avviso: testo => avvisi.push(testo),
   };
 }
@@ -86,12 +86,12 @@ test("dettaglio di un'altra conversazione non si applica", async () => {
 
 test('letta solo con la pagina visibile, in primo piano e sulla conversazione', async () => {
   const server = fintoServer(), amb = ambiente({visibile: false});
-  server.su('GET', /^\/api\/conversazioni\?/, () => elenco(['conv_A'], {aperte: 1, chiuse: 0, non_lette: 1}));
-  server.su('GET', '/api/conversazioni/conv_A', () => dettaglio('conv_A', [entrata('msgc_1'), entrata('msgc_2')], {non_letti: 2}));
-  server.su('POST', '/api/conversazioni/conv_A/letta', () => ({ok: true}));
+  let letta = false;
+  server.su('GET', /^\/api\/conversazioni\?/, () => ({conversazioni: [riga('conv_A', {non_letti: letta ? 0 : 2})], conteggi: {aperte: 1, chiuse: 0, non_lette: letta ? 0 : 1}, totale: 1}));
+  server.su('GET', '/api/conversazioni/conv_A', () => dettaglio('conv_A', [entrata('msgc_1'), entrata('msgc_2')], {non_letti: letta ? 0 : 2}));
+  server.su('POST', '/api/conversazioni/conv_A/letta', () => { letta = true; return {ok: true}; });
   const casella = crea(server, amb);
   await casella.aggiorna({elenco: true});
-  casella.istantanea().elenco.righe[0].non_letti = 2;
   casella.apri('conv_A');
   await giri();
   assert.equal(server.di('POST', '/api/conversazioni/conv_A/letta').length, 0, 'pagina nascosta');
@@ -104,7 +104,12 @@ test('letta solo con la pagina visibile, in primo piano e sulla conversazione', 
   await casella.segnaLetta();
   assert.equal(server.di('POST', '/api/conversazioni/conv_A/letta').length, 0, 'altra conversazione sullo schermo');
   amb.stato.vista = 'conv_A';
+  amb.stato.inFondo = false;
   await casella.segnaLetta();
+  assert.equal(server.di('POST', '/api/conversazioni/conv_A/letta').length, 0, 'registro scorso in su: gli ultimi messaggi non sono sullo schermo');
+  amb.stato.inFondo = true;
+  await casella.segnaLetta();
+  await giri();
   const lette = server.di('POST', '/api/conversazioni/conv_A/letta');
   assert.equal(lette.length, 1);
   assert.deepEqual(lette[0].corpo, {ultimo_visto: 'msgc_2'});
@@ -262,3 +267,108 @@ test('risposta non riuscita con la conversazione chiusa sullo schermo: avviso', 
   assert.equal(amb.avvisi.length, 1);
   assert.match(amb.avvisi[0], /not sent/i);
 });
+
+test('risposta non riuscita mentre lo schermo mostra altro: avviso e segno sulla conversazione finché non si apre', async () => {
+  const server = fintoServer(), amb = ambiente();
+  server.su('POST', '/api/conversazioni/conv_A/messaggi', corpo => ({messaggio: {...uscita('msgc_9', corpo.id, 'fallito', corpo.testo), errore: 'The customer blocked the bot or never started it'}}));
+  const casella = crea(server, amb);
+  casella.apri('conv_A');
+  await giri();
+  amb.stato.vista = null; // Reda è passato a un'altra pagina: la conversazione resta «aperta» nel controllo
+  await casella.rispondi('conv_A', 'Ciao');
+  assert.equal(amb.avvisi.length, 1);
+  assert.match(amb.avvisi[0], /^Your reply to Cliente conv_A was not sent: The customer blocked the bot/);
+  assert.equal(casella.istantanea().esiti.conv_A?.stato, 'fallito');
+  amb.stato.vista = 'conv_A';
+  await casella.aggiorna({dettaglio: true});
+  assert.equal(casella.istantanea().esiti.conv_A, undefined, 'aperta sullo schermo: il segno sparisce');
+});
+
+test('risposta incerta fuori dallo schermo: l\'avviso non dice «not sent»', async () => {
+  const server = fintoServer(), amb = ambiente({vista: null});
+  server.su('POST', '/api/conversazioni/conv_A/messaggi', corpo => ({messaggio: uscita('msgc_9', corpo.id, 'incerto', corpo.testo)}));
+  const casella = crea(server, amb);
+  casella.apri('conv_A');
+  await giri();
+  await casella.rispondi('conv_A', 'Ciao');
+  assert.equal(amb.avvisi.length, 1);
+  assert.match(amb.avvisi[0], /may not have arrived/);
+  assert.doesNotMatch(amb.avvisi[0], /not sent/);
+});
+
+test('risposta con un esito strano (non 4xx): resta in attesa con lo stesso id, mai «rifiutata»', async () => {
+  const server = fintoServer();
+  server.su('POST', '/api/conversazioni/conv_A/messaggi', () => new ErroreRichiesta('Moved', {stato: 302}));
+  const casella = crea(server);
+  casella.apri('conv_A');
+  await giri();
+  await casella.rispondi('conv_A', 'Ciao');
+  assert.equal(casella.istantanea().inSospeso[0].fase, 'attesa');
+});
+
+test('«Send again» non cancella la bozza in corso', async () => {
+  const server = fintoServer();
+  server.su('POST', '/api/conversazioni/conv_A/messaggi', corpo => ({messaggio: uscita('msgc_10', corpo.id, 'inviato', corpo.testo)}));
+  const casella = crea(server);
+  casella.apri('conv_A');
+  await giri();
+  casella.bozza('conv_A', 'Ti mando anche le misure');
+  await casella.rimanda({testo: 'Ciao', conversazione_id: 'conv_A'});
+  assert.equal(casella.bozza('conv_A'), 'Ti mando anche le misure');
+});
+
+test('nuovo invio dopo un cambio di conversazione: ultimo_visto della sua conversazione, mai null', async () => {
+  const server = fintoServer(), corpi = [];
+  server.su('GET', '/api/conversazioni/conv_B', () => dettaglio('conv_B', [entrata('msgc_7')]));
+  server.su('POST', '/api/conversazioni/conv_A/messaggi', corpo => { corpi.push(corpo); return {messaggio: uscita('msgc_11', corpo.id, 'inviato', corpo.testo)}; });
+  server.su('POST', '/api/conversazioni/conv_A/stato', corpo => { corpi.push(corpo); return {conversazione: riga('conv_A', {stato: 'chiusa'})}; });
+  const casella = crea(server, ambiente({vista: 'conv_B'}));
+  casella.apri('conv_A');
+  await giri();
+  casella.apri('conv_B');
+  await giri();
+  await casella.rimanda({testo: 'Ciao', conversazione_id: 'conv_A'});
+  assert.equal(corpi[0].ultimo_visto, 'msgc_1');
+  await casella.cambiaStato('conv_A', 'chiusa');
+  // La risposta non fa «vedere» i messaggi del cliente arrivati prima di lei: vale l'ultima conversazione letta dal server.
+  assert.equal(corpi[1].ultimo_visto, 'msgc_1');
+});
+
+test('letta: il badge si rilegge dal server invece di togliere 1', async () => {
+  const server = fintoServer();
+  let lette = 0;
+  // Due conversazioni da leggere (A e B); A riceve un altro messaggio mentre è sullo schermo.
+  server.su('GET', /^\/api\/conversazioni\?/, () => ({conversazioni: [riga('conv_A'), riga('conv_B', {non_letti: 1})], conteggi: {aperte: 2, chiuse: 0, non_lette: lette ? 1 : 2}, totale: 2}));
+  let messaggi = [entrata('msgc_1')];
+  server.su('GET', '/api/conversazioni/conv_A', () => dettaglio('conv_A', messaggi, {non_letti: 1}));
+  server.su('POST', '/api/conversazioni/conv_A/letta', () => { lette++; return {ok: true}; });
+  const casella = crea(server);
+  await casella.aggiorna({elenco: true});
+  casella.apri('conv_A');
+  await giri(10);
+  messaggi = [entrata('msgc_1'), entrata('msgc_2', 'Ancora io')];
+  await casella.aggiorna({dettaglio: true});
+  await giri(10);
+  assert.equal(lette, 2);
+  assert.equal(casella.istantanea().elenco.conteggi.non_lette, 1, 'B è ancora da leggere');
+});
+
+test('stessa «letta» già confermata: non si ripete a ogni lettura', async () => {
+  const server = fintoServer();
+  server.su('GET', '/api/conversazioni/conv_A', () => dettaglio('conv_A', [entrata('msgc_1')], {non_letti: 1}));
+  server.su('POST', '/api/conversazioni/conv_A/letta', () => ({ok: true}));
+  const casella = crea(server);
+  casella.apri('conv_A');
+  await giri();
+  for (let i = 0; i < 3; i++) await casella.aggiorna({dettaglio: true});
+  await giri();
+  assert.equal(server.di('POST', '/api/conversazioni/conv_A/letta').length, 1);
+});
+
+test('ricerca dei clienti da collegare: righe e numero totale', async () => {
+  const server = fintoServer();
+  server.su('GET', /^\/api\/clienti\?/, () => ({clienti: [{id: 'cus_1', nome: 'Giulia'}], conteggio: 23}));
+  const casella = crea(server);
+  assert.deepEqual(await casella.cercaClienti('giulia'), {righe: [{id: 'cus_1', nome: 'Giulia'}], conteggio: 23});
+});
+

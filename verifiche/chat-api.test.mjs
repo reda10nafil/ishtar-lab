@@ -56,3 +56,9 @@ test('rifiuto del server: messaggio, codice e dati (412 della chiusura)', async 
   assert.equal(errore.codice, 'conflitto');
   assert.equal(errore.dati.nuovi, 2);
 });
+
+test('200 con il corpo illeggibile: esito ignoto (stato 0), mai un rifiuto', async () => {
+  const errore = await richiesta('/api/conversazioni/conv_1/messaggi', {metodo: 'POST', corpo: {}, fetch: async () => ({ok: true, status: 200, json: async () => { throw new SyntaxError('Unexpected end of JSON input'); }})}).catch(e => e);
+  assert.ok(errore instanceof ErroreRichiesta);
+  assert.equal(errore.stato, 0);
+});

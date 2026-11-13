@@ -131,3 +131,29 @@ test('riga del server con un nuovo tentativo in corso: «Sending…» senza azio
   // Senza tentativi in corso la riga resta com'è.
   assert.equal(unisci(server, [], 'conv_1')[0].inviando, undefined);
 });
+
+test('server del pannello più vecchio della pagina: invito a riavviare Ishtar Lab', () => {
+  const riavvia = 'Restart Ishtar Lab to use Chats: the panel server running now is older than this page.';
+  assert.equal(testoErrore({stato: 404, message: 'Indirizzo del ponte non riconosciuto'}), riavvia);
+  assert.equal(testoErrore({stato: 501, message: 'Request failed (501)'}), riavvia);
+  assert.equal(testoErrore({stato: 404, message: 'Customer not found'}), 'Customer not found');
+});
+
+test('nuovo tentativo su una riga del server non riuscito: la riga mostra il suo esito', () => {
+  const id = 'e'.repeat(32);
+  const server = [{id: 'msgc_4', direzione: 'uscita', stato_consegna: 'fallito', errore: 'The customer blocked the bot or never started it', quando: prima(MIN), id_client: id}];
+  const chiusa = unisci(server, [{id_client: id, conversazione_id: 'conv_1', testo: 'Salve', fase: 'rifiutato', errore: 'This conversation is closed: reopen it to reply'}], 'conv_1');
+  assert.equal(chiusa.length, 1);
+  assert.deepEqual(statoRisposta(chiusa[0], ADESSO), {testo: 'This conversation is closed: reopen it to reply', tono: 'bad', azione: 'riprova'});
+  const rete = unisci(server, [{id_client: id, conversazione_id: 'conv_1', testo: 'Salve', fase: 'attesa', errore: "The panel's local server is not responding."}], 'conv_1');
+  assert.deepEqual(statoRisposta(rete[0], ADESSO), {testo: 'Not sent yet', tono: 'warn', azione: 'riprova'});
+  assert.equal(rete[0].tentativo.errore, "The panel's local server is not responding.");
+});
+
+test('risposta incerta già rimandata come nuova: nessun altro «Send again»', () => {
+  const id = 'f'.repeat(32);
+  const server = [{id: 'msgc_5', direzione: 'uscita', stato_consegna: 'incerto', errore: 'x', quando: prima(MIN), id_client: id}];
+  const [riga] = unisci(server, [], 'conv_1', [id]);
+  assert.equal(riga.rimandata, true);
+  assert.deepEqual(statoRisposta(riga, ADESSO), {testo: 'Not confirmed: sent again as a new message.', tono: 'warn', azione: null});
+});

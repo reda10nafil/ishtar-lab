@@ -55,6 +55,7 @@
 .chat-bolla--fuori .chat-bolla__piede { justify-content: flex-end; }
 .chat-bolla__motivo { color: var(--muted); font-size: var(--fs-2xs); }
 .chat-bolla__azioni { display: flex; gap: 6px; flex-wrap: wrap; }
+.chat-nuovi { position: sticky; bottom: 4px; align-self: center; list-style: none; }
 .chat-stato--good { color: var(--good); }
 .chat-stato--warn { color: var(--warn); }
 .chat-stato--bad { color: var(--bad); }

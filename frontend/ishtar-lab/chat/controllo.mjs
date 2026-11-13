@@ -6,7 +6,10 @@
 // - una risposta ha un solo id per tutti i suoi tentativi: il server non la manda mai due volte;
 // - una risposta di cui non si conosce l'esito resta visibile («Not sent yet») finché il server non mostra la sua riga;
 // - una lettura vecchia del server non sovrascrive una più nuova né la conversazione aperta dopo;
-// - «letta» parte solo con la pagina visibile, in primo piano e sulla conversazione, fino all'ultimo messaggio mostrato.
+// - «letta» parte solo con la pagina visibile, in primo piano, sulla conversazione e con il registro in fondo, fino
+//   all'ultimo messaggio mostrato;
+// - una risposta non riuscita mentre lo schermo mostra altro dà un avviso e lascia un segno sulla conversazione finché non si
+//   apre (`esiti`).
 import {percorsoElenco, testoErrore, ultimoVisto} from './casella.mjs';
 
 const RIGHE = 50, MASSIMO_RIGHE = 200;
@@ -19,12 +22,16 @@ export function creaCasella({richiesta, ambiente, nuovoId}) {
     inSospeso: [],
     schede: {},
     rapide: {righe: [], caricate: false, errore: null},
+    esiti: {},
+    rimandate: [],
   };
   const iscritti = new Set();
   const bozze = new Map();
   // Numero dell'ultima lettura partita per tipo: si applica solo quella (le altre sono superate).
   const turno = {elenco: 0, conteggi: 0, dettaglio: 0, schede: {}};
-  const letteInCorso = new Set();
+  const letteInCorso = new Set(), letteFatte = new Set();
+  // Ultimo messaggio di ogni conversazione nell'ultima lettura del server applicata (ultimo_visto delle scritture).
+  const visti = new Map();
 
   const cambia = parti => {
     stato = {...stato, ...parti};
@@ -39,7 +46,10 @@ export function creaCasella({richiesta, ambiente, nuovoId}) {
   const segna = (id_client, parti) => cambia({inSospeso: stato.inSospeso.map(r => (r.id_client === id_client ? {...r, ...parti} : r))});
   const togli = id_client => cambia({inSospeso: stato.inSospeso.filter(r => r.id_client !== id_client)});
   const indirizzo = (id, parte = '') => `/api/conversazioni/${encodeURIComponent(id)}${parte}`;
-  const ultimoDi = id => (stato.aperta.id === id ? ultimoVisto(stato.aperta.dati?.messaggi) : null);
+  // Anche dopo un cambio di conversazione o una conferma che si chiude dopo la navigazione: mai null se la si è vista.
+  // Una risposta appena mandata non conta: i messaggi del cliente arrivati prima di lei li fa vedere solo la rilettura.
+  const ultimoDi = id => visti.get(id) ?? null;
+  const sulloSchermo = id => ambiente.visibile() && ambiente.vista().id === id;
   const nomeDi = id => stato.elenco.righe.find(r => r.id === id)?.nome ?? (stato.aperta.id === id ? stato.aperta.dati?.identita?.nome : null);
 
   async function leggiElenco() {
@@ -90,7 +100,10 @@ export function creaCasella({richiesta, ambiente, nuovoId}) {
     const sulServer = new Set((dati.messaggi ?? []).map(m => m.id_client).filter(Boolean));
     // Una risposta in attesa che il server ha già si toglie (la sua riga vale di più); quella in invio resta fino all'esito.
     const inSospeso = stato.inSospeso.filter(r => r.fase === 'invio' || !sulServer.has(r.id_client));
-    cambia({aperta: {id, dati, errore: null, caricato: true, mancante: false}, inSospeso});
+    visti.set(id, ultimoVisto(dati.messaggi));
+    const esiti = {...stato.esiti};
+    if (sulloSchermo(id)) delete esiti[id];
+    cambia({aperta: {id, dati, errore: null, caricato: true, mancante: false}, inSospeso, esiti});
     cambiaRiga(id, dati.conversazione);
     segnaLetta();
   }
@@ -98,21 +111,24 @@ export function creaCasella({richiesta, ambiente, nuovoId}) {
   async function segnaLetta() {
     const {id, dati} = stato.aperta;
     if (!id || !dati || !(dati.conversazione?.non_letti > 0)) return;
-    if (!ambiente.visibile() || !ambiente.inPrimoPiano() || ambiente.vista().id !== id) return;
+    // Con il registro scorso in su gli ultimi messaggi non sono sullo schermo: si segna quando Reda torna in fondo.
+    const {id: sullo, inFondo} = ambiente.vista();
+    if (!ambiente.visibile() || !ambiente.inPrimoPiano() || sullo !== id || inFondo === false) return;
     const ultimo = ultimoVisto(dati.messaggi);
     const chiave = `${id} ${ultimo}`;
-    if (letteInCorso.has(chiave)) return;
+    // Già confermata: non si ripete a ogni lettura anche se il server conta ancora qualcosa da leggere.
+    if (letteInCorso.has(chiave) || letteFatte.has(chiave)) return;
     letteInCorso.add(chiave);
     try {
       await richiesta(indirizzo(id, '/letta'), {metodo: 'POST', corpo: {ultimo_visto: ultimo}});
+      letteFatte.add(chiave);
       // I messaggi arrivati dopo l'ultimo mostrato restano non letti sul server: qui si azzera solo se è ancora l'ultimo.
       if (stato.aperta.id === id && ultimoVisto(stato.aperta.dati?.messaggi) === ultimo) {
         cambiaDati({conversazione: {...stato.aperta.dati.conversazione, non_letti: 0}});
       }
-      const riga = stato.elenco.righe.find(r => r.id === id);
-      const conteggi = stato.elenco.conteggi;
-      cambiaElenco({conteggi: {...conteggi, non_lette: Math.max(0, conteggi.non_lette - (dati.conversazione.non_letti > 0 ? 1 : 0))}});
-      if (riga) cambiaRiga(id, {non_letti: 0});
+      cambiaRiga(id, {non_letti: 0});
+      // Conteggi e badge dal server: le letture dell'elenco partite prima della «letta» si scartano.
+      leggiElenco();
     } catch {
       // Si riprova al prossimo dettaglio letto.
     } finally {
@@ -162,10 +178,11 @@ export function creaCasella({richiesta, ambiente, nuovoId}) {
         metodo: 'POST', corpo: {testo, id: id_client, ultimo_visto: ultimoDi(conversazione_id)},
       }));
     } catch (errore) {
-      // Rete, ponte, API o lucchetto: l'esito non si conosce, si ritenta solo con lo stesso id. Altri rifiuti: da correggere.
-      const ignoto = errore.stato === 0 || errore.stato === 409 || errore.stato >= 500;
-      segna(id_client, {fase: ignoto ? 'attesa' : 'rifiutato', errore: testoErrore(errore)});
-      if (stato.aperta.id !== conversazione_id) avvisaFuori(conversazione_id, testoErrore(errore));
+      // Solo un rifiuto del server (4xx, tranne il 409 del lucchetto) è certo e va corretto; tutto il resto (rete, ponte, API,
+      // lucchetto, risposte illeggibili) ha un esito ignoto e si ritenta solo con lo stesso id.
+      const rifiutato = errore.stato >= 400 && errore.stato < 500 && errore.stato !== 409;
+      segna(id_client, {fase: rifiutato ? 'rifiutato' : 'attesa', errore: testoErrore(errore)});
+      if (!sulloSchermo(conversazione_id)) segnalaFuori(conversazione_id, rifiutato ? 'fallito' : 'attesa', testoErrore(errore));
       return;
     }
     // Le letture partite prima di questo esito non lo contengono: si scartano.
@@ -177,22 +194,27 @@ export function creaCasella({richiesta, ambiente, nuovoId}) {
       const posto = messaggi.findIndex(m => m.id === messaggio.id);
       cambiaDati({messaggi: posto < 0 ? [...messaggi, messaggio] : messaggi.map((m, i) => (i === posto ? messaggio : m))});
     }
-    if (stato.aperta.id !== conversazione_id && ['fallito', 'incerto'].includes(messaggio?.stato_consegna)) {
-      avvisaFuori(conversazione_id, messaggio.errore || 'Not confirmed');
+    if (['fallito', 'incerto'].includes(messaggio?.stato_consegna) && !sulloSchermo(conversazione_id)) {
+      segnalaFuori(conversazione_id, messaggio.stato_consegna, messaggio.errore);
     }
     aggiorna({elenco: true, dettaglio: true});
   }
 
-  function avvisaFuori(conversazione_id, motivo) {
-    const nome = nomeDi(conversazione_id);
-    ambiente.avviso(`Your reply${nome ? ` to ${nome}` : ''} was not sent: ${motivo}`, {warn: true});
+  // Esito non riuscito di una risposta mentre lo schermo mostra altro: avviso (globale nel pannello) e segno sulla
+  // conversazione, che resta finché la conversazione non si apre sullo schermo.
+  function segnalaFuori(conversazione_id, esito, motivo) {
+    const nome = nomeDi(conversazione_id), a = nome ? ` to ${nome}` : '';
+    const testo = esito === 'incerto' ? `Your reply${a} may not have arrived: the channel did not confirm it.`
+      : esito === 'attesa' ? `Your reply${a} is not sent yet: ${motivo}`
+        : `Your reply${a} was not sent: ${motivo || 'the channel refused it'}`;
+    cambia({esiti: {...stato.esiti, [conversazione_id]: {stato: esito, quando: ambiente.adesso()}}});
+    ambiente.avviso(testo, {warn: true});
   }
 
   async function rispondi(conversazione_id, testo) {
     const pulito = String(testo ?? '').trim();
     if (!pulito) return;
     const voce = {id_client: nuovoId(), conversazione_id, testo: pulito, fase: 'invio', errore: null, quando: ambiente.adesso()};
-    bozze.delete(conversazione_id);
     cambia({inSospeso: [...stato.inSospeso, voce]});
     await invia(voce);
   }
@@ -207,7 +229,10 @@ export function creaCasella({richiesta, ambiente, nuovoId}) {
   }
 
   /** Stessa risposta come risposta nuova (id nuovo): solo dopo la conferma della persona, per le risposte incerte. */
-  const rimanda = ({testo, conversazione_id}) => rispondi(conversazione_id, testo);
+  function rimanda({testo, conversazione_id, id_client}) {
+    if (id_client && !stato.rimandate.includes(id_client)) cambia({rimandate: [...stato.rimandate, id_client]});
+    return rispondi(conversazione_id, testo);
+  }
 
   function scarta(id_client) {
     const voce = stato.inSospeso.find(r => r.id_client === id_client);
@@ -270,9 +295,11 @@ export function creaCasella({richiesta, ambiente, nuovoId}) {
     }
   }
 
+  /** Clienti per il collegamento: le prime 8 righe e quanti sono in tutto (per chiedere di precisare la ricerca). */
   async function cercaClienti(q) {
     const dati = await richiesta(`/api/clienti?${new URLSearchParams({q: String(q ?? '').trim(), limit: '8'})}`);
-    return dati.clienti ?? [];
+    const righe = dati.clienti ?? [];
+    return {righe, conteggio: dati.conteggio ?? righe.length};
   }
 
   async function caricaRapide() {

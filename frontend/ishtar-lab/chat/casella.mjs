@@ -77,14 +77,25 @@ export function percorsoElenco({stato = 'aperte', canale = '', q = '', quante = 
 
 /**
  * Messaggi da mostrare: quelli del server nell'ordine ricevuto, poi le risposte ancora in attesa di quella conversazione.
- * Una risposta che il server ha già (stesso `id_client`) compare una volta sola, come riga del server; se un nuovo
- * tentativo è in corso la riga porta `inviando` (mostra «Sending…» e nessun pulsante).
+ * Una risposta che il server ha già (stesso `id_client`) compare una volta sola, come riga del server, con l'esito
+ * dell'ultimo tentativo fatto da qui: `inviando` (in corso: «Sending…» e nessun pulsante) oppure `tentativo` (non riuscito:
+ * il motivo). `rimandate`: id delle risposte incerte già rimandate come risposte nuove.
  */
-export function unisci(messaggi = [], inSospeso = [], conversazione_id) {
-  const presenti = new Set(messaggi.map(m => m.id_client).filter(Boolean));
+export function unisci(messaggi = [], inSospeso = [], conversazione_id, rimandate = []) {
   const mie = inSospeso.filter(r => r.conversazione_id === conversazione_id);
-  const inviando = new Set(mie.filter(r => r.fase === 'invio').map(r => r.id_client));
-  const server = messaggi.map(m => (m.id_client && inviando.has(m.id_client) ? {...m, inviando: true} : m));
+  const perId = new Map(mie.map(r => [r.id_client, r]));
+  const giaRimandate = new Set(rimandate);
+  const presenti = new Set();
+  const server = messaggi.map(m => {
+    if (!m.id_client) return m;
+    presenti.add(m.id_client);
+    const voce = perId.get(m.id_client);
+    let riga = m;
+    if (voce?.fase === 'invio') riga = {...riga, inviando: true};
+    else if (voce) riga = {...riga, tentativo: {fase: voce.fase, errore: voce.errore}};
+    if (giaRimandate.has(m.id_client)) riga = {...riga, rimandata: true};
+    return riga;
+  });
   return [...server, ...mie.filter(r => !presenti.has(r.id_client)).map(r => ({...r, locale: true}))];
 }
 
@@ -106,6 +117,8 @@ export function statoRisposta(m, adesso = Date.now()) {
   }
   if (m?.direzione !== 'uscita') return null;
   if (m.inviando) return {testo: 'Sending…', tono: 'plain', azione: null};
+  if (m.tentativo?.fase === 'attesa') return {testo: 'Not sent yet', tono: 'warn', azione: 'riprova'};
+  if (m.tentativo?.fase === 'rifiutato') return {testo: m.tentativo.errore || 'Not sent', tono: 'bad', azione: 'riprova'};
   switch (m.stato_consegna) {
     case 'inviato':
       return {testo: 'Sent', tono: 'good', azione: null};
@@ -116,15 +129,22 @@ export function statoRisposta(m, adesso = Date.now()) {
     case 'fallito':
       return {testo: !m.errore ? 'Not sent' : /^Not sent\b/.test(m.errore) ? m.errore : `Not sent: ${m.errore}`, tono: 'bad', azione: 'riprova'};
     case 'incerto':
-      return {testo: NON_CONFERMATO, tono: 'warn', azione: 'rimanda'};
+      return m.rimandata
+        ? {testo: 'Not confirmed: sent again as a new message.', tono: 'warn', azione: null}
+        : {testo: NON_CONFERMATO, tono: 'warn', azione: 'rimanda'};
     default:
       return null;
   }
 }
 
 /** Messaggio in inglese per un errore delle richieste (ErroreRichiesta di api.mjs o un Error qualsiasi). */
+const PONTE_VECCHIO = 'Restart Ishtar Lab to use Chats: the panel server running now is older than this page.';
+
 export function testoErrore(errore) {
   if (errore?.stato === 0) return "The panel's local server is not responding.";
+  // Pagina aggiornata ma server del pannello avviato prima dell'aggiornamento: il ponte vecchio non conosce i percorsi nuovi
+  // (404 con il suo messaggio) e il server vecchio non conosce DELETE (501).
+  if ((errore?.stato === 404 && errore.message === 'Indirizzo del ponte non riconosciuto') || errore?.stato === 501) return PONTE_VECCHIO;
   // 503 arriva dal ponte quando l'API non risponde: il suo messaggio è in italiano, qui si spiega in inglese come la pagina.
   if (errore?.stato === 503) return 'The Ishtar Lab server is not reachable. Start Ishtar Lab and try again.';
   if (errore?.message) return errore.message;
