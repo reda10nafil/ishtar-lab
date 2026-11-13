@@ -44,3 +44,19 @@ export function decidiInvio(esistente: { stato_consegna: StatoConsegna; tentato_
 
 /** Una risposta non consegnata lascia la conversazione al team: nell'elenco non deve sembrare già risposta. */
 export const statoDopoFallimento = (stato: StatoConversazione): StatoConversazione => (stato === "chiusa" ? "chiusa" : "aperta")
+
+/**
+ * Ordine dei messaggi di una conversazione: quello di arrivo nella casella, lo stesso con cui si contano i messaggi nuovi.
+ * Un messaggio del cliente registrato in ritardo (data Telegram più vecchia di una risposta già partita) compare in fondo,
+ * dopo l'ultimo messaggio che il team aveva davanti, e resta da leggere: non finisce sopra, già «visto».
+ */
+export const ORDINE_MESSAGGI = { created_at: "DESC", id: "DESC" } as const
+
+/** Messaggi del cliente dopo `visto` nell'ordine della conversazione (arrivati dopo, o nello stesso istante con id successivo). */
+export function filtroNuoviDopo(conversazione_id: string, visto: { id: string; created_at: Date | string } | null) {
+  const base = { conversazione_id, direzione: "entrata" as const }
+  if (!visto) return base
+  const quando = new Date(visto.created_at)
+  return { ...base, $or: [{ created_at: { $gt: quando } }, { created_at: quando, id: { $gt: visto.id } }] }
+}
+

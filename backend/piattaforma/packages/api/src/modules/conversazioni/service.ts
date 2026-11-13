@@ -4,7 +4,7 @@ import { Conversazione } from "./models/conversazione"
 import { Identita } from "./models/identita"
 import { Messaggio } from "./models/messaggio"
 import { RispostaRapida } from "./models/risposta-rapida"
-import { chiaveInArrivo, chiaveUscita, decidiInvio, estratto, statoDopo, statoDopoFallimento, type Decisione } from "./regole"
+import { chiaveInArrivo, chiaveUscita, decidiInvio, estratto, filtroNuoviDopo, statoDopo, statoDopoFallimento, type Decisione } from "./regole"
 import type { InArrivo } from "./tipi"
 
 export type MessaggioDTO = InferTypeOf<typeof Messaggio>
@@ -100,14 +100,12 @@ export default class ConversazioniModuleService extends MedusaService({ Conversa
    * pagina rimasta indietro non segna letti, non chiude e non mette «in attesa» messaggi che nessuno ha visto.
    */
   async nuoviDopo(conversazione_id: string, ultimo_visto: string | null, contesto: Context = {}): Promise<number> {
-    let dopo: Date | null = null
+    let visto: { id: string; created_at: Date | string } | null = null
     if (ultimo_visto) {
-      const [visto] = await this.listBattutas({ id: ultimo_visto, conversazione_id }, { take: 1 }, contesto)
+      ;[visto] = await this.listBattutas({ id: ultimo_visto, conversazione_id }, { take: 1 }, contesto)
       if (!visto) throw new MedusaError(MedusaError.Types.INVALID_DATA, "Reload the conversation: this message is not in it")
-      dopo = new Date(visto.created_at)
     }
-    const filtri = { conversazione_id, direzione: "entrata", ...(dopo ? { created_at: { $gt: dopo } } : {}) }
-    const [, quanti] = await this.listAndCountBattutas(filtri as never, { take: 1 }, contesto)
+    const [, quanti] = await this.listAndCountBattutas(filtroNuoviDopo(conversazione_id, visto) as never, { take: 1 }, contesto)
     return quanti
   }
 
