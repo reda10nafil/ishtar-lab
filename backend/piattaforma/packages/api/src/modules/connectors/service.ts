@@ -28,6 +28,11 @@ function servizioOErrore(id: string): Servizio {
   return servizio
 }
 
+/** Le credenziali salvate sono ancora quelle usate (ogni valore usato coincide con quello salvato)? */
+export function stessiValori(salvati: Record<string, string> | undefined, usati: Record<string, string>): boolean {
+  return Boolean(salvati) && Object.entries(usati).every(([chiave, valore]) => salvati![chiave] === valore)
+}
+
 export default class ConnectorsModuleService extends MedusaService({ ConnectorAccount, OauthState }) {
   private leggiSegreti(cifrato: string): Segreti {
     return JSON.parse(decifra(cifrato, chiave())) as Segreti
@@ -165,11 +170,16 @@ export default class ConnectorsModuleService extends MedusaService({ ConnectorAc
    * console. Con `token` l'errore vale solo se le credenziali salvate sono ancora quelle usate: un token appena cambiato
    * e verificato non torna in errore per la risposta arrivata al token vecchio.
    */
-  async segnaErrore(id: string, messaggio: string, token?: string) {
+  /**
+   * Mette il connettore in errore con un messaggio fisso. `usati`: le credenziali con cui è fallita la chiamata (per
+   * Telegram il token): se nel frattempo sono cambiate, l'errore riguarda quelle vecchie e il connettore non si tocca.
+   */
+  async segnaErrore(id: string, messaggio: string, usati?: string | Record<string, string>) {
     servizioOErrore(id)
     const conto = await this.conto(id)
     if (!conto) return
-    if (token !== undefined && this.leggiSegretiSicuri(conto.secret)?.valori.bot_token !== token) return
+    const controllo = typeof usati === "string" ? { bot_token: usati } : usati
+    if (controllo !== undefined && !stessiValori(this.leggiSegretiSicuri(conto.secret)?.valori, controllo)) return
     await this.updateConnectorAccounts({ id: conto.id, status: "errore", last_error: messaggio, last_checked_at: new Date() })
   }
 

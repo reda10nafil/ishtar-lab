@@ -15,6 +15,13 @@ export async function eseguiProva(
   token?: Token,
   fetchFn: typeof fetch = fetch
 ): Promise<EsitoProva> {
+  if (servizio.provaPersonalizzata) {
+    try {
+      return await servizio.provaPersonalizzata(valori)
+    } catch {
+      return { ok: false, errore: "Service unreachable" }
+    }
+  }
   if (!servizio.prova) return { ok: false, errore: "This service has no connection test" }
   let richiesta: ReturnType<NonNullable<Servizio['prova']>>
 

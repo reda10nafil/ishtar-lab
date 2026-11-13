@@ -42,7 +42,7 @@ describe("catalogo", () => {
       expect(s.nome && s.descrizione && s.documentazione).toBeTruthy()
       expect(s.campi.length).toBeGreaterThan(0)
       if (s.accesso === "login") expect(s.oauth).toBeDefined()
-      else expect(s.prova).toBeDefined()
+      else expect(s.prova ?? s.provaPersonalizzata).toBeDefined()
     }
   })
 
