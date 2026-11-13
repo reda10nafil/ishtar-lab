@@ -183,3 +183,14 @@ Aggiornamento caricato su GitHub, commit d5235b84b5f2078294c953bda5cea9a89c7ba70
 - Pannello: un rifiuto toglie dalla coda solo la parte rifiutata (il resto riparte con gli stessi id), l'«Undo» degli avvisi resta collegato dopo un riallineamento, il campo prezzo del dettaglio si allinea al prezzo nuovo.
 - Revisione avversariale (4 revisori e 4 verificatori): 22 rilievi confermati (18 distinti), corretti o motivati. Verifiche: jest 190/190, 80 test node, typecheck 0 errori, prove sul database vero (guasto provocato, concorrenza con le evasioni, secondo deposito, giacenza negativa, migrazione), prove end-to-end 18/18, 32/32, 8/8 e 20/20 con due finestre vere; database ripristinato dal backup alla fine. Rapporto `verifiche/conflitti-movimenti-2026-11-13.json`.
 
+## 2026-11-13 — Proposte di satria64 unite nel main
+
+- Le PR dalla #2 alla #7 sono unite nel main in ordine, con «Create a merge commit» (ultimo commit 25415d6), dopo che il titolare ha dato a satria64 l'accesso in scrittura.
+
+## 2026-11-13 — Scorte della console e del Magazzino delle aziende (versione modificata da satria64, PR #8)
+
+- Finestra varianti della console: si scrive solo ciò che è cambiato, ciascun campo con il valore da cui la finestra si è aperta; un valore cambiato intanto altrove non viene riscritto (412 con il valore attuale e l'azienda). La quantità è un conteggio sotto il lucchetto della voce di magazzino, firmato nello storico del Magazzino; variante, prezzi e scorte vanno in un solo workflow con il lucchetto del prodotto, lo stesso del pannello. Una giacenza sotto zero non blocca più la finestra.
+- Magazzino delle aziende: «Change» è una variazione con un id, sommata sotto il lucchetto e mai contata due volte; «New quantity» e il conteggio valgono solo se la giacenza è ancora quella mostrata. Il conteggio è «tutto o niente» in un solo workflow: una riga cambiata mentre si contava perde il numero contato e resta segnata da ricontare.
+- Con un conflitto le finestre restano aperte con il valore attuale nel campo cambiato e il resto conservato. Uno SKU o un EAN già usato dà di nuovo il messaggio di Medusa; un salvataggio rimasto a metà lo dice e nel log elenca le voci da sistemare.
+- Primo deposito di un'azienda sotto il suo lucchetto; proposte di prezzo e prezzi delle aziende scrivono nell'offerta solo le chiavi che cambiano.
+- Revisione avversariale (4 revisori e 4 verificatori): 19 rilievi confermati (12 distinti), 11 corretti, 1 rimandato con motivo (le schede prodotto della console mandano ancora tutti i valori: difetto che c'era già). Verifiche: jest 233/233, 80 test node, typecheck di API e console 0 errori, 30/30 prove con le rotte vere, prove end-to-end nella console 6/6 e 7/7, pannello 18/18, 32/32, 8/8 e 20/20; database ripristinato dal backup. Rapporto `verifiche/scorte-console-magazzino-2026-11-13.json`.

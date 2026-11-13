@@ -1,0 +1,95 @@
+{
+  "date": "2026-11-13",
+  "scope": "Ultima parte del blocco 3 (scelta 7 del 12 novembre): finestra varianti della console, correzioni e conteggi del Magazzino delle aziende, primo deposito di un'azienda, metadati delle offerte scritti per chiave",
+  "modified_by": "satria64 — versione modificata, autorizzata dal titolare nella issue #1",
+  "branch": "scorte-console-magazzino",
+  "base_branch": "main (dopo l'unione delle PR #2–#7)",
+  "base_commit": "25415d6",
+  "decisions": "stesse regole del pannello (PR #7): si scrive solo ciò che è cambiato, e solo se il valore attuale è ancora quello da cui la finestra è partita, altrimenti 412 con il valore attuale; una variazione di scorte si somma sotto il lucchetto della voce di magazzino (lo stesso di evasioni e resi) e ha un id che la rende innocua se rimandata; una quantità scritta è un conteggio con il valore di partenza; una finestra con il codice di prima riceve l'invito a ricaricare la pagina",
+  "defects": [
+    {
+      "id": "finestra-varianti-scorte",
+      "before": "la finestra varianti della console mandava sempre tutti i valori e scriveva le scorte come numero fisso, senza lucchetto: aperta prima di una vendita e salvata cambiando solo il prezzo, riportava indietro le scorte",
+      "after": "la quantità parte solo se è stata scritta ed è un conteggio con la giacenza di partenza, sotto il lucchetto della voce, firmato nello storico del Magazzino; se intanto la giacenza è cambiata, 412 con quella attuale e l'azienda"
+    },
+    {
+      "id": "finestra-varianti-campi",
+      "before": "la stessa finestra riscriveva prezzi, nome, SKU ed EAN cambiati intanto altrove",
+      "after": "ogni campo si scrive solo se è stato toccato e se il valore attuale è ancora quello di partenza; altrimenti 412 con il campo, il valore attuale e l'azienda"
+    },
+    {
+      "id": "finestra-varianti-passi",
+      "before": "variante, prezzi e scorte erano passaggi separati: un errore a metà lasciava salvato solo una parte",
+      "after": "un solo workflow «ishtar-aggiorna-variante» (scorte, variante, prezzi per ultimi) sotto il lucchetto del prodotto, lo stesso del pannello; un errore annulla ciò che era già stato scritto"
+    },
+    {
+      "id": "magazzino-correzione",
+      "before": "la correzione del Magazzino calcolava un valore fisso da una lettura e lo scriveva senza il lucchetto della voce: un'evasione arrivata in mezzo andava persa",
+      "after": "«Change» è una variazione con id, sommata sotto il lucchetto; «New quantity» vale solo se la giacenza è ancora quella mostrata dalla finestra (workflow «ishtar-scorte»)"
+    },
+    {
+      "id": "magazzino-conteggio",
+      "before": "il conteggio scriveva le righe in due operazioni separate e senza lucchetto: le vendite arrivate intanto venivano cancellate",
+      "after": "tutte le righe in un solo workflow, ognuna sotto il lucchetto della propria voce; le righe cambiate da quando si è iniziato a contare sono un conflitto (412 con le righe e i valori attuali) e non si scrive nulla; una voce rifiutata dentro il workflow fa togliere subito le altre già scritte"
+    },
+    {
+      "id": "primo-deposito",
+      "before": "due salvataggi insieme per un'azienda senza deposito potevano crearne due",
+      "after": "il primo deposito nasce sotto il lucchetto «deposito:<azienda>»"
+    },
+    {
+      "id": "metadati-offerta",
+      "before": "proposte di prezzo e prezzi delle aziende riscrivevano per intero i metadati dell'offerta, comprese le chiavi cambiate altrove",
+      "after": "si mandano solo le chiavi che cambiano (Medusa unisce i metadati al primo livello)"
+    }
+  ],
+  "tests": {
+    "jest_security": "233/233 (190 prima della PR); nuovi: workflow veri «ishtar-scorte» e «ishtar-aggiorna-variante» sul motore di Medusa con moduli in memoria (conflitto con la voce, annullamento non riuscito, compensazione, errori di Medusa e risposta HTTP), piani della finestra varianti e del Magazzino",
+    "node_test_verifiche": "80/80",
+    "typecheck_api": "0 errori",
+    "typecheck_console": "0 errori",
+    "ponte": "8/8",
+    "csv": "13 casi"
+  },
+  "real_checks": {
+    "environment": "istanza locale con 82 articoli DEMO; backup del database (pg_dump) prima delle prove; API riavviata con il nuovo codice; script temporanei di verifica rimossi dopo l'uso; alla fine database ripristinato dal backup in un database separato poi scambiato, e controllato: nessun membro, variante, chiave di metadati o movimento delle prove",
+    "api": "30/30 con le rotte vere chiamate dentro medusa exec e le risposte d'errore del vero errorHandler di Medusa: correzioni (variazione con storico, stesso id rimandato, quantità dalla giacenza giusta, 412 con articolo e deposito, invito a ricaricare, sotto zero rifiutato dal workflow, «Change −3» rimandato dopo la risposta persa senza falso «sotto zero», quantità uguale a quella mostrata con la giacenza cambiata → 412, uguale a quella attuale → «already»); conteggio (righe cambiate e uguali, 412 con la riga e la giacenza di partenza, invito a ricaricare); voce rifiutata dentro il workflow (le altre annullate, l'errore nomina la voce); finestra varianti (solo il prezzo con le scorte intatte, vendita arrivata intanto conservata, 412 con l'offerta e l'azienda, conteggio firmato, nome, SKU già usato → 400 con il messaggio di Medusa e scorte annullate, giacenza −2 non toccata con il prezzo salvato, quantità negativa scritta rifiutata, nuova offerta con lo SKU attuale della variante, metadati dell'offerta conservati)",
+    "concorrenza": "6 correzioni +1 dal Magazzino e 6 uscite −1 come le evasioni di Medusa, tutte insieme: giacenza esatta"
+  },
+  "end_to_end": {
+    "console_varianti": "6/6 con la console vera in Chrome: finestra aperta prima di una vendita, cambiato solo il prezzo (prezzo salvato, vendita conservata); quantità cambiata in una finestra rimasta indietro (niente salvato, la finestra resta aperta con l'avviso e le scorte attuali nel campo, il nome scritto resta); salvata di nuovo dalla stessa finestra; giacenza −2 non toccata (il modulo non si blocca, il prezzo si salva, le scorte restano −2)",
+    "console_magazzino": "7/7 con un membro di prova «Warehouse staff» invitato dal titolare (email su Mailpit, password generata e mai mostrata, tolto con il ripristino del database): conteggio con una riga cambiata mentre si contava (412, numero contato tolto, riga segnata con la giacenza di partenza e quella attuale, messaggio fisso sopra l'elenco, «Record count» spento, ricontata e registrata); finestra di correzione con la giacenza cambiata (resta aperta con la giacenza attuale e la quantità scritta, salvata di nuovo)",
+    "pannello": "nessuna regressione: catalogo 18/18, collegamento 32/32, parte A 8/8, parte B 20/20"
+  },
+  "known_limits": [
+    "schede prodotto della console (dell'azienda e del titolare) mandano ancora tutti i valori: una scheda aperta da tempo può riscrivere testi o prezzi cambiati altrove; quella dell'azienda scrive insieme i due prezzi con i valori letti all'apertura (difetto che c'era già, fuori da questa PR: prossimo passo, stessa regola dei valori di partenza)",
+    "le prove del repository backend/infra/prova-magazzino.mjs e prova-catalogo.mjs sono aggiornate al nuovo formato ma non eseguite qui: entrano con gli account demo delle aziende e richiedono DEMO_SEED_PASSWORD, non impostata su questo PC; gli stessi flussi sono provati con le rotte vere e nel browser",
+    "le offerte mancanti create dalla scheda dell'azienda (prodotti caricati prima delle offerte) non passano dal lucchetto del prodotto (caso raro, c'era già)",
+    "collegamento al canale di vendita: ancora fuori, come nella PR #7"
+  ],
+  "not_tested": [
+    "Windows (codice TypeScript del backend e della console, senza percorsi o comandi di sistema)",
+    "Redis come lucchetto in un cluster con più istanze dell'API (provato con l'istanza locale)",
+    "salvataggio rimasto a metà sul database vero (doppio guasto): provato con il motore dei workflow e moduli in memoria"
+  ],
+  "secrets_included": false,
+  "independent_review": {
+    "method": "workflow di revisione avversariale: quattro revisori (concorrenza e atomicità, contratto e regole del server, console, regressioni) e un verificatore per ciascuno che ha provato a smentire ogni rilievo nel codice di Medusa e Mercur e con piccoli script; 19 rilievi, tutti confermati, 12 distinti: 11 corretti, 1 accettato con motivo",
+    "fixed": [
+      "errori di Medusa usciti dal workflow trasformati in un 500 generico: uno SKU o un EAN già usato nella finestra varianti non dava più il messaggio; ora restano con il loro tipo (400, 404, 409) (media)",
+      "conteggio dopo un 412: le righe cambiate tenevano il numero vecchio e un secondo clic lo scriveva; ora il numero si toglie e la riga resta segnata finché non la si riconta, con il messaggio fisso sopra l'elenco (media)",
+      "giacenza negativa dopo un'evasione oltre le scorte: la finestra varianti non salvava nulla (minimo 0 nel corpo e nel modulo); ora una giacenza non toccata passa, una negativa scritta è rifiutata (media)",
+      "con un 412 le finestre si chiudevano come dopo un salvataggio e si perdeva ciò che era scritto; ora restano aperte con il valore attuale nel campo in conflitto e il resto conservato (bassa)",
+      "conflitti rilevati sotto il lucchetto senza la riga o l'azienda: ora voce e deposito nell'errore, la console segna la riga giusta e il messaggio nomina l'azienda; tolto l'invito a ricaricare la pagina, che faceva perdere i numeri contati (bassa)",
+      "annullamento interno non riuscito classificato «annullato», senza log delle voci rimaste cambiate; ora «a metà» con le voci nel log e un 500 con un codice che la console mostra (bassa)",
+      "compensazione delle scorte ferma al primo annullamento fallito; ora prova tutte le voci e le elenca nel log (bassa)",
+      "«Change» rimandato dopo una risposta persa rispondeva «below zero» anche se già applicato; il controllo ora è nel workflow, dopo quello sull'id (bassa)",
+      "«New quantity» uguale al valore mostrato con la giacenza cambiata intanto: falso «already at this quantity»; ora 412 con la giacenza attuale (bassa)",
+      "nuova offerta con SKU ed EAN letti prima della scrittura; ora quelli appena salvati, sotto il lucchetto del prodotto (bassa)",
+      "prove del repository prova-magazzino.mjs e prova-catalogo.mjs non aggiornate al campo «prima» (bassa)"
+    ],
+    "accepted": [
+      "scheda prodotto dell'azienda che riscrive i due prezzi con i valori letti all'apertura (media): difetto che c'era già e fuori dall'ambito della PR; corretto il commento che prometteva di più e annotato come prossimo passo, insieme alle schede prodotto della console"
+    ]
+  }
+}
