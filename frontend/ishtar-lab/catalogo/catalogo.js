@@ -1,6 +1,8 @@
 import {J as runtime, wt as legacy, it as mutateLegacy, F as nativeToast} from '../assets/kit-BLRx7j0_.js';
 import OriginalProducts from '../assets/products-DkARKCT7.js';
-import {parseCSV,numberCSV} from './csv.mjs';
+import {parseCSV} from './csv.mjs';
+import {destinazione,DESTINAZIONI,prodottoDaRiga,campiCambiati,convenzioneColonna,ambigui,normalizza} from './importa.mjs';
+import {impronta,differenze,decidi} from './sincronizza.mjs';
 import '../branding-ui.mjs';
 const h=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(v??0);
@@ -12,8 +14,6 @@ async function api(path='/api/catalogo',body){
   let data;try{data=await response.json();}catch{throw Error(`Richiesta non riuscita (${response.status})`);}
   if(!response.ok)throw Error(data.message||`Errore ${response.status}`);return data;
 }
-const aliases={'sku':'sku','nome':'name','name':'name','titolo':'name','descrizione':'description','prezzo vendita':'price','prezzo':'price','costo acquisto':'cost','quantita stock':'stock','quantità':'stock','categoria':'category','taglia/variante':'size','taglia':'size','genere':'gender','colore':'color','materiale':'material','link foto':'photos','foto':'photos','tipo dati':'demo','stato':'skip','campi fittizi':'custom','codice a barre':'custom'};
-const destinations={skip:'Non importare',sku:'SKU',name:'Nome',description:'Descrizione',category:'Categoria',gender:'Uomo / Donna / Unisex',size:'Taglia',color:'Colore',material:'Materiale',price:'Prezzo (€)',cost:'Costo (€)',stock:'Quantità',photos:'Foto (URL)',demo:'Dati dimostrativi',custom:'Crea campo personalizzato'};
 
 class Catalogo extends HTMLElement {
   connectedCallback(){this.data={products:[],fields:[],categories:[]};this.search='';this.filter='';this.busy=false;this.renderLoading();this.load();
@@ -64,35 +64,52 @@ class Catalogo extends HTMLElement {
     dialog.querySelector('form').onsubmit=e=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));if(d.type==='select'&&!d.options.trim()){dialog.querySelector('.il-form-error').textContent='Inserire almeno una scelta';return;}fields.push({id:'campo_'+crypto.randomUUID().replaceAll('-','').slice(0,16),label:d.label,type:d.type,category:d.category,options:d.options.split(',').map(s=>s.trim()).filter(Boolean),required:d.required==='on'});e.target.reset();render();};
     dialog.querySelector('[data-save]').onclick=async e=>{e.target.disabled=true;try{await api('/api/catalogo',{fields});dialog.close();await this.load();this.notice('Campi personalizzati salvati');}catch(err){dialog.querySelector('.il-form-error').textContent=err.message;}finally{e.target.disabled=false;}};
   }
-  async readFile(file){try{if(!/\.csv$/i.test(file.name))throw Error('Scegliere un file CSV');if(file.size>8*1024*1024)throw Error('Il CSV supera 8 MB');this.importCSV(parseCSV(await file.text()),file.name);}catch(e){this.notice(e.message,true);}}
+  async readFile(file){try{if(!/\.csv$/i.test(file.name))throw Error('Scegliere un file CSV');if(file.size>8*1024*1024)throw Error('Il CSV supera 8 MB');
+    // UTF-8 se valido, altrimenti la codifica «ANSI» di Excel su Windows (Windows-1252), segnalata nell'anteprima.
+    const byte=await file.arrayBuffer();let testo,codifica='UTF-8';
+    try{testo=new TextDecoder('utf-8',{fatal:true}).decode(byte);}catch{testo=new TextDecoder('windows-1252').decode(byte);codifica='Windows-1252';}
+    const csv=parseCSV(testo);csv.codifica=codifica;
+    // L'aggiornamento parte dai prodotti salvati: prima si completano i salvataggi in coda, poi si rilegge il database.
+    clearTimeout(this.changeTimer);await this.flush();
+    try{this.data=await api();this.ready=true;}catch(e){throw Error(`Catalogo non raggiungibile (${e.message}): importazione annullata, nessun dato modificato.`);}
+    this.render();
+    this.importCSV(csv,file.name);}catch(e){this.notice(e.message,true);}}
   importCSV(csv,fileName){
-    const mapping=csv.headers.map(s=>aliases[s.toLowerCase()]||'custom');
-    const dialog=this.modal('Importa inventario CSV',`<p><strong>${h(fileName)}</strong> · ${csv.rows.length} righe. Controlla i campi prima di importare.</p><details><summary>Associa colonne e personalizza campi</summary><div class="il-map">${csv.headers.map((s,i)=>`<label><span>${h(s)}</span><select data-map="${i}">${Object.entries(destinations).map(([k,v])=>`<option value="${k}" ${mapping[i]===k?'selected':''}>${v}</option>`).join('')}</select></label>`).join('')}</div></details><label class="il-choice"><input type="checkbox" data-update> Aggiorna gli articoli con lo stesso SKU (altrimenti vengono ignorati)</label><div class="il-preview"></div><div class="il-progress" role="status" aria-live="polite"></div><p class="il-form-error" role="alert"></p><footer><button type="button" class="il-secondary" data-cancel-import hidden>Interrompi dopo la riga corrente</button><button class="il-primary" data-run>Importa inventario</button></footer>`,true);
-    let normalized=[],extraFields=[],errors=[];
+    const mapping=csv.headers.map(destinazione);
+    const dialog=this.modal('Importa inventario CSV',`<p><strong>${h(fileName)}</strong> · ${csv.rows.length} righe. Controlla i campi prima di importare.</p><details><summary>Associa colonne e personalizza campi</summary><div class="il-map">${csv.headers.map((s,i)=>`<label><span>${h(s)}</span><select data-map="${i}">${Object.entries(DESTINAZIONI).map(([k,v])=>`<option value="${k}" ${mapping[i]===k?'selected':''}>${v}</option>`).join('')}</select></label>`).join('')}</div></details><label class="il-choice"><input type="checkbox" data-update> Aggiorna gli articoli con lo stesso SKU (altrimenti vengono ignorati)</label><div class="il-preview"></div><div class="il-progress" role="status" aria-live="polite"></div><p class="il-form-error" role="alert"></p><footer><button type="button" class="il-secondary" data-cancel-import hidden>Interrompi dopo la riga corrente</button><button class="il-primary" data-run>Importa inventario</button></footer>`,true);
+    let normalized=[],extraFields=[],errors=[];const changes=new Map();
     const existing=new Map(this.data.products.map(p=>[p.sku,p]));
-    const normalize=()=>{normalized=[];errors=[];extraFields=[];
+    const label={name:'nome',description:'descrizione',category:'categoria',gender:'destinazione',size:'taglia',color:'colore',material:'materiale',price:'prezzo',cost:'costo',stock:'scorte',status:'stato',demo:'demo',photos:'foto',custom:'campi'};
+    const normalize=()=>{normalized=[];errors=[];extraFields=[];changes.clear();
       const duplicate=mapping.filter(k=>!['custom','skip'].includes(k));if(new Set(duplicate).size!==duplicate.length)errors.push('Due colonne associate allo stesso campo: correggere la mappatura.');
-      csv.headers.forEach((label,j)=>{if(mapping[j]!=='custom')return;const known=this.data.fields.find(f=>f.label.toLowerCase()===label.toLowerCase()||f.id===label.toLowerCase());extraFields.push({id:known?.id||'csv_'+label.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'_').slice(0,45)+'_'+j,label,type:'text',category:'',options:[],required:false,column:j});});
-      const seen=new Set();csv.rows.forEach((row,i)=>{try{const p={name:'',sku:'',description:'',category:'',gender:'Unisex',size:'',color:'',material:'',price:0,cost:0,stock:0,photos:[],custom:{},demo:false};
-        row.forEach((v,j)=>{v=v.trim();const key=mapping[j];if(key==='skip')return;if(key==='custom'){p.custom[extraFields.find(f=>f.column===j).id]=v;return;}if(['price','cost','stock'].includes(key))p[key]=numberCSV(v);else if(key==='photos')p.photos=v?[v]:[];else if(key==='demo')p.demo=/demo|true|sì|si|1/i.test(v);else p[key]=v;});
-        if(!p.name||!p.sku)throw Error('Nome e SKU obbligatori');if(p.sku.length>80||/^https?:/.test(p.sku))throw Error('SKU non valido: usare il CSV demo normalizzato');
+      csv.headers.forEach((label,j)=>{if(mapping[j]!=='custom')return;const known=this.data.fields.find(f=>normalizza(f.label)===normalizza(label)||f.id===normalizza(label).replace(/ /g,'_'));extraFields.push({id:known?.id||'csv_'+label.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'_').slice(0,45)+'_'+j,label,type:'text',category:'',options:[],required:false,column:j});});
+      // Per uno SKU già presente si parte dal prodotto salvato: cambiano solo le celle piene (vedi importa.mjs).
+      const campiExtra=Object.fromEntries(extraFields.map(f=>[f.column,f.id]));const colonnaSku=mapping.indexOf('sku');
+      // Convenzione dei numeri decisa per colonna guardando tutte le celle; i valori ambigui senza indizi vengono segnalati.
+      const convenzioni={},avvisi=[];
+      mapping.forEach((k,j)=>{const numerica=['price','cost','stock'].includes(k)||(k==='custom'&&this.data.fields.find(f=>f.id===campiExtra[j])?.type==='number');if(!numerica)return;
+        const celle=csv.rows.map(r=>r[j]);convenzioni[j]=convenzioneColonna(celle);const dubbi=convenzioni[j]?[]:ambigui(celle);
+        if(dubbi.length)avvisi.push(`${csv.headers[j]}: ${dubbi.slice(0,3).join(', ')}${dubbi.length>3?'…':''} letti come migliaia`);});
+      const seen=new Set();csv.rows.forEach((row,i)=>{try{
+        const old=existing.get(String(row[colonnaSku]??'').trim())||null;
+        const p=prodottoDaRiga(row,{mappatura:mapping,campi:this.data.fields,categorie:this.data.categories,campiExtra,esistente:old,convenzioni});
         if(seen.has(p.sku))throw Error('SKU duplicato nel file');seen.add(p.sku);
-        if(!this.data.categories.some(c=>c.name.toLowerCase()===p.category.toLowerCase()))throw Error('Categoria non riconosciuta');p.category=this.data.categories.find(c=>c.name.toLowerCase()===p.category.toLowerCase()).name;
-        if(!Number.isInteger(p.stock))throw Error('La quantità deve essere intera');
-        for(const f of this.data.fields){if(f.required&&(!f.category||f.category===p.category)&&!p.custom[f.id])throw Error(`Campo richiesto: ${f.label}`);if(f.type==='number'&&p.custom[f.id]!==undefined)p.custom[f.id]=numberCSV(p.custom[f.id]);}
-        const old=existing.get(p.sku);if(old)p.id=old.id;normalized.push(p);
+        if(old)changes.set(p.sku,campiCambiati(old,p));normalized.push(p);
       }catch(e){errors.push(`Riga ${i+2}: ${e.message}`);}});
       const matching=normalized.filter(p=>p.id).length;
-      dialog.querySelector('.il-preview').innerHTML=`<p><b>${normalized.length}</b> righe valide · ${normalized.length-matching} nuovi · ${matching} SKU già presenti · ${extraFields.filter(f=>!this.data.fields.some(x=>x.id===f.id)).length} nuovi campi</p><div class="il-table"><table><thead><tr><th>SKU</th><th>Nome</th><th>Categoria</th><th>Prezzo</th><th>Scorte</th></tr></thead><tbody>${normalized.slice(0,8).map(p=>`<tr><td>${h(p.sku)}</td><td>${h(p.name)}</td><td>${h(p.category)}</td><td>${money(p.price)}</td><td>${p.stock}</td></tr>`).join('')}</tbody></table></div><p>${errors.length?h(errors.join(' · ')):'Anteprima pronta. Nessun dato è stato ancora modificato.'}</p>`;
+      const aggiorna=dialog.querySelector('[data-update]').checked;
+      const modifiche=p=>!p.id?'nuovo':!aggiorna?'ignorato (spuntare «Aggiorna»)':changes.get(p.sku).length?changes.get(p.sku).map(k=>label[k]||k).join(', '):'nessuna';
+      dialog.querySelector('.il-preview').innerHTML=`<p><b>${normalized.length}</b> righe valide · ${normalized.length-matching} nuovi · ${matching} SKU già presenti · ${extraFields.filter(f=>!this.data.fields.some(x=>x.id===f.id)).length} nuovi campi</p><div class="il-table"><table><thead><tr><th>SKU</th><th>Nome</th><th>Categoria</th><th>Prezzo</th><th>Scorte</th><th>Modifiche</th></tr></thead><tbody>${normalized.slice(0,8).map(p=>`<tr><td>${h(p.sku)}</td><td>${h(p.name)}</td><td>${h(p.category)}</td><td>${money(p.price)}</td><td>${p.stock}</td><td>${h(modifiche(p))}</td></tr>`).join('')}</tbody></table></div><p class="il-help">Con «Aggiorna» cambiano solo le celle piene delle colonne associate: stato, foto e campi assenti dal file restano invariati.${csv.codifica==='Windows-1252'?' File letto con la codifica Windows-1252 di Excel.':''}</p>${avvisi.length?`<p class="il-help">Da controllare: ${h(avvisi.join(' · '))}.</p>`:''}<p>${errors.length?h(errors.join(' · ')):'Anteprima pronta. Nessun dato è stato ancora modificato.'}</p>`;
       dialog.querySelector('[data-run]').disabled=!!errors.length||!normalized.length;
-    };normalize();dialog.querySelectorAll('[data-map]').forEach(s=>s.onchange=()=>{mapping[+s.dataset.map]=s.value;normalize();});
+    };normalize();dialog.querySelectorAll('[data-map]').forEach(s=>s.onchange=()=>{mapping[+s.dataset.map]=s.value;normalize();});dialog.querySelector('[data-update]').onchange=normalize;
     dialog.querySelector('[data-run]').onclick=async e=>{
       this.busy=true;this.cancelImport=false;e.target.disabled=true;dialog.querySelector('[data-cancel-import]').hidden=false;dialog.querySelectorAll('select,input').forEach(x=>x.disabled=true);
-      let created=0,updated=0,skipped=0;const failed=[];const update=dialog.querySelector('[data-update]').checked;
+      let created=0,updated=0,skipped=0,unchanged=0;const failed=[];const update=dialog.querySelector('[data-update]').checked;
       try{const fields=[...this.data.fields];for(const f of extraFields)if(!fields.some(x=>x.id===f.id)){const {column,...definition}=f;fields.push(definition);}if(fields.length!==this.data.fields.length)await api('/api/catalogo',{fields});
         for(let i=0;i<normalized.length;i++){if(this.cancelImport)break;const p=normalized[i];dialog.querySelector('.il-progress').textContent=`Importazione ${i+1}/${normalized.length}: ${p.name}`;
-          if(p.id&&!update){skipped++;continue;}try{await api('/api/catalogo',{product:p});p.id?updated++:created++;}catch(err){failed.push(`${p.sku}: ${err.message}`);}}
-        const message=`${created} creati, ${updated} aggiornati, ${skipped} ignorati, ${failed.length} errori${this.cancelImport?' · interrotta':''}.`;
+          if(p.id&&!update){skipped++;continue;}if(p.id&&!changes.get(p.sku)?.length){unchanged++;continue;}
+          try{await api('/api/catalogo',{product:p});p.id?updated++:created++;}catch(err){failed.push(`${p.sku}: ${err.message}`);}}
+        const message=`${created} creati, ${updated} aggiornati, ${unchanged} invariati, ${skipped} ignorati, ${failed.length} errori${this.cancelImport?' · interrotta':''}.`;
         this.data=await api();this.busy=false;dialog.close();this.render();this.notice(message,failed.length>0);
         if(failed.length){this.modal('Esito importazione',`<p>${h(message)}</p><pre>${h(failed.join('\n'))}</pre>`);}
       }catch(err){dialog.querySelector('.il-form-error').textContent=err.message;e.target.disabled=false;}finally{this.busy=false;}
@@ -116,6 +133,7 @@ Catalogo.prototype.render=function(){
     window.IshtarRepairRefs?.(legacy);
   });
   this.syncing=false;
+  this.commercio=impronta(legacy);
   if(!this.querySelector('.il-file')){
     const file=document.createElement('input');file.type='file';file.accept='.csv,text/csv';file.className='il-file';file.hidden=true;file.setAttribute('aria-label','Scegli CSV inventario');
     file.onchange=()=>{if(file.files[0])this.readFile(file.files[0]);};this.append(file);
@@ -124,18 +142,29 @@ Catalogo.prototype.render=function(){
 Catalogo.prototype.syncChanges=function(){
   if(this.syncing)return;
   this.pendingWrites??=new Map();
-  for(const p of this.data.products){
-    const n=legacy.products.find(n=>n.id===p.id);if(!n)continue;
-    const changes={stock:n.stock,price:n.price,cost:n.cost,status:n.status,incoming:n.incoming,reorder:n.reorder};
-    if(Object.entries(changes).every(([key,value])=>value===(p[key]??({status:'draft',incoming:0,reorder:5}[key]))))continue;
-    Object.assign(p,changes);this.pendingWrites.set(p.id,structuredClone(p));
+  // Solo le modifiche della pagina Prodotti che non toccano ordini, resi o bozze arrivano al database (sincronizza.mjs):
+  // cassa, nuovi ordini e resi dimostrativi non cambiano le scorte reali e i valori del database tornano nello stato demo.
+  const prima=this.commercio,dopo=impronta(legacy);this.commercio=dopo;
+  const trovate=differenze(legacy.products||[],this.data.products);
+  const esito=decidi({rotta:location.hash,prima,dopo,differenze:trovate});
+  if(esito==='ripristina'){
+    clearTimeout(this.restoreTimer);this.restoreTimer=setTimeout(()=>{this.render();
+      const ora=Date.now();if(!this.demoNotice||ora-this.demoNotice>10000){this.demoNotice=ora;nativeToast('Azione dimostrativa: scorte e prezzi reali del catalogo non sono stati modificati.');}},0);
+    return;
   }
-  clearTimeout(this.changeTimer);this.changeTimer=setTimeout(async()=>{
-    if(this.flushing)return;this.flushing=true;
-    try{while(this.pendingWrites.size){const [id,p]=this.pendingWrites.entries().next().value;this.pendingWrites.delete(id);await api('/api/catalogo',{product:p});}}
+  for(const {id,campi} of trovate){const p=this.data.products.find(x=>x.id===id);Object.assign(p,campi);this.pendingWrites.set(id,structuredClone(p));}
+  if(!this.pendingWrites.size)return;
+  clearTimeout(this.changeTimer);this.changeTimer=setTimeout(()=>this.flush(),250);
+};
+// Coda dei salvataggi come promessa unica: readFile la attende prima di rileggere il catalogo. Il corpo parte sempre dopo
+// l'assegnazione (await iniziale) e libera this.flushing solo se è ancora la propria esecuzione, anche con la coda vuota.
+Catalogo.prototype.flush=function(){
+  if(this.flushing)return this.flushing;
+  const corsa=(async()=>{await null;try{while(this.pendingWrites?.size){const [id,p]=this.pendingWrites.entries().next().value;this.pendingWrites.delete(id);await api('/api/catalogo',{product:p});}}
     catch(e){this.pendingWrites.clear();nativeToast('Salvataggio non riuscito: '+e.message);await this.load();}
-    finally{this.flushing=false;}
-  },250);
+    finally{if(this.flushing===corsa)this.flushing=null;}})();
+  this.flushing=corsa;
+  return corsa;
 };
 if(!window.IshtarCatalog){
   const controller=document.createElement('ishtar-catalog');window.IshtarCatalog=controller;

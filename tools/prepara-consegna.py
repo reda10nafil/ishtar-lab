@@ -18,7 +18,8 @@ ROOT_FILES = {"README.md", "GUIDA-COLLABORATORE.md", "AGENTS.md", "PROJECT.md", 
               "avvia_pannello.py", "catalog_bridge.py"}
 PROOFS = {"qa-catalogo-operativo.json", "pagine-ripristinate.json", "avvio-bat.json",
           "integrita-design.json", "csv.test.mjs", "dashboard-ripristinata.jpg",
-          "consegna-github.json", "avvio-linux-2026-11-12.json"}
+          "consegna-github.json", "avvio-linux-2026-11-12.json",
+          "importa.test.mjs", "sincronizza.test.mjs", "correzioni-dati-csv-2026-11-12.json"}
 
 def permitted(p):
     rel = p.relative_to(ROOT)

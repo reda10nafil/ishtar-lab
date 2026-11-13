@@ -24,11 +24,11 @@ tags: [ishtar-lab]
 | Quantità inventario | Operativo verificato / parziale | Incremento in tabella, riscontro DB e ripristino |
 | Foto locali | Operativo verificato | Upload e lettura PNG dal bucket dedicato |
 | Foto remote | Parziale | Link conservato; download e associazione non verificati |
-| CSV da pulsante | Operativo verificato | Anteprima e reimportazione 82 SKU senza duplicati |
+| CSV da pulsante | Operativo verificato | Anteprima e reimportazione 82 SKU senza duplicati. Dal 12/11 (proposta satria64) l'aggiornamento conserva i dati non presenti nel file e legge i numeri con le migliaia |
 | CSV trascinato | Implementato, prova fisica mancante | Handler documentato, non simulare un esito non osservato |
 | Varianti multiple nella stessa scheda | Proposto nell'adattatore | API attuale espone la prima variante |
 | Movimenti, riserve, depositi | Codice backend presente | Da integrare e provare nel primo pannello |
-| Dashboard e analisi vendite | Demo | Dati browser, non risultati commerciali reali |
+| Dashboard e analisi vendite | Demo | Dati browser, non risultati commerciali reali. Dal 12/11 (proposta satria64) cassa, ordini e resi dimostrativi non modificano più le scorte reali |
 | Visite, conversioni e funnel | Demo / integrazione proposta | Nessuna acquisizione dal sito accertata |
 | Ordini, resi e cassa | Demo | Nessun ciclo reale di pagamento/spedizione provato |
 | Clienti e segmenti | Demo + codice backend | API riutilizzabili, dati demo nel pannello |
