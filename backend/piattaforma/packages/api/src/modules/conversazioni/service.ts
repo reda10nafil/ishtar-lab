@@ -1,6 +1,7 @@
 import { InjectTransactionManager, MedusaContext, MedusaError, MedusaService } from "@medusajs/framework/utils"
 import type { Context, InferTypeOf } from "@medusajs/framework/types"
 import { Conversazione } from "./models/conversazione"
+import { Cursore } from "./models/cursore"
 import { Identita } from "./models/identita"
 import { Messaggio } from "./models/messaggio"
 import { RispostaRapida } from "./models/risposta-rapida"
@@ -23,7 +24,7 @@ const unicita = (errore: unknown) => ERRORE_UNICITA.test(String((errore as Error
 
 // Le chiavi finiscono in «a» o in «e»: per le parole in «o» il plurale dei tipi (Messaggioes) e quello a runtime
 // (Messaggios) sono diversi, e i metodi generati non esisterebbero.
-export default class ConversazioniModuleService extends MedusaService({ Conversazione, Battuta: Messaggio, Identita, RispostaRapida }) {
+export default class ConversazioniModuleService extends MedusaService({ Conversazione, Battuta: Messaggio, Identita, RispostaRapida, Cursore }) {
   /**
    * Messaggio di un cliente arrivato da un canale. Messaggio, identità e conversazione si scrivono in una sola
    * transazione: un guasto a metà non lascia un messaggio registrato in una conversazione mai aggiornata (la rilettura lo
@@ -69,6 +70,7 @@ export default class ConversazioniModuleService extends MedusaService({ Conversa
       chiave_unica: chiave,
       id_esterno: e.id_messaggio,
       stato_consegna: "ricevuto",
+      dettagli: e.dettagli ?? null,
     }, contesto)
 
     // Un messaggio arrivato in ritardo (più vecchio dell'ultimo) non sposta l'anteprima.
@@ -77,9 +79,23 @@ export default class ConversazioniModuleService extends MedusaService({ Conversa
       id: conversazione.id,
       stato: statoDopo(conversazione.stato, "entrata"),
       non_letti: conversazione.non_letti + 1,
-      ...(piuVecchio ? {} : { ultimo_messaggio_il: e.quando, ultimo_estratto: estratto(e.testo) }),
+      ...(piuVecchio ? {} : { ultimo_messaggio_il: e.quando, ultimo_estratto: estratto(e.testo), ...(e.oggetto ? { oggetto: e.oggetto } : {}) }),
     }, contesto)
     return { conversazione_id: conversazione.id, messaggio_id: messaggio.id, nuovo: true }
+  }
+
+  /** Punto di lettura salvato di un canale (null: mai letto). */
+  async leggiCursore(canale: string, account: string, cartella: string): Promise<{ uidvalidity: string; ultimo_uid: number } | null> {
+    const [c] = await this.listCursores({ canale, account, cartella }, { take: 1 })
+    return c ? { uidvalidity: c.uidvalidity, ultimo_uid: Number(c.ultimo_uid) } : null
+  }
+
+  /** Salva il punto di lettura (solo il job di lettura, sotto il suo lucchetto, scrive il cursore del suo canale). */
+  async salvaCursore(canale: string, account: string, cartella: string, valore: { uidvalidity: string; ultimo_uid: number }): Promise<void> {
+    const dati = { uidvalidity: valore.uidvalidity, ultimo_uid: String(valore.ultimo_uid) }
+    const [c] = await this.listCursores({ canale, account, cartella }, { take: 1 })
+    if (c) await this.updateCursores({ id: c.id, ...dati })
+    else await this.createCursores({ canale, account, cartella, ...dati })
   }
 
   /** Identità del contatto per canale e account: creata la prima volta, nome e recapito aggiornati se il canale li cambia. */

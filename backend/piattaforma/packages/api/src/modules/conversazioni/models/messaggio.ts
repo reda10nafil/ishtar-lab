@@ -22,5 +22,10 @@ export const Messaggio = model
     errore: model.text().nullable(),
     autore_id: model.text().nullable(),
     autore_nome: model.text().nullable(),
+    /**
+     * Dati del canale che servono alla casella, per le email: Message-ID, In-Reply-To, References, oggetto, Reply-To,
+     * verifica del mittente, allegati, testo intero con le citazioni. Per le risposte: le intestazioni con cui sono partite.
+     */
+    dettagli: model.json().nullable(),
   })
   .indexes([{ on: ["chiave_unica"], unique: true }])

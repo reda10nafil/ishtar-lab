@@ -30,4 +30,6 @@ export type InArrivo = {
   testo: string
   quando: Date
   oggetto?: string | null
+  /** Dati propri del canale da conservare con il messaggio (per le email: intestazioni del filo, allegati, verifica). */
+  dettagli?: Record<string, unknown> | null
 }
