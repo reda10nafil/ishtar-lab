@@ -69,6 +69,10 @@ class Handler(SimpleHTTPRequestHandler):
     def do_POST(self):
         handle_catalog(self)
 
+    def do_DELETE(self):
+        # Solo il ponte: elimina una risposta rapida della casella; ogni altro indirizzo risponde 404 in JSON.
+        handle_catalog(self)
+
 
 def main():
     parser = argparse.ArgumentParser()
