@@ -60,13 +60,20 @@ export type Servizio = {
 }
 
 /**
- * Indirizzo dell'API Telegram. `TELEGRAM_API_BASE` serve solo alle prove (un server finto in locale): in produzione si
- * accetta solo un indirizzo HTTPS, perché il token del bot viaggia nell'indirizzo di ogni chiamata.
+ * Indirizzo dell'API Telegram. `TELEGRAM_API_BASE` serve alle prove con un server finto: il token del bot viaggia
+ * nell'indirizzo di ogni chiamata, quindi si accetta solo HTTPS oppure un indirizzo di questo computer (l'istanza gira
+ * con NODE_ENV=development anche quando è quella vera, quindi NODE_ENV non basta a distinguere).
  */
 export function baseTelegram(): string {
-  const scelto = process.env.TELEGRAM_API_BASE?.trim()
-  const valido = Boolean(scelto) && (scelto!.startsWith("https://") || process.env.NODE_ENV !== "production")
-  return (valido ? scelto! : "https://api.telegram.org").replace(/\/+$/, "")
+  const scelto = process.env.TELEGRAM_API_BASE?.trim() ?? ""
+  let valido = false
+  try {
+    const indirizzo = new URL(scelto)
+    valido = indirizzo.protocol === "https:" || (indirizzo.protocol === "http:" && ["127.0.0.1", "localhost", "[::1]"].includes(indirizzo.hostname))
+  } catch {
+    valido = false
+  }
+  return (valido ? scelto : "https://api.telegram.org").replace(/\/+$/, "")
 }
 
 const appSviluppatore: Campo[] = [
@@ -309,7 +316,7 @@ export const CATALOGO: Servizio[] = [
     nome: "Telegram",
     fornitore: "Telegram",
     categoria: "messaggi",
-    descrizione: "Bot for customer support and team alerts.",
+    descrizione: "Bot for customer messages: its private chats appear in the shop inbox. Use it only for this.",
     accesso: "chiave",
     campi: [{ chiave: "bot_token", etichetta: "Bot token", segreto: true, aiuto: "From @BotFather" }],
     documentazione: "https://core.telegram.org/bots/api#getme",

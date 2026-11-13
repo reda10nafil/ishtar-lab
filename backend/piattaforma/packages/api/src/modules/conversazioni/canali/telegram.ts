@@ -9,7 +9,7 @@ import type { InArrivo } from "../tipi"
 
 export { baseTelegram }
 
-export type CodiceErrore = "credenziali" | "webhook" | "limite" | "bloccato" | "richiesta" | "servizio" | "rete"
+export type CodiceErrore = "credenziali" | "webhook" | "conflitto" | "limite" | "bloccato" | "richiesta" | "servizio" | "rete"
 
 export class ErroreCanale extends Error {
   constructor(public codice: CodiceErrore, messaggio: string) {
@@ -20,8 +20,15 @@ export class ErroreCanale extends Error {
 
 export type AggiornamentoTelegram = { update_id: number; [chiave: string]: unknown }
 
-/** Messaggi senza testo: un segnaposto, così il team sa che il cliente ha mandato qualcosa. */
-const SEGNAPOSTI: [chiave: string, testo: string][] = [["photo", "[Photo]"], ["sticker", "[Sticker]"], ["voice", "[Voice message]"], ["document", "[Document]"]]
+/**
+ * Contenuti che un cliente manda: un segnaposto dice al team che c'è un allegato (prima della didascalia, se c'è). Tutto
+ * il resto (messaggi fissati, timer, permessi e gli altri messaggi di servizio) non è un messaggio del cliente.
+ */
+const SEGNAPOSTI: [chiave: string, testo: string][] = [
+  ["photo", "[Photo]"], ["video", "[Video]"], ["animation", "[GIF]"], ["video_note", "[Video message]"], ["voice", "[Voice message]"],
+  ["audio", "[Audio]"], ["document", "[Document]"], ["sticker", "[Sticker]"], ["contact", "[Contact]"], ["venue", "[Location]"],
+  ["location", "[Location]"], ["poll", "[Poll]"],
+]
 
 type MessaggioTelegram = {
   message_id: number
@@ -38,7 +45,9 @@ export function normalizzaAggiornamento(u: unknown, account: string): InArrivo |
   const m = (u as { message?: MessaggioTelegram } | null)?.message
   if (!m?.chat || m.chat.type !== "private" || m.from?.is_bot) return null
   const nome = [m.from?.first_name, m.from?.last_name].filter(Boolean).join(" ") || m.from?.username || null
-  const testo = m.text || m.caption || SEGNAPOSTI.find(([chiave]) => m[chiave])?.[1] || "[Attachment]"
+  const segnaposto = SEGNAPOSTI.find(([chiave]) => m[chiave])?.[1]
+  const testo = m.text || [segnaposto, m.caption].filter(Boolean).join(" ")
+  if (!testo) return null
   return {
     canale: "telegram",
     account,
@@ -54,7 +63,8 @@ export function normalizzaAggiornamento(u: unknown, account: string): InArrivo |
 function erroreDa(stato: number, descrizione: string | null): ErroreCanale {
   if (stato === 401 || stato === 404) return new ErroreCanale("credenziali", "Telegram refused the bot token")
   if (stato === 403) return new ErroreCanale("bloccato", "The customer blocked the bot or never started it")
-  if (stato === 409) return new ErroreCanale("webhook", "A webhook is set on this bot: remove it to read messages here")
+  if (stato === 409 && /webhook/i.test(descrizione ?? "")) return new ErroreCanale("webhook", "A webhook is set on this bot: remove it to read messages here")
+  if (stato === 409) return new ErroreCanale("conflitto", "Another program is reading this bot's messages: use this bot only for the shop inbox")
   if (stato === 429) return new ErroreCanale("limite", "Telegram is limiting requests: try again shortly")
   if (stato >= 400 && stato < 500) return new ErroreCanale("richiesta", `Telegram refused the message${descrizione ? `: ${descrizione}` : ""}`)
   return new ErroreCanale("servizio", `Telegram is not responding (error ${stato})`)

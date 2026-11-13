@@ -29,14 +29,22 @@ describe("normalizzaAggiornamento", () => {
     })
   })
 
-  it("didascalia, poi segnaposto per foto, sticker, vocale, documento e altro", () => {
+  it("media con segnaposto; con la didascalia il team sa comunque che c'è un allegato", () => {
     const testo = (extra: Record<string, unknown>) => normalizzaAggiornamento(aggiornamento({ text: undefined, ...extra }), "b")?.testo
-    expect(testo({ photo: [{}], caption: "Questa taglia?" })).toBe("Questa taglia?")
+    expect(testo({ photo: [{}], caption: "Questa taglia?" })).toBe("[Photo] Questa taglia?")
     expect(testo({ photo: [{}] })).toBe("[Photo]")
     expect(testo({ sticker: {} })).toBe("[Sticker]")
     expect(testo({ voice: {} })).toBe("[Voice message]")
-    expect(testo({ document: {} })).toBe("[Document]")
-    expect(testo({ location: {} })).toBe("[Attachment]")
+    expect(testo({ document: {}, caption: "fattura" })).toBe("[Document] fattura")
+    expect(testo({ video: {} })).toBe("[Video]")
+    expect(testo({ location: {} })).toBe("[Location]")
+    expect(testo({ contact: {} })).toBe("[Contact]")
+  })
+
+  it("messaggi di servizio della chat (fissati, timer, permessi): ignorati, non riaprono la conversazione", () => {
+    expect(normalizzaAggiornamento(aggiornamento({ text: undefined, pinned_message: { message_id: 1 } }), "b")).toBeNull()
+    expect(normalizzaAggiornamento(aggiornamento({ text: undefined, message_auto_delete_timer_changed: {} }), "b")).toBeNull()
+    expect(normalizzaAggiornamento(aggiornamento({ text: undefined, write_access_allowed: {} }), "b")).toBeNull()
   })
 
   it("username se mancano nome e cognome; null se manca tutto", () => {
@@ -92,20 +100,37 @@ describe("clientTelegram", () => {
     expect(baseTelegram()).toBe("http://127.0.0.1:9999")
   })
 
-  it("in produzione ignora un indirizzo non HTTPS", () => {
-    process.env.TELEGRAM_API_BASE = "http://127.0.0.1:9999"
-    process.env.NODE_ENV = "production"
+  it("un indirizzo non HTTPS vale solo su questo computer, qualunque sia NODE_ENV", () => {
+    process.env.NODE_ENV = "development"
+    process.env.TELEGRAM_API_BASE = "http://esempio.invalid:8080"
     expect(baseTelegram()).toBe("https://api.telegram.org")
+    process.env.TELEGRAM_API_BASE = "http://localhost:9999"
+    expect(baseTelegram()).toBe("http://localhost:9999")
+    process.env.NODE_ENV = "production"
+    process.env.TELEGRAM_API_BASE = "http://127.0.0.1:9999"
+    expect(baseTelegram()).toBe("http://127.0.0.1:9999")
+    process.env.TELEGRAM_API_BASE = "https://proxy.esempio.invalid"
+    expect(baseTelegram()).toBe("https://proxy.esempio.invalid")
   })
 
   it.each([
-    [401, "credenziali"], [404, "credenziali"], [403, "bloccato"], [409, "webhook"], [429, "limite"], [400, "richiesta"], [502, "servizio"],
+    [401, "credenziali"], [404, "credenziali"], [403, "bloccato"], [409, "conflitto"], [429, "limite"], [400, "richiesta"], [502, "servizio"],
   ])("risposta %i → %s, senza il token nel messaggio", async (stato, codice) => {
     const f = fintoFetch(() => json(stato, { ok: false, error_code: stato, description: `Errore ${stato} per bot${TOKEN}` }))
     const errore = await clientTelegram(TOKEN, f.chiama).invia("123", "x").catch((e: unknown) => e)
     expect(errore).toBeInstanceOf(ErroreCanale)
     expect((errore as ErroreCanale).codice).toBe(codice)
     expect((errore as ErroreCanale).message).not.toContain("SEGRETO")
+  })
+
+  it("409: webhook impostato oppure un altro programma che legge lo stesso bot, con due motivi diversi", async () => {
+    const conflitto = async (descrizione: string) =>
+      (await clientTelegram(TOKEN, fintoFetch(() => json(409, { ok: false, error_code: 409, description: descrizione })).chiama).leggi(null, 0).catch((e: unknown) => e)) as ErroreCanale
+    const webhook = await conflitto("Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first")
+    const altro = await conflitto("Conflict: terminated by other getUpdates request; make sure that only one bot instance is running")
+    expect(webhook.codice).toBe("webhook")
+    expect(altro.codice).toBe("conflitto")
+    expect(altro.message).toMatch(/Another program is reading this bot/)
   })
 
   it("rete irraggiungibile → «rete», senza il token", async () => {

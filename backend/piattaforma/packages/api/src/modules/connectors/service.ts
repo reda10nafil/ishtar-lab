@@ -160,11 +160,17 @@ export default class ConnectorsModuleService extends MedusaService({ ConnectorAc
     return segreti ? { valori: segreti.valori, token: segreti.token, account: conto.account_label ?? null } : null
   }
 
-  /** Un canale che ha trovato il servizio inutilizzabile (token rifiutato, webhook di un altro sistema): si vede nella console. */
-  async segnaErrore(id: string, messaggio: string) {
+  /**
+   * Un canale che ha trovato il servizio inutilizzabile (token rifiutato, webhook di un altro sistema): si vede nella
+   * console. Con `token` l'errore vale solo se le credenziali salvate sono ancora quelle usate: un token appena cambiato
+   * e verificato non torna in errore per la risposta arrivata al token vecchio.
+   */
+  async segnaErrore(id: string, messaggio: string, token?: string) {
     servizioOErrore(id)
     const conto = await this.conto(id)
-    if (conto) await this.updateConnectorAccounts({ id: conto.id, status: "errore", last_error: messaggio, last_checked_at: new Date() })
+    if (!conto) return
+    if (token !== undefined && this.leggiSegretiSicuri(conto.secret)?.valori.bot_token !== token) return
+    await this.updateConnectorAccounts({ id: conto.id, status: "errore", last_error: messaggio, last_checked_at: new Date() })
   }
 
   async scollega(id: string) {
