@@ -19,9 +19,9 @@ tags: [ishtar-lab]
 | Branding Ishtar Lab e logo | Applicato | Nessun sottotitolo Ishtar Hub sotto il nome dell'app |
 | Design e navigazione | 28 pagine verificate | Titolo/componenti visibili, non prova dei flussi reali |
 | Prodotti e categorie | Operativo verificato | 82 record DEMO in DB, otto categorie |
-| Creazione/modifica articolo | Operativo verificato | Prodotto temporaneo creato, verificato e rimosso. Dal 12/11 (proposta satria64) salvataggio «tutto o niente» in un solo workflow, provato con guasti provocati; lucchetto per prodotto e SKU |
+| Creazione/modifica articolo | Operativo verificato | Prodotto temporaneo creato, verificato e rimosso. Dal 12/11 (proposta satria64) salvataggio «tutto o niente» in un solo workflow, provato con guasti provocati; lucchetto per prodotto e SKU. Dal 13/11 solo i campi cambiati, con conflitto se cambiati altrove |
 | Campi configurabili | Operativo verificato / parziale | 14 definizioni; campo numerico altezza provato. Dal 12/11 (proposta satria64) un obbligatorio aggiunto dopo non blocca i prodotti esistenti |
-| Quantità inventario | Operativo verificato / parziale | Incremento in tabella, riscontro DB e ripristino |
+| Quantità inventario | Operativo verificato / parziale | Incremento in tabella, riscontro DB e ripristino. Dal 13/11 (proposta satria64) variazioni sommate con storico del Magazzino, conteggio dalla scheda e dal CSV, in arrivo e riordino nel magazzino; provato con due finestre |
 | Foto locali | Operativo verificato | Upload e lettura PNG dal bucket dedicato |
 | Foto remote | Parziale | Link conservato; download e associazione non verificati |
 | CSV da pulsante | Operativo verificato | Anteprima e reimportazione 82 SKU senza duplicati. Dal 12/11 (proposta satria64) l'aggiornamento conserva i dati non presenti nel file e legge i numeri con le migliaia |

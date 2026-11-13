@@ -1,0 +1,124 @@
+{
+  "date": "2026-11-13",
+  "scope": "Blocco 3, parte B: conflitti fra copie del pannello, scorte come variazioni e conteggi con storico del Magazzino, in arrivo e riordino nel magazzino vero, più depositi, finestre con il codice vecchio",
+  "modified_by": "satria64 — versione modificata, autorizzata dal titolare nella issue #1, in attesa di revisione",
+  "branch": "conflitti-movimenti",
+  "base_branch": "salvataggi-atomici-magazzino",
+  "base_commit": "67b103b",
+  "decisions": "proposte inviate al titolare su Telegram il 12 novembre e applicate come annunciato, in assenza di risposta: 1 conflitto → niente salvataggio, valore attuale e catalogo ricaricato; 2 +/−, Ricevi e Ordina/Pour come variazioni sommate, quantità della scheda e del CSV come conteggio, storico firmato con l'email; 3 più depositi → scorte bloccate nel pannello; 4 riordino = soglia di sicurezza del Magazzino, in arrivo = unità in arrivo del livello; 5 campi obbligatori come nella parte A; 6 finestre con il codice vecchio rifiutate con l'invito a ricaricare; 7 finestra varianti della console e correzioni del Magazzino dopo; 8 canale di vendita fuori da questa modifica",
+  "defects": [
+    {
+      "id": "copia-vecchia-scorte",
+      "before": "il pannello inviava la scheda intera e le scorte come valore assoluto: una finestra rimasta indietro, salvando anche solo il prezzo, riportava le scorte al valore vecchio e annullava in silenzio evasioni, resi e modifiche fatte altrove",
+      "after": "modifica parziale (POST {modifica}): scorte come variazioni con un id, sommate a quelle del server e applicate sotto il lucchetto della voce di magazzino, lo stesso di evasioni e resi di Medusa; un invio ripetuto con lo stesso id non conta due volte; la quantità scritta nella scheda o nel CSV è un conteggio accettato solo se la giacenza è ancora quella letta (altrimenti 412 con il valore attuale)"
+    },
+    {
+      "id": "copia-vecchia-campi",
+      "before": "prezzo, costo, stato, testi, categoria, genere e campi personalizzati cambiati dalla console o da un'altra finestra venivano riscritti con i valori vecchi; ogni salvataggio riscriveva anche stato e categoria",
+      "after": "si inviano solo i campi cambiati, ciascuno con il valore di partenza: se il valore attuale è diverso la modifica non si salva (412), il pannello mostra il valore attuale e ricarica il catalogo; nel prodotto si scrivono solo i campi cambiati, nell'offerta solo il prezzo o il costo cambiati (dei metadati solo prezzo_cessione); al cambio di categoria restano le categorie della console fuori dal catalogo Ishtar"
+    },
+    {
+      "id": "storico-scorte",
+      "before": "le scorte cambiate dal pannello non lasciavano traccia nello storico del Magazzino",
+      "after": "ogni variazione e ogni conteggio vanno nello storico del livello nel formato del Magazzino, firmati con l'email di chi salva; Ordina/Pour con differenza 0 e la merce in arrivo nella nota; il conteggio aggiorna la data dell'ultimo conteggio; l'annullamento di un salvataggio toglie solo le proprie voci"
+    },
+    {
+      "id": "doppio-ricevi",
+      "before": "«Ricevi» premuto in due finestre caricava la stessa merce due volte",
+      "after": "una variazione che consuma merce in arrivo non più presente è un conflitto (412 «le unità in arrivo sono state cambiate altrove»); le altre variazioni della stessa modifica si salvano"
+    },
+    {
+      "id": "in-arrivo-riordino",
+      "before": "«In arrivo» e «Riordino» esistevano solo nella scheda Ishtar del pannello, scollegati dal magazzino",
+      "after": "«In arrivo» = incoming_quantity dei livelli (Ordina/Pour aumenta, Ricevi la porta in giacenza); «Riordino» = soglia di sicurezza del Magazzino (voce, poi azienda, poi 5); lo script pulisci-metadati-ishtar.ts sposta i valori vecchi con un movimento ricordato (una nuova esecuzione non li aggiunge due volte) e la soglia solo se la voce non ne ha una valida; finché lo script non gira, i salvataggi della scheda conservano i valori da spostare"
+    },
+    {
+      "id": "piu-depositi",
+      "before": "con scorte in più depositi il pannello mostrava il totale e scriveva in un deposito qualsiasi",
+      "after": "vista con stock_locked, quantità in sola lettura nella scheda, variazioni rifiutate con 400 «scorte» (prezzo e stato della stessa modifica si salvano), quantità del CSV ignorata con un avviso nell'anteprima"
+    },
+    {
+      "id": "giacenza-negativa",
+      "before": "Medusa lascia la giacenza sotto zero dopo un'evasione oltre le unità disponibili: il pannello non poteva più salvare la scheda di quel prodotto né registrare «+» o «Ricevi»",
+      "after": "conteggio accettato anche partendo da una giacenza negativa; rifiutate solo le variazioni che la abbassano ancora"
+    },
+    {
+      "id": "finestre-vecchie",
+      "before": "una finestra aperta prima dell'aggiornamento avrebbe continuato a inviare la scheda intera",
+      "after": "una scheda intera con id e una configurazione dei campi senza il valore di partenza ricevono 400 «Pannello aggiornato: ricaricare la pagina per salvare le modifiche»; la creazione di prodotti nuovi resta com'era"
+    },
+    {
+      "id": "configurazione-campi",
+      "before": "due finestre potevano sovrascriversi la configurazione dei campi personalizzati",
+      "after": "salvataggio con la configurazione di partenza e un lucchetto; 412 se è cambiata altrove, ok se è già quella richiesta (invio ripetuto); un campo tolto altrove mentre la scheda lo mostrava è un conflitto con ricaricamento"
+    },
+    {
+      "id": "undo-e-dettaglio",
+      "before": "dopo un salvataggio che riallineava la pagina, l'«Undo» degli avvisi del kit agiva su una copia non più mostrata; il campo prezzo del dettaglio teneva il valore con cui era stato aperto e, uscendo dal campo, lo riscriveva sopra quello nuovo",
+      "after": "il pannello aggiorna gli oggetti già mostrati invece di ricrearli, e allinea il campo prezzo del dettaglio aperto quando il prezzo cambia dal server (non mentre l'utente lo modifica)"
+    }
+  ],
+  "tests": {
+    "jest_security": "190/190 (prima 131)",
+    "node_test_verifiche": "80/80 (prima 69)",
+    "typecheck_api": "0 errori",
+    "ponte": "8/8",
+    "csv": "13 casi"
+  },
+  "real_checks": {
+    "environment": "istanza locale con 82 articoli DEMO; backup del database (pg_dump) prima delle prove; API riavviata con il nuovo codice; script temporanei di verifica rimossi dopo l'uso; alla fine database ripristinato dal backup in un database separato poi scambiato (pg_restore --clean non può togliere il vincolo ereditato di cat_seller: il tentativo in transazione unica è stato annullato senza effetti); catalogo, campi e livelli di magazzino identici a prima delle prove",
+    "api": "22/22: scheda intera e campi senza valore di partenza rifiutati con l'invito a ricaricare; prezzo salvato e risposta con la scheda aggiornata; invio ripetuto innocuo; prezzo cambiato altrove 412 senza scritture parziali; solo il nome; variazione idempotente; storico firmato; Ordina e Ricevi; doppio Ricevi 412; variazione sotto zero 400; conteggio su giacenza vecchia 412 e su giacenza giusta salvato con la data; livello creato per un prodotto che non lo aveva; configurazione dei campi con valore di partenza, conflitto e invio ripetuto",
+    "casi_nuovi": "13/13: giacenza negativa (+, Ordina e Ricevi accettati, − rifiutato con 400 «scorte», conteggio accettato dallo schema); secondo deposito vero (scorte bloccate e sommate nella vista, variazione 400 «scorte», prezzo salvato); campo personalizzato tolto 412; «constructor» 400; categoria della console fuori catalogo conservata al cambio di categoria; cambio del solo prezzo senza riscrivere i metadati dell'offerta",
+    "guasto": "ultimo passo fallito (offerta inesistente) dopo scorte e prodotto: esito «annullato», scorte, merce in arrivo e prodotto identici a prima, nessun movimento rimasto nei metadati",
+    "concorrenza": "8 variazioni +1 del pannello e 8 uscite −1 come le evasioni di Medusa (adjustInventory sotto il lucchetto della voce), insieme: giacenza esatta, 8 voci su 8 nello storico",
+    "migrazione": "prodotto con livello (3 in arrivo e riordino 2): unità nel livello e soglia nella voce; prodotto senza livello (5 in arrivo): livello creato, riordino predefinito non scritto; seconda esecuzione: niente da fare; nessuna scheda con le chiavi vecchie"
+  },
+  "end_to_end": {
+    "catalogo": "18/18",
+    "collegamento": "32/32 (API spenta e riaccesa)",
+    "parte_a": "8/8",
+    "parte_b": "20/20 con due finestre vere del pannello: prezzo cambiato nella finestra rimasta indietro (412, valore attuale, ricaricamento), scorte cambiate insieme da due finestre (sommate), «Ricevi» in due finestre (merce caricata una volta), quantità della scheda dopo una vendita altrove (412) e poi salvata, prezzo in conflitto e «+» nella stessa modifica (il «+» salvato), «Undo» dopo un riallineamento (annullato davvero), campo prezzo del dettaglio dopo una rilettura (prezzo nuovo; con la correzione disattivata restava quello vecchio), storico del Magazzino firmato; catalogo identico alla fine"
+  },
+  "known_limits": [
+    "finestra varianti della console (impostaScorte) e correzioni del Magazzino (applicaVariazioni) scrivono ancora le scorte come valore assoluto senza lucchetto: rimandate (scelta 7)",
+    "le rotte della console non prendono il lucchetto del prodotto: una modifica della console arrivata fra la lettura e la scrittura di un salvataggio del pannello può essere sovrascritta (finestra breve)",
+    "categorie della console fuori dal catalogo Ishtar e stati proposed/rejected non sono rappresentati nel pannello: un loro cambio non è visto come conflitto (non vengono però più riscritti, e le categorie fuori catalogo restano al cambio di categoria)",
+    "il kit confronta la soglia di riordino con la giacenza, il Magazzino con le unità disponibili: coincidono senza ordini aperti",
+    "nessun aggiornamento automatico fra finestre aperte: una finestra rimasta indietro vede i cambi solo ricaricando o salvando (ma non può più riscriverli)",
+    "campi personalizzati: vuoto e assente valgono uguale e una modifica parziale non toglie una chiave",
+    "lo script pulisci-metadati-ishtar.ts va eseguito una volta dopo l'unione: prima, «In arrivo» e «Riordino» vecchi non compaiono nel pannello (restano nella scheda e non vanno persi)"
+  ],
+  "not_tested": [
+    "Windows (codice TypeScript del backend e JavaScript del pannello, senza percorsi o comandi di sistema)",
+    "interfacce della console e del portale aziende (la creazione dei prodotti condivisa non è cambiata)",
+    "nel browser: scheda di un articolo con più depositi, import CSV con più depositi e scheda con giacenza negativa (provati con l'API e con i test)"
+  ],
+  "secrets_included": false,
+  "independent_review": {
+    "method": "workflow di revisione avversariale: quattro revisori (concorrenza e atomicità, contratto e regole del server, pannello, regressioni) e un verificatore per ciascuno che ha provato a smentire ogni rilievo nel codice di Medusa e Mercur e con piccoli script; 22 rilievi, tutti confermati, di cui 4 doppioni fra revisori (18 problemi distinti)",
+    "fixed": [
+      "salvataggio della scheda prima dello script che cancellava «In arrivo» e «Riordino» ancora da spostare (alta)",
+      "un rifiuto (412 o 400) che scartava anche le variazioni di scorte e le modifiche fatte durante l'invio (media, regressione rispetto alla parte A)",
+      "giacenza negativa che bloccava scheda, conteggio e pulsanti (media)",
+      "«Undo» del kit senza effetto dopo un riallineamento della pagina (media)",
+      "id del conteggio rigenerato a ogni nuovo «Salva» dopo una risposta persa",
+      "metadati dell'offerta riscritti per intero anche cambiando solo il prezzo",
+      "deposito letto fuori dal lucchetto nello script, con il rischio di un secondo deposito",
+      "configurazione dei campi già salvata risposta come conflitto al nuovo invio",
+      "categorie della console fuori catalogo tolte al cambio di categoria",
+      "nomi come «constructor» che producevano un errore 500",
+      "soglia del Magazzino non valida considerata già impostata dallo script",
+      "Ordina/Pour fuori dallo storico del Magazzino",
+      "importazione CSV bloccata da un 412 sui campi senza ricaricamento",
+      "campo prezzo del dettaglio del kit con il valore vecchio",
+      "rilettura con variazioni in volo contate due volte sullo schermo",
+      "CSV con articoli in più depositi che scartava tutta la riga",
+      "campo personalizzato tolto altrove che dava un 400 invece del conflitto"
+    ],
+    "accepted": [
+      "console senza il lucchetto del prodotto (rotte fuori ambito, scelta 7): ridotto il danno scrivendo nell'offerta solo ciò che cambia",
+      "stati proposed/rejected e categorie fuori catalogo non rappresentati nel pannello: conservati, non segnalati come conflitto",
+      "soglia tolta apposta dal Magazzino (null): lo script la rispetta e non ci scrive il riordino vecchio"
+    ]
+  }
+}
