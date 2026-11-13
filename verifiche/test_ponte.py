@@ -7,8 +7,11 @@ import json
 import sys
 import threading
 import unittest
+from functools import partial
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.error import HTTPError
+from urllib.request import Request, urlopen
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import avvia_pannello  # noqa: E402
@@ -244,6 +247,29 @@ class Server(unittest.TestCase):
         self.assertEqual(avvia_pannello.indirizzo_canonico("LOCALHOST:4273", "/api/catalogo"), "http://127.0.0.1:4273/api/catalogo")
         self.assertIsNone(avvia_pannello.indirizzo_canonico("127.0.0.1:4273", "/ishtar-lab/"))
         self.assertIsNone(avvia_pannello.indirizzo_canonico("esterno.example:4273", "/ishtar-lab/"))
+
+    def test_cornici_vietate_e_dati_del_ponte_fuori_dalla_cache(self):
+        # Nessun altro sito mostra il pannello in una cornice; le risposte del ponte (dati veri) non finiscono su disco.
+        server = ThreadingHTTPServer(("127.0.0.1", 0), partial(avvia_pannello.Handler, directory=str(avvia_pannello.ROOT)))
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        try:
+            base = f"http://127.0.0.1:{server.server_port}"
+            with urlopen(base + "/ishtar-lab/index.html", timeout=5) as risposta:
+                pagina = risposta.headers
+            try:
+                urlopen(Request(base + "/api/conversazioni", headers={"X-Ishtar-Local": "1"}), timeout=5)
+                self.fail("il ponte doveva rifiutare un host diverso da 127.0.0.1:4273")
+            except HTTPError as rifiuto:
+                ponte_headers = rifiuto.headers
+                rifiuto.close()
+            for intestazioni in (pagina, ponte_headers):
+                self.assertEqual(intestazioni.get("X-Frame-Options"), "DENY")
+                self.assertEqual(intestazioni.get("Content-Security-Policy"), "frame-ancestors 'none'")
+            self.assertEqual(pagina.get("Cache-Control"), "no-cache")
+            self.assertEqual(ponte_headers.get("Cache-Control"), "no-store")
+        finally:
+            server.shutdown()
+            server.server_close()
 
     def test_delete_servito(self):
         self.assertTrue(callable(getattr(avvia_pannello.Handler, "do_DELETE", None)))

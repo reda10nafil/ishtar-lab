@@ -35,7 +35,12 @@ class Handler(SimpleHTTPRequestHandler):
 
     def end_headers(self):
         self.send_header("X-Redx-Recovery", IDENTIFIER)
-        self.send_header("Cache-Control", "no-cache")
+        percorso = urlsplit(getattr(self, "path", "") or "").path
+        # Le risposte del ponte portano i dati veri dei clienti: mai nella cache del browser, che resta su disco.
+        self.send_header("Cache-Control", "no-store" if percorso.startswith("/api/") else "no-cache")
+        # Nessun altro sito può mostrare il pannello in una cornice (clic nascosti su conversazioni, «Close», collegamenti).
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Content-Security-Policy", "frame-ancestors 'none'")
         super().end_headers()
 
     def do_GET(self):
