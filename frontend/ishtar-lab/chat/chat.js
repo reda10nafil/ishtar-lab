@@ -159,7 +159,7 @@ function Elenco({s, scheda, id}) {
   }
   return h('section', {className: 'card card--flush chat__elenco', 'aria-label': 'Conversations'},
     h('div', {className: 'chat__strumenti'},
-      h(Ricerca, {value: q, onChange: cambiaQ, placeholder: 'Name, message or contact'}),
+      h(Ricerca, {value: q, onChange: cambiaQ, placeholder: 'Search chats'}),
       h('select', {className: 'select chat__canale', value: filtri.canale, 'aria-label': 'Channel', onChange: e => casella.filtra({canale: e.target.value})},
         h('option', {value: ''}, 'All channels'),
         CANALI.map(c => h('option', {key: c, value: c}, etichettaCanale(c))))),
@@ -206,23 +206,27 @@ function Aperta({s, scheda, id, conv, dati, larghezza}) {
   const chiusa = conv.stato === 'chiusa';
   const [testo, cambiaTesto] = useState(() => casella.bozza(id));
   const area = useRef(null);
-  const scrivi = valore => { cambiaTesto(valore); casella.bozza(id, valore); };
+  // Testo corrente anche fra due eventi dello stesso giro (doppio clic, Invio e clic insieme): React lo ridisegna dopo,
+  // e senza questo il secondo evento manderebbe lo stesso testo come seconda risposta.
+  const attuale = useRef(testo);
+  const scrivi = valore => { attuale.current = valore; cambiaTesto(valore); casella.bozza(id, valore); };
   const manda = () => {
-    const daInviare = testo;
+    const daInviare = attuale.current;
     if (!daInviare.trim() || chiusa) return;
     scrivi('');
     casella.rispondi(id, daInviare);
     area.current?.focus();
   };
   const inserisci = aggiunta => {
-    const el = area.current, inizio = el?.selectionStart ?? testo.length, fine = el?.selectionEnd ?? testo.length;
-    const nuovo = (testo.slice(0, inizio) + aggiunta + testo.slice(fine)).slice(0, MASSIMO_RISPOSTA);
+    const corrente = attuale.current, el = area.current;
+    const inizio = el?.selectionStart ?? corrente.length, fine = el?.selectionEnd ?? corrente.length;
+    const nuovo = (corrente.slice(0, inizio) + aggiunta + corrente.slice(fine)).slice(0, MASSIMO_RISPOSTA);
     scrivi(nuovo);
     requestAnimationFrame(() => { const p = Math.min(nuovo.length, inizio + aggiunta.length); el?.focus(); el?.setSelectionRange(p, p); });
   };
   const riprendi = id_client => {
     const ripreso = casella.scarta(id_client);
-    if (ripreso) scrivi(testo ? `${testo}\n${ripreso}` : ripreso);
+    if (ripreso) scrivi(attuale.current ? `${attuale.current}\n${ripreso}` : ripreso);
   };
   const messaggi = dati ? unisci(dati.messaggi, s.inSospeso, id) : [];
   return h('section', {className: 'card card--flush chat__conv', 'aria-label': `Chat with ${nome}`},
@@ -232,11 +236,11 @@ function Aperta({s, scheda, id, conv, dati, larghezza}) {
       h('span', {className: 'cell__text chat__chi'}, h('b', null, nome),
         h('small', null, [etichettaCanale(conv.canale), etichettaStato(conv.stato), conv.oggetto].filter(Boolean).join(' · '))),
       h('span', {className: 'chat__azioni'},
-        larghezza !== 'tre' && h('button', {type: 'button', className: 'btn btn--sm', onClick: () => apriCassetto({title: 'Customer', body: () => h(SchedaCliente, {idConversazione: id})})},
-          h(Icona, {name: 'user'}), 'Customer'),
+        larghezza !== 'tre' && h('button', {type: 'button', className: 'btn btn--sm', 'aria-label': 'Customer', onClick: () => apriCassetto({title: 'Customer', body: () => h(SchedaCliente, {idConversazione: id})})},
+          h(Icona, {name: 'user'}), h('span', {className: 'chat-etichetta'}, 'Customer')),
         chiusa
-          ? h('button', {type: 'button', className: 'btn btn--sm', onClick: () => casella.cambiaStato(id, 'aperta')}, h(Icona, {name: 'refresh'}), 'Reopen')
-          : h('button', {type: 'button', className: 'btn btn--sm', disabled: !dati, onClick: () => casella.cambiaStato(id, 'chiusa')}, h(Icona, {name: 'check'}), 'Close'))),
+          ? h('button', {type: 'button', className: 'btn btn--sm', 'aria-label': 'Reopen', onClick: () => casella.cambiaStato(id, 'aperta')}, h(Icona, {name: 'refresh'}), h('span', {className: 'chat-etichetta'}, 'Reopen'))
+          : h('button', {type: 'button', className: 'btn btn--sm', 'aria-label': 'Close', disabled: !dati, onClick: () => casella.cambiaStato(id, 'chiusa')}, h(Icona, {name: 'check'}), h('span', {className: 'chat-etichetta'}, 'Close')))),
     s.aperta.errore && dati && h('p', {className: 'chat-avviso', role: 'alert'}, `Not updated: ${s.aperta.errore}`),
     dati ? h(Registro, {messaggi, conversazione_id: id, riprendi}) : h('p', {className: 'chat-carica', role: 'status'}, 'Loading messages…'),
     chiusa

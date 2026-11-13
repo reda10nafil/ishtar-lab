@@ -119,5 +119,7 @@
 
 @media (max-width: 760px) {
   .chat-bolla { max-width: 90%; }
+  /* Sul telefono i pulsanti della testata restano icone (con il nome per i lettori di schermo): il nome del cliente ha spazio. */
   .chat__azioni .btn { padding: 0 10px; }
+  .chat__azioni .chat-etichetta { display: none; }
 }
