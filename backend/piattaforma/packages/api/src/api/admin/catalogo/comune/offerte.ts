@@ -2,6 +2,7 @@ import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { createInventoryLevelsWorkflow, deleteInventoryItemWorkflow, updateInventoryLevelsWorkflow } from "@medusajs/medusa/core-flows"
 import { createOffersWorkflow, createSellerStockLocationsWorkflow, deleteOffersWorkflow, updateOffersWorkflow } from "@mercurjs/core/workflows"
+import { sogliaDi } from "../../magazzino/lib/scorte"
 
 export const VALUTA = "eur"
 
@@ -20,6 +21,10 @@ export type Offerta = {
   scorte: number
   livelli: Livello[]
   voci_magazzino: string[]
+  /** Unità in arrivo nei depositi (incoming_quantity dei livelli): «In arrivo» del pannello. */
+  in_arrivo: number
+  /** Soglia di sicurezza del Magazzino (voce, poi azienda, poi 5): «Riordino» del pannello. */
+  soglia: number
   prezzo_cessione: number | null
   prezzo_consigliato: number | null
   proposta: Proposta | null
@@ -34,11 +39,15 @@ type RigaOfferta = {
   sku: string
   ean: string | null
   metadata: Record<string, unknown> | null
-  seller?: { id: string; name: string } | null
+  seller?: { id: string; name: string; metadata?: Record<string, unknown> | null } | null
   prices?: ({ id: string; amount: number; currency_code: string } | null)[]
   inventory_item_link?: {
     inventory_item_id: string
-    inventory_item?: { id: string; location_levels?: { location_id: string; stocked_quantity: number }[] } | null
+    inventory_item?: {
+      id: string
+      metadata?: Record<string, unknown> | null
+      location_levels?: { location_id: string; stocked_quantity: number; incoming_quantity?: number }[]
+    } | null
   }[]
 }
 
@@ -52,13 +61,16 @@ const CAMPI = [
   "metadata",
   "seller.id",
   "seller.name",
+  "seller.metadata",
   "prices.id",
   "prices.amount",
   "prices.currency_code",
   "inventory_item_link.inventory_item_id",
   "inventory_item_link.inventory_item.id",
+  "inventory_item_link.inventory_item.metadata",
   "inventory_item_link.inventory_item.location_levels.location_id",
   "inventory_item_link.inventory_item.location_levels.stocked_quantity",
+  "inventory_item_link.inventory_item.location_levels.incoming_quantity",
 ]
 
 const numero = (valore: unknown) => (typeof valore === "number" && Number.isFinite(valore) ? valore : null)
@@ -82,6 +94,8 @@ function normalizza(riga: RigaOfferta): Offerta {
     scorte: livelli.reduce((totale, l) => totale + l.quantita, 0),
     livelli,
     voci_magazzino: voci.map((v) => v.inventory_item_id),
+    in_arrivo: voci.reduce((totale, v) => totale + (v.inventory_item?.location_levels ?? []).reduce((s, l) => s + Number(l.incoming_quantity ?? 0), 0), 0),
+    soglia: sogliaDi(voci[0]?.inventory_item?.metadata, riga.seller?.metadata).soglia,
     prezzo_cessione: numero(metadata.prezzo_cessione),
     prezzo_consigliato: numero(metadata.prezzo_consigliato),
     proposta: (metadata.proposta_prezzi as Proposta | undefined) ?? null,

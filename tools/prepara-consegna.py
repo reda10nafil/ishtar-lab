@@ -22,7 +22,7 @@ PROOFS = {"qa-catalogo-operativo.json", "pagine-ripristinate.json", "avvio-bat.j
           "importa.test.mjs", "sincronizza.test.mjs", "correzioni-dati-csv-2026-11-12.json",
           "collegamento.test.mjs", "test_ponte.py", "affidabilita-salvataggi-2026-11-12.json",
           "accesso-locale.test.mjs", "sicurezza-riservatezza-2026-11-12.json",
-          "salvataggi-atomici-2026-11-12.json"}
+          "salvataggi-atomici-2026-11-12.json", "conflitti-movimenti-2026-11-13.json"}
 
 def permitted(p):
     rel = p.relative_to(ROOT)

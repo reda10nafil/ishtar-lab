@@ -1,9 +1,10 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { createStep, createWorkflow, StepResponse, transform, when, WorkflowResponse } from "@medusajs/framework/workflows-sdk"
-import { createInventoryLevelsWorkflow, updateInventoryLevelsWorkflow, updateProductsWorkflow, useQueryGraphStep } from "@medusajs/medusa/core-flows"
+import { updateProductsWorkflow, useQueryGraphStep } from "@medusajs/medusa/core-flows"
 import { createOffersWorkflow, createProductsWorkflow, createSellerStockLocationsWorkflow, updateOffersWorkflow } from "@mercurjs/core/workflows"
 import { classificaEsito, compensazioniFallite } from "./esito"
+import { annullaMovimenti, applicaMovimenti, metadatiLivello, statoLivello, type Applicato, type ConteggioPannello, type MovimentoPannello } from "./movimenti"
 import { fotografiaProdotto, ripristinoProdotto, type FotografiaProdotto } from "./ripristino"
 
 /*
@@ -112,53 +113,119 @@ const ricordaProdottoStep = createStep(
   }
 )
 
+/** Attesa massima del lucchetto della voce di magazzino (lo stesso di evasioni e resi di Medusa). */
+const ATTESA_VOCE = 30
+
+export type InputScorte = {
+  voce: string
+  /** Deposito del livello; null se la voce non ha ancora livelli: si usa quello dell'azienda o lo si crea qui. */
+  deposito: string | null
+  azienda: string
+  nome_deposito: string
+  movimenti: MovimentoPannello[]
+  conteggio?: ConteggioPannello
+  chi: string
+  quando: string
+}
+
+type Annullamento = { voce: string; deposito: string; nuovi: Applicato[]; creato: boolean; conteggioPrima?: string | null } | null
+
+type Magazzino = {
+  listInventoryLevels: (filtri: object) => Promise<Array<{ id: string; stocked_quantity?: unknown; incoming_quantity?: unknown; reserved_quantity?: unknown; metadata?: Record<string, unknown> | null }>>
+  updateInventoryLevels: (dati: object[]) => Promise<unknown>
+  createInventoryLevels: (dati: object[]) => Promise<unknown>
+  deleteInventoryLevels: (ids: string[]) => Promise<void>
+}
+type Lucchetti = { execute: <T>(chiavi: string[], lavoro: () => Promise<T>, opzioni?: { timeout?: number }) => Promise<T> }
+
+/**
+ * Variazioni e conteggi del pannello applicati al livello di magazzino sotto il lucchetto della voce, lo stesso di
+ * evasioni e resi (adjustInventoryLevelsStep): la giacenza si legge e si scrive senza che un ordine passi in mezzo, e
+ * l'annullamento toglie solo le variazioni di questo salvataggio, non quelle arrivate nel frattempo.
+ */
+const movimentiScorteStep = createStep(
+  "ishtar-movimenti-scorte",
+  async (s: InputScorte & { deposito: string }, { container }) => {
+    const lucchetti = container.resolve(Modules.LOCKING) as unknown as Lucchetti
+    const magazzino = container.resolve(Modules.INVENTORY) as unknown as Magazzino
+    return await lucchetti.execute([s.voce], async () => {
+      const [livello] = await magazzino.listInventoryLevels({ inventory_item_id: s.voce, location_id: s.deposito })
+      const esito = applicaMovimenti(statoLivello(livello), s, s.chi, s.quando)
+      if (!esito.cambiato) return new StepResponse(esito.giacenza, null as Annullamento)
+      const conteggioPrima = typeof livello?.metadata?.ultimo_conteggio === "string" ? (livello.metadata.ultimo_conteggio as string) : null
+      const dati = {
+        inventory_item_id: s.voce,
+        location_id: s.deposito,
+        stocked_quantity: esito.giacenza,
+        incoming_quantity: esito.in_arrivo,
+        metadata: metadatiLivello(livello?.metadata, esito, esito.contato ? s.quando : undefined),
+      }
+      if (livello) await magazzino.updateInventoryLevels([dati])
+      else await magazzino.createInventoryLevels([dati])
+      return new StepResponse(esito.giacenza, { voce: s.voce, deposito: s.deposito, nuovi: esito.nuovi, creato: !livello, ...(esito.contato ? { conteggioPrima } : {}) } as Annullamento)
+    }, { timeout: ATTESA_VOCE })
+  },
+  async (annullamento: Annullamento | undefined, { container }) => {
+    if (!annullamento) return
+    const lucchetti = container.resolve(Modules.LOCKING) as unknown as Lucchetti
+    const magazzino = container.resolve(Modules.INVENTORY) as unknown as Magazzino
+    await lucchetti.execute([annullamento.voce], async () => {
+      const [livello] = await magazzino.listInventoryLevels({ inventory_item_id: annullamento.voce, location_id: annullamento.deposito })
+      if (!livello) return
+      const stato = annullaMovimenti(statoLivello(livello), annullamento.nuovi)
+      // Livello creato da questo salvataggio e rimasto vuoto: si toglie, come faceva createInventoryLevelsWorkflow.
+      const vuoto = !stato.giacenza && !stato.in_arrivo && !Number(livello.reserved_quantity ?? 0) && !stato.storico.length
+      if (annullamento.creato && vuoto) {
+        await magazzino.deleteInventoryLevels([livello.id])
+        return
+      }
+      await magazzino.updateInventoryLevels([{
+        inventory_item_id: annullamento.voce,
+        location_id: annullamento.deposito,
+        stocked_quantity: stato.giacenza,
+        incoming_quantity: stato.in_arrivo,
+        metadata: metadatiLivello(livello.metadata, stato, "conteggioPrima" in annullamento ? annullamento.conteggioPrima : undefined),
+      }])
+    }, { timeout: ATTESA_VOCE })
+  }
+)
+
 export type InputModifica = {
   id: string
-  /** Aggiornamento del prodotto: titolo, descrizione, materiale, stato, categorie, foto, metadati. */
-  prodotto: Record<string, unknown>
-  scorte:
-    | { tipo: "invariate" }
-    | { tipo: "livello"; voce: string; deposito: string; quantita: number }
-    | { tipo: "nuovo-livello"; voce: string; quantita: number; azienda: string; deposito: string | null; nome_deposito: string }
-  /** null se prezzo e costo non cambiano; prices assente se cambia solo il costo. */
-  offerta: null | { id: string; prices?: unknown[]; metadata: Record<string, unknown> }
+  /** Solo i campi cambiati del prodotto (titolo, descrizione, materiale, stato, categorie, foto, metadati), o null. */
+  prodotto: Record<string, unknown> | null
+  /** Variazioni e conteggio delle scorte, o null se non cambiano. */
+  scorte: InputScorte | null
+  /** null se prezzo e costo non cambiano; prices assente se cambia solo il costo, metadata (solo il costo) se cambia. */
+  offerta: null | { id: string; prices?: unknown[]; metadata?: Record<string, unknown> }
   updated_by: string
 }
 
 /**
- * Ordine dei passi: scheda, scorte, prezzo per ultimo. La compensazione dell'offerta toglie i prezzi creati ma non
- * ripristina l'importo di un prezzo aggiornato sul posto: per ultimo, non c'è un passo successivo che possa fallire dopo.
+ * Ordine dei passi: scorte, prodotto, prezzo per ultimo. Le scorte vengono prima perché un conflitto (giacenza cambiata
+ * da un ordine o da un'altra finestra) ferma il salvataggio prima che si scriva altro. La compensazione dell'offerta
+ * toglie i prezzi creati ma non ripristina l'importo di un prezzo aggiornato sul posto: per ultimo, non c'è un passo
+ * successivo che possa fallire dopo.
  */
 export const aggiornaProdottoCatalogoWorkflow = createWorkflow("ishtar-aggiorna-prodotto", (input: InputModifica) => {
-  ricordaProdottoStep(transform({ input }, ({ input }) => input.id))
-  updateProductsWorkflow.runAsStep({
-    input: transform({ input }, ({ input }) => ({ selector: { id: input.id }, update: input.prodotto }) as any),
+  const nuovoDeposito = when({ input }, ({ input }) => Boolean(input.scorte && !input.scorte.deposito)).then(() =>
+    createSellerStockLocationsWorkflow.runAsStep({
+      input: transform({ input }, ({ input }) => ({ seller_id: input.scorte!.azienda, locations: [{ name: input.scorte!.nome_deposito }] })),
+    }))
+
+  when({ input }, ({ input }) => Boolean(input.scorte)).then(() => {
+    movimentiScorteStep(transform({ input, nuovoDeposito }, ({ input, nuovoDeposito }) => ({
+      ...input.scorte!,
+      deposito: input.scorte!.deposito ?? (nuovoDeposito as unknown as { id: string }[] | undefined)?.[0]?.id ?? "",
+    })))
   })
 
-  when({ input }, ({ input }) => input.scorte.tipo === "livello").then(() =>
-    updateInventoryLevelsWorkflow.runAsStep({
-      input: transform({ input }, ({ input }) => {
-        const s = input.scorte as Extract<InputModifica["scorte"], { tipo: "livello" }>
-        return { updates: [{ inventory_item_id: s.voce, location_id: s.deposito, stocked_quantity: s.quantita }] }
-      }),
-    }))
-
-  const nuovoDeposito = when({ input }, ({ input }) => input.scorte.tipo === "nuovo-livello" && !input.scorte.deposito).then(() =>
-    createSellerStockLocationsWorkflow.runAsStep({
-      input: transform({ input }, ({ input }) => {
-        const s = input.scorte as Extract<InputModifica["scorte"], { tipo: "nuovo-livello" }>
-        return { seller_id: s.azienda, locations: [{ name: s.nome_deposito }] }
-      }),
-    }))
-
-  when({ input }, ({ input }) => input.scorte.tipo === "nuovo-livello").then(() =>
-    createInventoryLevelsWorkflow.runAsStep({
-      input: transform({ input, nuovoDeposito }, ({ input, nuovoDeposito }) => {
-        const s = input.scorte as Extract<InputModifica["scorte"], { tipo: "nuovo-livello" }>
-        const deposito = s.deposito ?? (nuovoDeposito as unknown as { id: string }[] | undefined)?.[0]?.id
-        return { inventory_levels: [{ inventory_item_id: s.voce, location_id: deposito!, stocked_quantity: s.quantita }] }
-      }),
-    }))
+  when({ input }, ({ input }) => Boolean(input.prodotto)).then(() => {
+    ricordaProdottoStep(transform({ input }, ({ input }) => input.id))
+    updateProductsWorkflow.runAsStep({
+      input: transform({ input }, ({ input }) => ({ selector: { id: input.id }, update: input.prodotto }) as any),
+    })
+  })
 
   when({ input }, ({ input }) => Boolean(input.offerta)).then(() =>
     updateOffersWorkflow.runAsStep({
