@@ -25,7 +25,8 @@ export function scriviSessione(sessione: Sessione | null) {
 }
 
 export class ErroreApi extends Error {
-  constructor(messaggio: string, readonly stato: number) {
+  /** dettagli: il corpo della risposta (per un 412, i valori cambiati altrove). */
+  constructor(messaggio: string, readonly stato: number, readonly dettagli?: unknown) {
     super(messaggio)
   }
 }
@@ -73,8 +74,12 @@ export async function api<T>(percorso: string, opzioni: Opzioni = {}): Promise<T
   }
   if (!risposta.ok) {
     if (risposta.status === 401 && !opzioni.pubblico) inScadenza?.()
-    const messaggio = risposta.status === 400 ? (dati as { message?: string })?.message : undefined
-    throw new ErroreApi(messaggio ?? MESSAGGI[risposta.status] ?? "Something went wrong: try again shortly", risposta.status)
+    // 400 (dato non valido), 412 (valore cambiato altrove, con quello attuale) e salvataggio rimasto a metà (500 con il suo
+    // codice, che invita a ricontrollare): il messaggio del server si mostra così com'è.
+    const corpo = dati as { message?: string; code?: string } | undefined
+    const daMostrare = risposta.status === 400 || risposta.status === 412 || corpo?.code === "salvataggio_a_meta"
+    const messaggio = daMostrare ? corpo?.message : undefined
+    throw new ErroreApi(messaggio ?? MESSAGGI[risposta.status] ?? "Something went wrong: try again shortly", risposta.status, dati)
   }
   return dati as T
 }

@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query"
 import { useState, type FormEvent } from "react"
-import { api } from "../../api/client"
+import { api, ErroreApi } from "../../api/client"
 import { useAvvisi } from "../../componenti"
 import { numero } from "../../lingua"
 import { Campo, Modale } from "../../ui"
@@ -19,19 +19,45 @@ export function ModuloCorrezione({ riga, onChiudi }: { riga: Riga; onChiudi: () 
   const [valore, setValore] = useState("")
   const [motivo, setMotivo] = useState("rifornimento")
   const [nota, setNota] = useState("")
-  const finale = modo === "quantita" ? Number(valore) : riga.giacenza + Number(valore)
+  // Giacenza mostrata all'apertura: una «New quantity» si scrive solo se è ancora questa (altrimenti 412, e la finestra
+  // passa a quella attuale).
+  const [giacenza, setGiacenza] = useState(riga.giacenza)
+  // Stessa correzione, stesso id: rimandata dopo una risposta persa non conta due volte.
+  const [ids] = useState(() => new Map<string, string>())
+  const idPer = (chiave: string) => {
+    if (!ids.has(chiave)) ids.set(chiave, crypto.randomUUID().replaceAll("-", ""))
+    return ids.get(chiave)!
+  }
+  const finale = modo === "quantita" ? Number(valore) : giacenza + Number(valore)
 
   const salva = useMutation({
     mutationFn: () =>
       api(`/vendor/magazzino/articoli/${riga.articolo_id}/correzione`, {
-        corpo: { deposito_id: riga.deposito_id, [modo]: Number(valore), motivo, nota: nota.trim() || undefined },
+        corpo: {
+          deposito_id: riga.deposito_id,
+          [modo]: Number(valore),
+          ...(modo === "quantita" ? { prima: giacenza } : {}),
+          id: idPer(`${modo}:${valore}`),
+          motivo,
+          nota: nota.trim() || undefined,
+        },
       }),
     onSuccess: () => {
       void aggiorna()
       avvisa("Quantity updated")
       onChiudi()
     },
+    onError: (errore) => {
+      // Giacenza cambiata altrove (una vendita, un'altra correzione): niente salvato. La finestra resta aperta con la
+      // giacenza attuale, che diventa quella di partenza; quantità, motivo e nota restano per salvare di nuovo.
+      if (errore instanceof ErroreApi && errore.stato === 412) {
+        const attuale = (errore.dettagli as { conflitti?: { attuale?: unknown }[] } | undefined)?.conflitti?.[0]?.attuale
+        if (typeof attuale === "number") setGiacenza(attuale)
+        void aggiorna()
+      }
+    },
   })
+  const conflitto = salva.error instanceof ErroreApi && salva.error.stato === 412
 
   const invia = (e: FormEvent) => {
     e.preventDefault()
@@ -39,7 +65,7 @@ export function ModuloCorrezione({ riga, onChiudi }: { riga: Riga; onChiudi: () 
   }
 
   return (
-    <Modale titolo="Adjust quantity" sottotitolo={`${nomeRiga(riga)}: ${numero(riga.giacenza)} in stock now`} onChiudi={onChiudi}>
+    <Modale titolo="Adjust quantity" sottotitolo={`${nomeRiga(riga)}: ${numero(giacenza)} in stock now`} onChiudi={onChiudi}>
       <form className="modulo" onSubmit={invia}>
         <div className="selettore selettore--stretto" role="group" aria-label="How to enter the adjustment">
           <button type="button" className={modo === "quantita" ? "attivo" : undefined} onClick={() => { setModo("quantita"); setValore("") }}>New quantity</button>
@@ -62,7 +88,7 @@ export function ModuloCorrezione({ riga, onChiudi }: { riga: Riga; onChiudi: () 
         <Campo etichetta="Note">
           <textarea rows={2} maxLength={300} value={nota} onChange={(e) => setNota(e.target.value)} />
         </Campo>
-        <Errore errore={salva.error} />
+        <Errore errore={salva.error && conflitto ? new Error(`${salva.error.message} Check the quantity and save again.`) : salva.error} />
         <button className="primario" type="submit" disabled={salva.isPending}>{salva.isPending ? "Saving..." : "Save adjustment"}</button>
       </form>
     </Modale>
