@@ -23,5 +23,11 @@ describe("esito di un salvataggio a più passi", () => {
     expect(classificaEsito("invoking", [])).toBe("a-meta")
     expect(classificaEsito("compensating", [])).toBe("a-meta")
   })
+  it("passo delle scorte che non è riuscito ad annullare da sé le voci già scritte: a metà, anche se la transazione è annullata", () => {
+    // serializeError di Medusa conserva il nome dell'errore.
+    const errori = [{ action: "ishtar-movimenti-scorte", handlerType: "invoke", error: { name: "ScorteAMeta", message: "variazioni non annullate: iitem_1@sloc_1" } }]
+    expect(classificaEsito("reverted", errori)).toBe("a-meta")
+    expect(classificaEsito("failed", errori)).toBe("a-meta")
+  })
 })
 

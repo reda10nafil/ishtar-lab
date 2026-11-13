@@ -47,7 +47,8 @@ export async function POST(req: AuthenticatedMedusaRequest, res: MedusaResponse)
   if (!offerte.length) throw assente("Price proposal")
   for (const offerta of offerte) {
     const accolti = esito === "approva" && offerta.proposta ? { prezzo_cessione: offerta.proposta.prezzo_cessione, prezzo_consigliato: offerta.proposta.prezzo_consigliato } : {}
-    await aggiornaOfferta(req.scope, offerta, { metadata: { ...offerta.metadata, proposta_prezzi: null, ...accolti } }, req.auth_context.actor_id)
+    // Solo le chiavi che cambiano: Medusa unisce i metadati al primo livello.
+    await aggiornaOfferta(req.scope, offerta, { metadata: { proposta_prezzi: null, ...accolti } }, req.auth_context.actor_id)
   }
   res.json({ esito })
 }

@@ -46,8 +46,21 @@ describe("movimenti di scorte del pannello", () => {
     const esito = applicaMovimenti(vuoto, { conteggio: { id: "cnt-1", prima: [10], dopo: 7 } }, chi, quando)
     expect([esito.giacenza, esito.storico[0].tipo, esito.storico[0].differenza]).toEqual([7, "conteggio", -3])
   })
-  it("conteggio già applicato (giacenza uguale al valore nuovo): nessuna scrittura", () => {
-    expect(applicaMovimenti({ ...vuoto, giacenza: 7 }, { conteggio: { id: "cnt-1", prima: [10], dopo: 7 } }, chi, quando).cambiato).toBe(false)
+  it("conteggio uguale alla giacenza: niente nello storico, ma vale come conteggio (data dell'ultimo conteggio, come nel Magazzino)", () => {
+    const esito = applicaMovimenti({ ...vuoto, giacenza: 7 }, { conteggio: { id: "cnt-1", prima: [10], dopo: 7 } }, chi, quando)
+    expect([esito.cambiato, esito.contato, esito.storico.length, esito.nuovi.length, esito.giacenza]).toEqual([true, true, 0, 0, 7])
+  })
+  it("variazione con motivo e nota del Magazzino (per esempio merce danneggiata): nello storico", () => {
+    const esito = applicaMovimenti(vuoto, { movimenti: [{ id: "mov-d", differenza: -2, in_arrivo: 0, motivo: "danneggiato", nota: "scatola bagnata" }] }, chi, quando)
+    expect([esito.giacenza, esito.storico[0].motivo, esito.storico[0].nota]).toEqual([8, "danneggiato", "scatola bagnata"])
+  })
+  it("quantità nuova scritta nel Magazzino: correzione con il valore di partenza, motivo e nota; non cambia la data del conteggio", () => {
+    const esito = applicaMovimenti(vuoto, { conteggio: { id: "cor-1", prima: [10], dopo: 12, tipo: "correzione", motivo: "reso", nota: "cliente" } }, chi, quando)
+    expect([esito.giacenza, esito.storico[0].tipo, esito.storico[0].motivo, esito.storico[0].nota, esito.contato]).toEqual([12, "correzione", "reso", "cliente", false])
+    expect(() => applicaMovimenti({ ...vuoto, giacenza: 9 }, { conteggio: { id: "cor-2", prima: [10], dopo: 12, tipo: "correzione", motivo: "reso" } }, chi, quando)).toThrow(ConflittoScorte)
+  })
+  it("correzione che trova già la quantità richiesta: niente da scrivere", () => {
+    expect(applicaMovimenti({ ...vuoto, giacenza: 12 }, { conteggio: { id: "cor-3", prima: [10], dopo: 12, tipo: "correzione", motivo: "reso" } }, chi, quando).cambiato).toBe(false)
   })
   it("conteggio su una giacenza cambiata nel frattempo (per esempio da un ordine): conflitto con il valore attuale", () => {
     expect(() => applicaMovimenti({ ...vuoto, giacenza: 8 }, { conteggio: { id: "cnt-1", prima: [10], dopo: 7 } }, chi, quando)).toThrow(ConflittoScorte)
