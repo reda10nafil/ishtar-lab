@@ -95,7 +95,9 @@ export const rotteCatalogo: RottaProtetta[] = [
   regola("/vendor/catalogo/prodotti/:id", "POST", "products", "edit"),
 
   { matcher: "/admin/*", middlewares: [senza(CHIAVI_MARGINE, conMargini)] },
-  { matcher: "/store/*", middlewares: [senza(CHIAVI_RISERVATE)] },
+  // In Mercur `metadata` è tra i campi predefiniti di GET /store/products: la scheda interna Ishtar (campi personalizzati,
+  // merce in arrivo, soglie di riordino) resta fuori dal negozio online, come le chiavi riservate delle offerte.
+  { matcher: "/store/*", middlewares: [senza([...CHIAVI_RISERVATE, "ishtar_v1"])] },
   { matcher: "/vendor/*", middlewares: [senza(CHIAVI_RISERVATE, rottaPropria)] },
   ...ROTTE_CON_OFFERTE.flatMap((rotta) => [
     { matcher: rotta, middlewares: [senzaPrezzi] },

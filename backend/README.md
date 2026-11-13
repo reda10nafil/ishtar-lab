@@ -25,6 +25,8 @@ Progetto Docker `ishtar-lab-redx`, rete `ishtar_lab_redx_private`, volumi `ishta
 
 Ambiente già preparato e verificato il 6 novembre 2026. Per ricreare soltanto i file di configurazione della copia: `node infra/configura-ambiente.mjs` (conserva le chiavi della stessa istanza). Per inizializzare tabelle, proprietario e bucket: `node infra/runtime.mjs init`, senza dati demo. Per migrazioni: `node infra/migra.mjs`; generazione: `node infra/migra.mjs genera nome-modulo`. Per stato: `node infra/runtime.mjs status`.
 
+Dopo l'aggiornamento del 12 novembre (proposta di satria64, ramo `sicurezza-riservatezza`) eseguire una volta, con il pannello chiuso, da `piattaforma/packages/api`: `npx medusa exec ./src/scripts/pulisci-metadati-ishtar.ts controlla` per contare i prodotti con il costo d'acquisto o altri dati duplicati nei metadati, poi lo stesso comando senza `controlla` per ripulirli. Si può rieseguire senza effetti.
+
 Le credenziali locali sono in `.credenziali-locali.env`; non sono riportate nei documenti. Le configurazioni private sono ignorate da Git. Dipendenze locali installate dal lockfile, con script automatici di installazione disabilitati. I normali comandi dev/start dei workspace API e piattaforma sono indirizzati al gestore della copia.
 
 Avvio stabile senza watcher backend su Windows; per applicare modifiche al codice fermare e riavviare **solo questa istanza**. Il vecchio progetto non viene toccato. Il seed demo richiede consenso tecnico esplicito tramite variabili di ambiente e password individuale, e non serve per importare i CSV dell’utente.

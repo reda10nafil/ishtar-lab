@@ -5,6 +5,8 @@ import { updateProductsWorkflow, updateStoresWorkflow } from "@medusajs/medusa/c
 import { valida, invalido } from "../../../utili"
 import { creaProdotto, controllaCodici } from "../../catalogo/comune/creazione"
 import { leggiOfferte, aggiornaOfferta, impostaScorte } from "../../catalogo/comune/offerte"
+import { vedeMargini } from "../../catalogo/comune/permessi"
+import { catalogoIshtar, metadatiIshtar } from "./vista"
 
 const imageUrl = z.string().max(2048).refine(s => {
   try { const u = new URL(s, "http://127.0.0.1:4273"); return ["http:","https:"].includes(u.protocol) && !u.username && !u.password } catch { return false }
@@ -35,11 +37,8 @@ export async function GET(req:AuthenticatedMedusaRequest,res:MedusaResponse) {
   const {query,config} = await context(req)
   const {data} = await query.graph({entity:"product",fields:["id","title","description","metadata","images.url","variants.id","variants.sku"],pagination:{take:10000}})
   const offers = await leggiOfferte(req.scope,{seller_id:config.seller_id})
-  const products = data.filter((p:any)=>p.metadata?.ishtar_v1).map((p:any)=>{
-    const o=offers.find(o=>o.prodotto_id===p.id)
-    return {...p.metadata.ishtar_v1,id:p.id,name:p.title,description:p.description??"",sku:p.variants?.[0]?.sku,
-      photos:p.images?.map((i:any)=>i.url)??[],price:o?.prezzo??0,cost:o?.prezzo_cessione??0,stock:o?.scorte??0}
-  })
+  // Solo i prodotti con un'offerta di Ishtar Lab; il costo d'acquisto solo verso chi ha il permesso sui margini (vista.ts).
+  const products = catalogoIshtar(data as any[], offers, vedeMargini(req))
   res.json({products,fields:config.fields??[],categories:config.categories??[]})
 }
 export async function POST(req:AuthenticatedMedusaRequest,res:MedusaResponse) {
@@ -77,6 +76,6 @@ export async function POST(req:AuthenticatedMedusaRequest,res:MedusaResponse) {
   }
   const {data}=await query.graph({entity:"product",fields:["id","metadata"],filters:{id}})
   await updateProductsWorkflow(req.scope).run({input:{selector:{id},update:{title:p.name,description:p.description,material:p.material,status:p.status==="active"?"published":"draft",
-    category_ids:[cat.id],images:p.photos.map(url=>({url})),thumbnail:p.photos[0]??null,metadata:{...(data[0] as any).metadata,ishtar_v1:{...p,id},genere:p.gender}}}})
+    category_ids:[cat.id],images:p.photos.map(url=>({url})),thumbnail:p.photos[0]??null,metadata:{...(data[0] as any).metadata,ishtar_v1:metadatiIshtar(p,id),genere:p.gender}}}})
   res.json({ok:true,id})
 }

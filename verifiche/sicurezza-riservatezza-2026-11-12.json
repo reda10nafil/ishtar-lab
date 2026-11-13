@@ -1,0 +1,81 @@
+{
+  "date": "2026-11-12",
+  "scope": "Sicurezza e riservatezza: costo d'acquisto, negozio online, credenziali dei connettori, console di sviluppo, codici delle carte regalo",
+  "modified_by": "satria64 — versione modificata, autorizzata dal titolare nella issue #1, in attesa di revisione",
+  "branch": "sicurezza-riservatezza",
+  "base_branch": "affidabilita-salvataggi",
+  "base_commit": "edf3f1e",
+  "defects": [
+    {
+      "id": "costo-esposto",
+      "before": "GET /admin/ishtar/catalogo, con il solo permesso products:view, restituiva il costo d'acquisto (prezzo di cessione) di ogni prodotto, mentre il resto del catalogo lo mostra solo con il permesso margini; la POST copiava l'intera scheda, costo compreso, in metadata.ishtar_v1",
+      "after": "il costo esce solo con vedeMargini(req) e sempre dall'offerta; nei metadati si salvano solo i campi senza un'altra fonte (categoria, genere, taglia, colore, materiale, demo, stato, merce in arrivo, soglia, campi personalizzati); script src/scripts/pulisci-metadati-ishtar.ts per i prodotti già salvati"
+    },
+    {
+      "id": "negozio-metadati",
+      "before": "in Mercur 2.4.1 metadata è tra i campi predefiniti di GET /store/products: per i prodotti pubblicati la scheda ishtar_v1 (costo, campi personalizzati come note interne e fornitore, merce in arrivo, soglie) arrivava a chiunque leggesse il negozio online",
+      "after": "il middleware di /store/* toglie anche ishtar_v1, oltre alle chiavi riservate delle offerte; nell'import CSV le colonne «Prezzo d'acquisto», «Costo unitario», «Prezzo fornitore», «Purchase price» e simili vanno nel campo costo, protetto, invece che in un campo personalizzato"
+    },
+    {
+      "id": "gcm-tag-corto",
+      "before": "la decifratura delle credenziali dei connettori (AES-256-GCM) accettava un controllo di integrità accorciato fino a 4 byte: una falsificazione riesce una volta su 2^32 invece che su 2^128",
+      "after": "IV di 12 byte e tag di 16 byte obbligatori (authTagLength: 16); i dati salvati finora usano già questo formato"
+    },
+    {
+      "id": "credenziale-illeggibile",
+      "before": "una sola credenziale che non si decifrava più (chiave cambiata, dato danneggiato) bloccava l'intera pagina dei connettori, il rinnovo orario degli accessi di tutti i connettori successivi e il nuovo inserimento delle credenziali",
+      "after": "il connettore risulta «da sistemare» con un messaggio chiaro, le credenziali si reinseriscono senza scollegarlo, il rinnovo segnala il problema e prosegue; una CONNECTORS_KEY mancante o scritta male resta un errore di configurazione"
+    },
+    {
+      "id": "console-accesso-locale",
+      "before": "/__accesso-locale del server di sviluppo della console consegnava il token del proprietario controllando solo Sec-Fetch-Site: con il DNS rebinding un sito esterno, con un suo nome che punta a 127.0.0.1, lo riceveva; il controllo degli host di Vite non copre questa rotta (i middleware dei plugin vengono montati prima); la console si poteva anche incorniciare in un'altra pagina",
+      "after": "host obbligatoriamente localhost, 127.0.0.1 o [::1] sulla porta della console e Origin coerente (apps/console/accesso-locale.mjs); intestazioni X-Frame-Options: DENY e frame-ancestors 'none'"
+    },
+    {
+      "id": "carte-regalo-oracolo",
+      "before": "con il solo permesso sconti:view il codice delle carte regalo era mascherato, ma la ricerca q guardava anche il codice: partendo dalle ultime quattro cifre mostrate lo si ricostruiva un carattere alla volta",
+      "after": "senza permesso di modifica la ricerca guarda solo nome ed email del destinatario, con i caratteri jolly trattati come testo (modules/carte-regalo/ricerca.ts)"
+    }
+  ],
+  "tests": {
+    "jest_security": "100/100 (prima 80)",
+    "node_test_verifiche": "67/67 (accesso-locale 4, collegamento 14, csv 13, importa 21, sincronizza 13, identità 2)",
+    "typecheck_api": "0 errori"
+  },
+  "real_checks": {
+    "environment": "istanza locale con 82 articoli DEMO, API riavviata con il nuovo codice; script temporanei di verifica rimossi dopo l'uso",
+    "catalogo_proprietario": "82 prodotti, tutti con costo e con gli stessi campi di prima; nessun prodotto legittimo escluso dal filtro sulle offerte di Ishtar Lab",
+    "pulizia_metadati": "controllo 82, pulizia 82, nuovo controllo 0; prodotto «sporcato» di nuovo con costo e prezzo e una chiave di prova: lo script toglie solo costo e prezzo, conserva genere e la chiave di prova, ripristino identico; dopo le prove end-to-end il controllo resta 0",
+    "negozio_online": "prodotto demo collegato e pubblicato per pochi secondi: metadati salvati genere e ishtar_v1, GET /store/products 200 con il solo genere; stato e canale ripristinati",
+    "carte_regalo": "carta di prova: pezzo del codice con sola lettura 0 risultati, con permesso 1; nome ed email 1; «%» 0; carta eliminata",
+    "connettori": "credenziale cifrata con un'altra chiave: elenco disponibile con il connettore «errore»; rinnovo orario completato e connettore segnato con il messaggio chiaro; prova del servizio con lo stesso messaggio; connettori di prova eliminati",
+    "console": "codice precedente: Host attacco.example:5283 → 200 e token del proprietario; nuovo codice: 403 (anche senza Sec-Fetch-Site o con Origin di un altro sito), localhost → 200 come prima; intestazioni X-Frame-Options DENY e frame-ancestors 'none' presenti"
+  },
+  "end_to_end": {
+    "catalogo": "18/18 (salvataggi e import CSV attraverso la rotta modificata)",
+    "collegamento": "32/32"
+  },
+  "independent_review": {
+    "method": "revisore indipendente con il solo codice; 5 rilievi sulle correzioni e 2 problemi preesistenti, verificati sul codice e sui pacchetti Medusa/Mercur",
+    "fixed": [
+      "scheda ishtar_v1 ancora pubblica nel negozio online (Mercur include metadata di default), con campi personalizzati come note interne, fornitore o un prezzo d'acquisto importato da CSV (media)",
+      "catalogo del pannello bloccato da un prodotto con ishtar_v1 malformato, creabile da un fornitore; prodotti di altre aziende con ishtar_v1 nel pannello (medio-bassa, introdotto e corretto)",
+      "rinnovo orario fermato da una credenziale illeggibile; prova e login con l'errore di cifratura grezzo (medio-bassa)",
+      "CONNECTORS_KEY scritta male presentata come «credenziali da reinserire» (bassa)",
+      "script di pulizia che riscriveva tutta la copia dei metadati letta all'inizio (bassa): ora rilegge ogni prodotto e scrive solo ishtar_v1, in ordine stabile",
+      "console incorniciabile da un altro sito (preesistente)"
+    ],
+    "not_fixed_documented": [
+      "qualunque programma locale (non un browser) può chiedere il token a /__accesso-locale: è inevitabile per una funzione di solo sviluppo; non avviare la console con --host",
+      "prodotti eliminati (soft delete) non toccati dallo script di pulizia",
+      "un campo personalizzato creato a mano con dati riservati resta visibile ai ruoli con products:view: il pannello non può sapere quali campi liberi siano riservati"
+    ]
+  },
+  "after_merge": "eseguire una volta, con il pannello chiuso, da backend/piattaforma/packages/api: npx medusa exec ./src/scripts/pulisci-metadati-ishtar.ts controlla, poi senza «controlla»",
+  "not_tested": [
+    "Windows (codice TypeScript del backend e configurazione Vite, senza percorsi o comandi di sistema)",
+    "un utente reale con ruolo senza permesso sui margini (verificato con i test della vista e con la regola vedeMargini già usata dal catalogo)",
+    "un servizio esterno reale per il rinnovo dei token"
+  ],
+  "secrets_included": false
+}

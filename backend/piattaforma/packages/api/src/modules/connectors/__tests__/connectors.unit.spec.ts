@@ -22,6 +22,13 @@ describe("cifratura delle credenziali", () => {
     expect(() => decifra(dato, "cd".repeat(32))).toThrow()
   })
 
+  it("rifiuta un controllo di integrità accorciato", () => {
+    // AES-GCM con tag di 4 byte: una falsificazione riesce una volta su 2^32 invece che su 2^128.
+    const [versione, iv, tag, dati] = cifra("segreto", CHIAVE).split(".")
+    const corto = Buffer.from(tag, "base64url").subarray(0, 4).toString("base64url")
+    expect(() => decifra([versione, iv, corto, dati].join("."), CHIAVE)).toThrow()
+  })
+
   it("rifiuta una chiave non valida", () => {
     expect(() => cifra("segreto", "corta")).toThrow(/CONNECTORS_KEY/)
   })

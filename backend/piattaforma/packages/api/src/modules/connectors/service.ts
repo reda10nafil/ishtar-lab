@@ -2,13 +2,14 @@ import { MedusaError, MedusaService } from "@medusajs/framework/utils"
 import { ConnectorAccount } from "./models/connector-account"
 import { OauthState } from "./models/oauth-state"
 import { catalogoAttivo, trovaServizio, valoriValidi, type Servizio, type Token, type Valori } from "./catalogo"
-import { cifra, decifra } from "./crypto"
+import { cifra, controllaChiave, decifra } from "./crypto"
 import { eseguiProva } from "./prova"
 import { creaPkce, creaStato, improntaStato, rinnovaToken, scambiaCodice, urlAutorizzazione } from "./oauth"
 
 type Segreti = { valori: Valori; token?: Token }
 
 const DURATA_LOGIN_MS = 10 * 60 * 1000
+const CREDENZIALI_ILLEGGIBILI = "Saved credentials can't be read (the encryption key changed or the data is damaged): enter them again"
 const MARGINE_RINNOVO_MS = 24 * 60 * 60 * 1000
 
 function chiave(): string {
@@ -32,6 +33,27 @@ export default class ConnectorsModuleService extends MedusaService({ ConnectorAc
     return JSON.parse(decifra(cifrato, chiave())) as Segreti
   }
 
+  /**
+   * Credenziali che non si decifrano più (chiave cambiata, dato danneggiato): null invece di un errore che fermerebbe
+   * l'intero elenco. Una chiave mancante o scritta male resta un errore immediato: «scollega» cancellerebbe dati che
+   * con la chiave giusta si leggono ancora.
+   */
+  private leggiSegretiSicuri(cifrato: string): Segreti | null {
+    controllaChiave(chiave())
+    try {
+      return this.leggiSegreti(cifrato)
+    } catch {
+      return null
+    }
+  }
+
+  /** Come leggiSegreti, ma con un messaggio chiaro quando le credenziali salvate non si leggono più. */
+  private leggiSegretiOErrore(cifrato: string): Segreti {
+    const segreti = this.leggiSegretiSicuri(cifrato)
+    if (!segreti) throw new MedusaError(MedusaError.Types.NOT_ALLOWED, CREDENZIALI_ILLEGGIBILI)
+    return segreti
+  }
+
   private scriviSegreti(segreti: Segreti): string {
     return cifra(JSON.stringify(segreti), chiave())
   }
@@ -48,7 +70,9 @@ export default class ConnectorsModuleService extends MedusaService({ ConnectorAc
     const ritorno = indirizzoRitorno()
     return catalogoAttivo().map((s) => {
       const conto = perServizio.get(s.id)
-      const valori = conto ? this.leggiSegreti(conto.secret).valori : {}
+      const letti = conto ? this.leggiSegretiSicuri(conto.secret) : null
+      const illeggibile = Boolean(conto) && !letti
+      const valori = letti?.valori ?? {}
       return {
         id: s.id,
         nome: s.nome,
@@ -73,11 +97,11 @@ export default class ConnectorsModuleService extends MedusaService({ ConnectorAc
           impostato: Boolean(valori[c.chiave]),
           valore: c.segreto ? null : valori[c.chiave] ?? null,
         })),
-        stato: conto?.status ?? "non_collegato",
+        stato: illeggibile ? "errore" : conto?.status ?? "non_collegato",
         account: conto?.account_label ?? null,
         ultimo_controllo: conto?.last_checked_at ?? null,
         scadenza: conto?.expires_at ?? null,
-        errore: conto?.last_error ?? null,
+        errore: illeggibile ? CREDENZIALI_ILLEGGIBILI : conto?.last_error ?? null,
       }
     })
   }
@@ -86,7 +110,8 @@ export default class ConnectorsModuleService extends MedusaService({ ConnectorAc
   async salva(id: string, inseriti: Valori) {
     const servizio = servizioOErrore(id)
     const conto = await this.conto(id)
-    const precedenti = conto ? this.leggiSegreti(conto.secret) : { valori: {} as Valori }
+    // Credenziali illeggibili: si riparte dai valori inseriti ora (per i servizi con login serve un nuovo accesso).
+    const precedenti = (conto ? this.leggiSegretiSicuri(conto.secret) : null) ?? { valori: {} as Valori }
     const noti = new Set(servizio.campi.map((c) => c.chiave))
     const pulito: Valori = { ...precedenti.valori }
     for (const [k, v] of Object.entries(inseriti)) {
@@ -107,7 +132,7 @@ export default class ConnectorsModuleService extends MedusaService({ ConnectorAc
     const servizio = servizioOErrore(id)
     const conto = await this.conto(id)
     if (!conto) throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "Service not set up yet")
-    const { valori, token } = this.leggiSegreti(conto.secret)
+    const { valori, token } = this.leggiSegretiOErrore(conto.secret)
     if (servizio.accesso === "login" && !token) {
       throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "Sign in to the service first")
     }
@@ -138,7 +163,7 @@ export default class ConnectorsModuleService extends MedusaService({ ConnectorAc
     }
     const conto = await this.conto(id)
     if (!conto) throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "Enter the application details first")
-    const { valori } = this.leggiSegreti(conto.secret)
+    const { valori } = this.leggiSegretiOErrore(conto.secret)
 
     const scaduti = await this.listOauthStates({ expires_at: { $lt: new Date() } })
     if (scaduti.length) await this.deleteOauthStates(scaduti.map((s) => s.id))
@@ -165,7 +190,7 @@ export default class ConnectorsModuleService extends MedusaService({ ConnectorAc
     const servizio = servizioOErrore(salvato.provider)
     const conto = await this.conto(salvato.provider)
     if (!conto) throw new MedusaError(MedusaError.Types.NOT_ALLOWED, "Connection removed during sign-in")
-    const { valori } = this.leggiSegreti(conto.secret)
+    const { valori } = this.leggiSegretiOErrore(conto.secret)
     const token = await scambiaCodice(servizio, {
       clientId: valori.client_id,
       clientSecret: valori.client_secret,
@@ -190,7 +215,13 @@ export default class ConnectorsModuleService extends MedusaService({ ConnectorAc
     for (const conto of conti) {
       const servizio = trovaServizio(conto.provider)
       if (!servizio?.oauth) continue
-      const { valori, token } = this.leggiSegreti(conto.secret)
+      // Una credenziale illeggibile non deve fermare il rinnovo degli altri connettori: si segnala e si prosegue.
+      const segreti = this.leggiSegretiSicuri(conto.secret)
+      if (!segreti) {
+        await this.updateConnectorAccounts({ id: conto.id, status: "errore", last_error: CREDENZIALI_ILLEGGIBILI })
+        continue
+      }
+      const { valori, token } = segreti
       if (!token) continue
       try {
         const nuovo = await rinnovaToken(servizio, valori.client_id, valori.client_secret, token)
