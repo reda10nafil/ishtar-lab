@@ -194,3 +194,12 @@ Aggiornamento caricato su GitHub, commit d5235b84b5f2078294c953bda5cea9a89c7ba70
 - Con un conflitto le finestre restano aperte con il valore attuale nel campo cambiato e il resto conservato. Uno SKU o un EAN già usato dà di nuovo il messaggio di Medusa; un salvataggio rimasto a metà lo dice e nel log elenca le voci da sistemare.
 - Primo deposito di un'azienda sotto il suo lucchetto; proposte di prezzo e prezzi delle aziende scrivono nell'offerta solo le chiavi che cambiano.
 - Revisione avversariale (4 revisori e 4 verificatori): 19 rilievi confermati (12 distinti), 11 corretti, 1 rimandato con motivo (le schede prodotto della console mandano ancora tutti i valori: difetto che c'era già). Verifiche: jest 233/233, 80 test node, typecheck di API e console 0 errori, 30/30 prove con le rotte vere, prove end-to-end nella console 6/6 e 7/7, pannello 18/18, 32/32, 8/8 e 20/20; database ripristinato dal backup. Rapporto `verifiche/scorte-console-magazzino-2026-11-13.json`.
+
+## 2026-11-13 — Casella dei clienti, tappa 1 del CRM (versione modificata da satria64, proposta)
+
+- Progetto del CRM omnicanale e piano della tappa 1 nel vault (`piani di implementazione/02 Roadmap`), dopo una ricognizione di versione 1, versione 2 e documentazione ufficiale dei canali. TikTok escluso: niente API dei messaggi per gli account europei.
+- Modulo `conversazioni` nel backend: contatti per canale, conversazioni con stato, anteprima e non letti, messaggi con stato di consegna, risposte rapide; collegamento del contatto al cliente del negozio deciso dal team.
+- Telegram: lettura dei messaggi privati ogni minuto, senza cursore salvato (dopo una settimana di silenzio Telegram ricomincia gli identificativi), e invio delle risposte; il connettore va in errore con il motivo se il token è rifiutato, se c'è un webhook o se un altro programma legge lo stesso bot.
+- Rotte `/admin/conversazioni` e `/admin/risposte-rapide` con il permesso nuovo «Customer messages». Una risposta non parte mai due volte; una pagina rimasta indietro non segna letti né chiude messaggi che nessuno ha visto (412).
+- Revisione avversariale (4 revisori e 4 verificatori): 27 rilievi confermati, 18 distinti, tutti corretti. Verifiche: jest 268/268, 80 test node, typecheck 0 errori, 25/25 prove dal vivo con un Telegram finto, job contro il vero Telegram con un token finto, permessi con utenti veri, pannello 18/18, 32/32, 8/8 e 20/20; database ripristinato. Rapporto `verifiche/crm-tappa1-2026-11-13.json`.
+

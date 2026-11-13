@@ -1,0 +1,67 @@
+{
+  "date": "2026-11-13",
+  "scope": "CRM omnicanale, tappa 1: casella dei clienti nel backend (modulo conversazioni, rotte, permesso, risposte rapide) e canale Telegram (lettura ogni minuto e invio delle risposte)",
+  "modified_by": "satria64 — versione modificata, autorizzata dal titolare nella issue #1",
+  "branch": "crm-tappa1",
+  "base_branch": "main (con le PR #2–#8)",
+  "base_commit": "3d8a0f3",
+  "decisions": "richiesta del titolare del 13 novembre (CRM per parlare con i clienti da tutte le piattaforme, partendo da ciò che esiste); scelte tecniche di satria64 su delega di Marco: casella costruita nel backend Medusa e non con un sistema affiancato (Chatwoot), modulo nuovo separato dall'assistenza fra staff e aziende, canali come adattatori, prima la lettura a intervalli (Telegram, poi email) e i webhook quando ci sarà un indirizzo HTTPS pubblico, TikTok escluso perché l'API dei messaggi non è disponibile per gli account europei; progetto e piano in piani di implementazione/02 Roadmap",
+  "features": [
+    "modulo conversazioni: identità del contatto per canale e account (indice unico), conversazioni con stato, anteprima e non letti, messaggi con chiave unica e stato di consegna (ricevuto, in coda, inviato, fallito, incerto), risposte rapide; legame di sola lettura dell'identità al cliente del negozio",
+    "Telegram: messaggi privati dei clienti con segnaposto per i media; lettura ogni minuto (job ricevi-telegram, 4 richieste da 12 s) senza cursore salvato; invio delle risposte",
+    "rotte /admin/conversazioni (elenco con filtri e conteggi, dettaglio, risposta, stato, letta, collegamento al cliente) e /admin/risposte-rapide; permesso «conversazioni» (Customer messages) all'operatore degli ordini",
+    "regole che proteggono il cliente: lo stesso messaggio non si registra due volte; una risposta non parte mai due volte (stesso id, stesso testo; esito incerto mai rimandato); una pagina rimasta indietro non segna letti, non chiude e non mette in attesa messaggi che nessuno ha visto; il token del bot non compare mai in errori, risposte o log"
+  ],
+  "tests": {
+    "jest_security": "268/268 (233 prima della tappa): regole, adattatore Telegram, lettura con un Telegram finto che applica le regole documentate, filtri dell'elenco",
+    "node_test_verifiche": "80/80",
+    "typecheck_api": "0 errori",
+    "ponte": "8/8",
+    "csv": "13 casi"
+  },
+  "real_checks": {
+    "environment": "istanza locale; backup del database prima delle prove; API ferma durante le prove con il connettore finto (il suo job avrebbe chiamato il vero Telegram con un token finto); dopo la revisione database riportato al backup e migrazione rigenerata da zero; script temporanei rimossi; alla fine database riportato al backup di prima della tappa e migrato",
+    "dal_vivo": "25/25 dentro medusa exec, sul database vero, con un server Telegram finto su 127.0.0.1 e le risposte d'errore del vero errorHandler di Medusa: messaggi doppi, riapertura dopo la chiusura, guasto simulato fra messaggio e conversazione (niente a metà), risposta e chiusura da una pagina rimasta indietro (412), risposta ripresa, incerta, fallita e ritentata, testo diverso con lo stesso id rifiutato, token cambiato durante un giro, aggiornamento con un id più basso dopo una settimana, 409 del webhook e di un altro lettore, cliente che ha bloccato il bot, 502 incerto e mai rimandato, doppio clic con un solo invio, elenco e filtri, collegamento al cliente, risposte rapide; token mai presente nell'output",
+    "telegram_vero": "il job dell'API con un token finto ha ricevuto il rifiuto del vero Telegram: connettore in errore «Telegram refused the bot token», nessuna occorrenza del token nei log",
+    "permessi": "richieste HTTP vere: senza accesso 401; titolare 200; utente Marketing 403 su elenco e risposta; utente Orders operator 200 su elenco e cambio di stato, 403 sulla scrittura delle risposte rapide"
+  },
+  "end_to_end": {
+    "pannello": "nessuna regressione: catalogo 18/18, collegamento 32/32, parte A 8/8, parte B 20/20",
+    "console": "non toccata in questa tappa"
+  },
+  "known_limits": [
+    "la pagina «Chats» nel primo pannello è la tappa 2: oggi la casella si usa dall'API",
+    "prova con un bot Telegram vero del negozio da fare quando Marco crea il bot di prova",
+    "cancellazione ed esportazione dei messaggi insieme ai dati del cliente: tappa successiva (già nel progetto)",
+    "il bot collegato in Connettori › Telegram è letto dalla casella: va usato solo per quella (un bot usato anche per altro porterebbe nella casella le sue chat)",
+    "un solo account per canale, come i connettori; una registrazione in parallelo dello stesso contatto (webhook futuri) richiederà un lucchetto per contatto"
+  ],
+  "not_tested": [
+    "Windows (codice TypeScript del backend, senza percorsi o comandi di sistema)",
+    "Redis come lucchetto con più istanze dell'API",
+    "WhatsApp, Instagram, Messenger, email e chat del sito: tappe successive"
+  ],
+  "secrets_included": false,
+  "independent_review": {
+    "method": "workflow di revisione avversariale: quattro revisori (concorrenza e idempotenza, sicurezza e riservatezza, regole e contratto delle rotte, regressioni e integrazione) e un verificatore per ciascuno che ha provato a smentire ogni rilievo nel codice di Medusa e con piccole prove; 29 rilievi, 27 confermati, 18 distinti, tutti corretti",
+    "fixed": [
+      "il cursore di Telegram non scadeva: dopo una settimana senza messaggi gli identificativi ripartono da un numero a caso e i messaggi nuovi venivano scartati in silenzio (alta)",
+      "un nuovo tentativo con lo stesso id e un testo diverso mandava al cliente il testo nuovo e conservava il vecchio (alta)",
+      "doppio clic con Telegram lento: la seconda richiesta rimandava una risposta dall'esito incerto (media)",
+      "risposta, «letta» o chiusura da una pagina rimasta indietro nascondevano il messaggio appena arrivato (media)",
+      "una risposta non consegnata faceva sembrare la conversazione già risposta (media)",
+      "registrazione non atomica: un guasto fra messaggio e conversazione lasciava il messaggio nascosto (bassa)",
+      "una risposta interrotta restava in coda per sempre (bassa)",
+      "ogni 409 era trattato come webhook; descrizione del connettore che invitava a usare il bot anche per altro (bassa)",
+      "il 401 del token vecchio rimetteva in errore un token appena cambiato (bassa)",
+      "testo, nome e chat del cliente nel log quando il database dava errore (bassa)",
+      "controllo HTTPS di TELEGRAM_API_BASE inefficace con NODE_ENV=development (bassa)",
+      "foto con didascalia senza segnale della foto; messaggi di servizio della chat come messaggi del cliente (bassa)",
+      "nome del bot privato nel documento di progetto pubblico (bassa)",
+      "ordine dell'elenco non stabile a parità di orario; anteprima che spezzava le emoji; registro delle attività impreciso; spegnimento che arrivava all'arresto forzato (bassa)"
+    ],
+    "accepted": [
+      "messaggi che restano dopo la cancellazione del cliente (smentito come difetto del ramo: limite già scritto nel progetto, rimandato a una tappa successiva)"
+    ]
+  }
+}

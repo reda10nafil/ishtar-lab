@@ -55,15 +55,17 @@ La ricognizione del 13 novembre (codice di v1 e v2, documentazione ufficiale dei
 - **Costruire la casella dentro il backend Medusa**, non affiancare Chatwoot. Chatwoot (licenza MIT) ha già quasi tutti i canali, ma è un secondo sistema Rails con almeno 4 GB di RAM, con un'interfaccia sua diversa dal pannello e con i clienti in due database. Resta un riferimento per i dettagli dei canali.
 - **Modulo nuovo «conversazioni»**, separato dall'assistenza (che è un help-desk fra staff e aziende e dà a ogni ruolo il diritto di scrivere). Contiene identità del contatto per canale, conversazioni, messaggi con stato di consegna, risposte rapide e i cursori di lettura dei canali.
 - **Canali come adattatori**: ognuno sa ricevere (lettura a intervalli o webhook) e inviare; le regole comuni (deduplica, stati, idempotenza) stanno nel modulo.
-- **Prima la lettura a intervalli** (Telegram getUpdates, email IMAP), poi i webhook quando ci sarà l'indirizzo HTTPS pubblico.
+- **Prima la lettura a intervalli** (Telegram getUpdates, email IMAP), poi i webhook quando ci sarà l'indirizzo HTTPS pubblico. Per Telegram ogni lettura parte senza offset: dopo una settimana senza messaggi Telegram ricomincia gli identificativi da un numero a caso, e un offset salvato scarterebbe i messaggi nuovi.
+- **Risposte mai doppie**: una risposta certamente non partita si può ritentare; una forse arrivata (Telegram non ha risposto) resta «incerta» e si ripete solo come risposta nuova.
 - **Permesso nuovo** `conversazioni` (vedere, rispondere, gestire le risposte rapide), dato al proprietario e all'operatore degli ordini.
 - **Un account per canale**, come oggi nei connettori.
+- **Il bot collegato nei Connettori è il bot della casella**: le sue chat private entrano nella casella e va usato solo per quello (un bot usato per altro porterebbe nella casella anche le sue chat).
 
 ## Tappe
 
 | Tappa | Contenuto | Serve da Marco e Reda |
 |---|---|---|
-| 1 | Nucleo delle conversazioni nel backend, API per la casella, permesso, risposte rapide; canale Telegram (lettura a intervalli e invio) | un bot Telegram di prova del negozio, creato con @BotFather (diverso da @P8804bot), con il token inserito da Marco nella console › Connettori › Telegram |
+| 1 | Nucleo delle conversazioni nel backend, API per la casella, permesso, risposte rapide; canale Telegram (lettura a intervalli e invio) | un bot Telegram di prova del negozio, creato con @BotFather e usato solo per i clienti, con il token inserito da Marco nella console › Connettori › Telegram |
 | 2 | Pagina «Chats» nel primo pannello con la scheda cliente, attraverso il ponte | niente |
 | 3 | Email: lettura IMAP della casella del negozio, risposte via SMTP nello stesso filo | una casella email di prova con IMAP attivo e password per app, inserita da Marco nella console |
 | 4 | Chat del sito: rotte pubbliche per il negozio, aggiornamento in tempo reale, piccolo widget | il sito del negozio su cui provarla |

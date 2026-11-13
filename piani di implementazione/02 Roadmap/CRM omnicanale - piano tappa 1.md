@@ -279,3 +279,14 @@ describe("clientTelegram", () => {
 - [ ] **Passo 3:** jest, typecheck, test di `verifiche/`, prove del pannello (`strumenti-prova/e2e-*.mjs`): nessuna regressione.
 - [ ] **Passo 4:** revisione avversariale a più agenti; correzioni con test che falliscono prima.
 - [ ] **Passo 5:** ripristino del database; script temporanei tolti; documenti e rapporto; controllo dei file di licenza e dei segreti; commit, push sul fork, PR verso il main; recap breve a Reda.
+
+## Dopo la revisione
+
+La revisione avversariale (quattro revisori e quattro verificatori) ha confermato 27 rilievi su 29, 18 distinti, tutti corretti. Il codice finale differisce dal piano in questi punti:
+
+- **Nessun cursore salvato per Telegram.** Ogni lettura parte senza offset e lo usa solo al suo interno: dopo una settimana senza messaggi Telegram ricomincia gli identificativi da un numero a caso, anche più basso, e un offset salvato scartava i messaggi nuovi. Il modello `cursore_canale` e i metodi relativi sono stati tolti (la tappa dell'email aggiungerà ciò che le serve).
+- **Stato «incerto» delle risposte** e momento del tentativo (`tentato_il`): una risposta forse arrivata (Telegram senza risposta chiara, processo fermato durante l'invio) non si rimanda mai con lo stesso id; si rimanda solo ciò che certamente non è partito. Al cliente parte sempre il testo salvato con quell'id.
+- **Ultimo messaggio visto** (`ultimo_visto`) in risposta, «letta» e chiusura: i messaggi del cliente arrivati dopo restano non letti e la chiusura risponde 412.
+- **Registrazione in una transazione** (messaggio, identità e conversazione), con un secondo tentativo se due registrazioni si incrociano.
+- Una risposta non consegnata rimette la conversazione al team; i 409 di Telegram (webhook o altro programma) hanno motivi distinti; i messaggi di servizio della chat non entrano nella casella; quattro letture da 12 secondi invece di due da 25.
+
