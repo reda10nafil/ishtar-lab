@@ -14,8 +14,15 @@ export type ModoTls = "implicito" | "starttls" | "nessuno"
 export type Destinazione = { indirizzo: string; servername: string; porta: number; tls: ModoTls }
 export type Risolvi = (host: string) => Promise<{ address: string; family?: number }[]>
 
-/** Errore di configurazione della rete, con un messaggio fisso da mostrare così com'è. */
-export class ErroreRete extends Error {}
+/**
+ * Errore di rete con un messaggio fisso da mostrare così com'è. `transitoria`: può passare da sola (il nome del server
+ * oggi non si risolve), quindi non è un errore della configurazione del connettore.
+ */
+export class ErroreRete extends Error {
+  constructor(messaggio: string, readonly transitoria = false) {
+    super(messaggio)
+  }
+}
 
 export const proveLocali = () => process.env.EMAIL_PROVE_LOCALI === "1" && process.env.NODE_ENV !== "production"
 const LOCALI = new Set(["127.0.0.1", "localhost", "::1"])
@@ -36,7 +43,7 @@ export async function destinazione(
   try {
     indirizzi = isIP(nome) ? [{ address: nome }] : await risolvi(nome)
   } catch {
-    throw new ErroreRete("The mail server can't be reached")
+    throw new ErroreRete("The mail server can't be reached", true)
   }
   if (!indirizzi.length || indirizzi.some((a) => !indirizzoPubblico(a.address))) throw new ErroreRete("This server is not reachable on the public internet")
   return { indirizzo: indirizzi[0].address, servername: nome, porta, tls: tipo === "smtp" && porta === 587 ? "starttls" : "implicito" }

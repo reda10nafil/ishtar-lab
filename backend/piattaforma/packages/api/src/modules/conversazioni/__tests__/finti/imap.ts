@@ -2,13 +2,13 @@ import net from "node:net"
 
 /*
  * Server IMAP finto per le prove (solo node:net, nessun download): il sottoinsieme che imapflow usa con un server che
- * annuncia solo IMAP4rev1 (LOGIN, CAPABILITY, LIST, LSUB, SELECT/EXAMINE, UID SEARCH, UID FETCH, NOOP, LOGOUT).
+ * annuncia solo IMAP4rev1 (LOGIN, CAPABILITY, LIST, LSUB, SELECT/EXAMINE, UID SEARCH, FETCH e UID FETCH, NOOP, LOGOUT).
  * Come un server vero, «n:*» comprende sempre l'ultimo messaggio anche se n lo supera (RFC 9051 §6.4.9).
  * `comandi` registra ogni comando (senza la password): serve a provare che il lettore non modifica mai la casella.
  */
 
 export type EmailFinta = { uid: number; grezzo: Buffer; internaldate: Date; flags: string[] }
-export type Guasti = { rifiutaLogin?: boolean; chiudiAlFetch?: boolean }
+export type Guasti = { rifiutaLogin?: boolean; chiudiAlFetch?: boolean; senzaUidnext?: boolean }
 export type ImapFinto = {
   porta: number
   comandi: string[]
@@ -117,7 +117,8 @@ export async function avviaImapFinto({ utente, password, uidvalidity = 170000000
           if ((argomenti[0] ?? "").toUpperCase() !== "INBOX") return scrivi(`${tag} NO [NONEXISTENT] No such mailbox\r\n`)
           selezionata = true
           scrivi(`* ${finto.messaggi.length} EXISTS\r\n* 0 RECENT\r\n* FLAGS (\\Seen \\Answered \\Flagged \\Deleted \\Draft)\r\n`)
-          scrivi(`* OK [PERMANENTFLAGS ()] No permanent flags\r\n* OK [UIDVALIDITY ${finto.uidvalidity}] UIDs valid\r\n* OK [UIDNEXT ${finto.uidnext}] Predicted next UID\r\n`)
+          scrivi(`* OK [PERMANENTFLAGS ()] No permanent flags\r\n* OK [UIDVALIDITY ${finto.uidvalidity}] UIDs valid\r\n`)
+          if (!finto.guasti.senzaUidnext) scrivi(`* OK [UIDNEXT ${finto.uidnext}] Predicted next UID\r\n`)
           return ok(`[${nome === "EXAMINE" ? "READ-ONLY" : "READ-WRITE"}] ${nome} completed`)
         }
         case "UID SEARCH": {
@@ -135,13 +136,16 @@ export async function avviaImapFinto({ utente, password, uidvalidity = 170000000
           scrivi(`* SEARCH${trovati.map((m) => ` ${m.uid}`).join("")}\r\n`)
           return ok()
         }
+        case "FETCH":
         case "UID FETCH": {
           if (!selezionata) return scrivi(`${tag} BAD No mailbox selected\r\n`)
           if (finto.guasti.chiudiAlFetch) { presa.destroy(); return }
           const insieme = argomenti[0]
           const voci = (argomenti[1] ?? "").replace(/^\(|\)$/g, "").toUpperCase()
           finto.messaggi.forEach((m, i) => {
-            if (!nelInsieme(insieme, m.uid, massimo)) return
+            // FETCH senza UID: l'insieme indica i numeri d'ordine dei messaggi (1 = il primo), «*» l'ultimo.
+            const scelto = nome === "FETCH" ? nelInsieme(insieme, i + 1, finto.messaggi.length) : nelInsieme(insieme, m.uid, massimo)
+            if (!scelto) return
             const parti: (string | Buffer)[] = [`* ${i + 1} FETCH (UID ${m.uid}`]
             if (voci.includes("RFC822.SIZE")) parti.push(` RFC822.SIZE ${m.grezzo.length}`)
             if (voci.includes("INTERNALDATE")) parti.push(` INTERNALDATE "${dataImap(m.internaldate)}"`)

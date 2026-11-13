@@ -42,8 +42,18 @@ const MASSIMO_TESTO = 20_000
 const MASSIMO_COMPLETO = 50_000
 const MASSIMO_OGGETTO = 300
 const MASSIMO_REFERENCES = 20
+const MASSIMO_NOME = 200
+/** Più lungo di così non è un indirizzo valido (RFC 5321) e non entrerebbe nell'indice delle identità. */
+const MASSIMO_INDIRIZZO = 254
+/** Message-ID più lunghi restano fuori dal filo: nelle intestazioni della risposta supererebbero i limiti delle righe. */
+const MASSIMO_ID_FILO = 250
 
-const taglia = (testo: string, massimo: number) => (testo.length > massimo ? `${testo.slice(0, massimo - 1)}…` : testo)
+/** Accorcia con «…» senza spezzare un carattere fuori dal piano di base (emoji): metà coppia non è testo valido. */
+function taglia(testo: string, massimo: number): string {
+  if (testo.length <= massimo) return testo
+  const fine = /[\ud800-\udbff]/.test(testo[massimo - 2]) ? massimo - 2 : massimo - 1
+  return `${testo.slice(0, fine)}…`
+}
 const minuscolo = (indirizzo: string | null | undefined) => (indirizzo ?? "").trim().toLowerCase()
 export const dominio = (indirizzo: string) => minuscolo(indirizzo).split("@")[1] ?? ""
 const valore = (righe: Intestazione[], chiave: string) => righe.find((r) => r.key === chiave)?.value
@@ -55,7 +65,9 @@ function idMessaggio(grezzo: string | null | undefined): string | null {
   return pulito.startsWith("<") ? pulito : `<${pulito.replace(/>$/, "")}>`
 }
 
-const elencoId = (grezzo: string | null | undefined) => (grezzo?.match(/<[^<>\s]+>/g) ?? []).slice(-MASSIMO_REFERENCES * 2)
+const elencoId = (grezzo: string | null | undefined) =>
+  (grezzo?.match(/<[^<>\s]+>/g) ?? []).filter((id) => id.length <= MASSIMO_ID_FILO).slice(-MASSIMO_REFERENCES)
+const nelFilo = (id: string | null) => (id && id.length <= MASSIMO_ID_FILO ? id : null)
 
 const ENTITA: Record<string, string> = {
   amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", euro: "€", hellip: "…", ndash: "–", mdash: "—",
@@ -67,7 +79,8 @@ function decodifica(testo: string): string {
   return testo.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (tutto, corpo: string) => {
     if (corpo[0] === "#") {
       const codice = corpo[1] === "x" || corpo[1] === "X" ? parseInt(corpo.slice(2), 16) : parseInt(corpo.slice(1), 10)
-      return Number.isFinite(codice) && codice > 0 && codice <= 0x10ffff ? String.fromCodePoint(codice) : tutto
+      const valido = Number.isFinite(codice) && codice > 0 && codice <= 0x10ffff && (codice < 0xd800 || codice > 0xdfff)
+      return valido ? String.fromCodePoint(codice) : tutto
     }
     return ENTITA[corpo] ?? tutto
   })
@@ -177,6 +190,7 @@ export function idMessaggioEmail(message_id: string | null, uidvalidity: string,
 function messaggioDaBusta(meta: MetaEmail, testo: string): Tradotta {
   const mittente = minuscolo(meta.busta?.mittente)
   if (!mittente) return { tipo: "automatico", motivo: "no sender" }
+  if (mittente.length > MASSIMO_INDIRIZZO) return { tipo: "automatico", motivo: "invalid sender address" }
   if (mittente === minuscolo(meta.account)) return { tipo: "nostro" }
   const message_id = idMessaggio(meta.busta?.message_id)
   const oggetto = meta.busta?.oggetto?.trim() ? taglia(meta.busta.oggetto.trim(), MASSIMO_OGGETTO) : null
@@ -186,29 +200,62 @@ function messaggioDaBusta(meta: MetaEmail, testo: string): Tradotta {
       canale: "email",
       account: minuscolo(meta.account),
       id_contatto: mittente,
-      nome: meta.busta?.nome?.trim() || null,
+      nome: meta.busta?.nome?.trim() ? taglia(meta.busta.nome.trim(), MASSIMO_NOME) : null,
       recapito: mittente,
       id_messaggio: idMessaggioEmail(message_id, meta.uidvalidity, meta.uid),
       testo,
       quando: meta.internaldate,
       oggetto,
-      dettagli: { message_id, in_reply_to: null, references: [], oggetto, reply_to: null, verifica: "sconosciuto", allegati: [], testo_completo: null },
+      dettagli: { message_id: nelFilo(message_id), in_reply_to: null, references: [], oggetto, reply_to: null, verifica: "sconosciuto", allegati: [], testo_completo: null },
     },
+  }
+}
+
+const SURROGATO_SPAIATO = /[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/g
+
+/**
+ * Testi pronti per il database, in ogni campo: Postgres rifiuta il carattere NUL nel testo e, nei dettagli JSON, i
+ * surrogati spaiati. Un'email che il database rifiuta non va solo persa: fermerebbe la lettura di tutte le successive.
+ */
+export function pulisci<T>(valore: T): T {
+  if (typeof valore === "string") return valore.replace(/\u0000/g, "").replace(SURROGATO_SPAIATO, "\ufffd") as T
+  if (Array.isArray(valore)) return valore.map((v) => pulisci(v)) as T
+  if (valore && typeof valore === "object" && Object.getPrototypeOf(valore) === Object.prototype) {
+    return Object.fromEntries(Object.entries(valore).map(([chiave, v]) => [chiave, pulisci(v)])) as T
+  }
+  return valore
+}
+
+/** Busta (mittente, nome, oggetto, Message-ID) dalla sola testata: per le email troppo grandi o con un MIME che non si legge. */
+export async function bustaDaTestata(grezzo: Buffer): Promise<Required<Busta>> {
+  const fine = [grezzo.indexOf("\r\n\r\n"), grezzo.indexOf("\n\n")].filter((i) => i >= 0)
+  const testata = fine.length ? grezzo.subarray(0, Math.min(...fine) + 2) : grezzo
+  try {
+    const email = await PostalMime.parse(testata)
+    const da = email.from?.address ? email.from : email.from?.group?.[0]
+    return { mittente: da?.address?.trim() || null, nome: da?.name?.trim() || null, oggetto: email.subject?.trim() || null, message_id: idMessaggio(email.messageId) }
+  } catch {
+    return { mittente: null, nome: null, oggetto: null, message_id: null }
   }
 }
 
 /** Dall'email grezza al messaggio della casella (o al motivo per cui non lo è). Non lancia: un'email illeggibile è un segnaposto. */
 export async function traduciEmail(grezzo: Buffer | null, meta: MetaEmail): Promise<Tradotta> {
+  return pulisci(await traduci(grezzo, meta))
+}
+
+async function traduci(grezzo: Buffer | null, meta: MetaEmail): Promise<Tradotta> {
   if (!grezzo) return messaggioDaBusta(meta, TROPPO_GRANDE)
   let email: PostalMime.Email
   try {
     email = await PostalMime.parse(grezzo, { maxNestingDepth: 32, maxPartCount: 400 })
   } catch {
-    return messaggioDaBusta(meta, ILLEGGIBILE)
+    return messaggioDaBusta({ ...meta, busta: meta.busta ?? (await bustaDaTestata(grezzo)) }, ILLEGGIBILE)
   }
   const da = email.from?.address ? email.from : email.from?.group?.[0]
   const mittente = minuscolo(da?.address)
   if (!mittente) return messaggioDaBusta(meta, (email.text ?? "").trim() ? taglia((email.text ?? "").trim(), MASSIMO_TESTO) : ILLEGGIBILE)
+  if (mittente.length > MASSIMO_INDIRIZZO) return { tipo: "automatico", motivo: "invalid sender address" }
   if (mittente === minuscolo(meta.account)) return { tipo: "nostro" }
 
   const righe = email.headers as Intestazione[]
@@ -233,16 +280,16 @@ export async function traduciEmail(grezzo: Buffer | null, meta: MetaEmail): Prom
       canale: "email",
       account: minuscolo(meta.account),
       id_contatto: mittente,
-      nome: da?.name?.trim() || null,
+      nome: da?.name?.trim() ? taglia(da.name.trim(), MASSIMO_NOME) : null,
       recapito: mittente,
       id_messaggio: idMessaggioEmail(message_id, meta.uidvalidity, meta.uid),
       testo,
       quando: meta.internaldate,
       oggetto,
       dettagli: {
-        message_id,
-        in_reply_to: idMessaggio(email.inReplyTo?.match(/<[^<>\s]+>/)?.[0] ?? email.inReplyTo),
-        references: elencoId(email.references).slice(-MASSIMO_REFERENCES),
+        message_id: nelFilo(message_id),
+        in_reply_to: nelFilo(idMessaggio(email.inReplyTo?.match(/<[^<>\s]+>/)?.[0] ?? email.inReplyTo)),
+        references: elencoId(email.references),
         oggetto,
         reply_to: replyTo && replyTo !== mittente ? replyTo : null,
         verifica: verificaMittente(righe, dominio(mittente)),
@@ -277,4 +324,9 @@ export function intestazioniRisposta(
 /** Message-ID di una risposta, deciso dall'id della risposta: lo stesso id dà lo stesso Message-ID. */
 export function messageIdNostro(id_client: string, indirizzo: string): string {
   return `<crm.${id_client}@${dominio(indirizzo) || "ishtar-lab.local"}>`
+}
+
+/** Id della risposta da un Message-ID scritto da `messageIdNostro` (per i rimbalzi); null se il Message-ID non è nostro. */
+export function idClientDaMessageId(message_id: string): string | null {
+  return /^<crm\.([^<>\s]+)@[^@<>\s]+>$/i.exec(message_id.trim())?.[1] ?? null
 }

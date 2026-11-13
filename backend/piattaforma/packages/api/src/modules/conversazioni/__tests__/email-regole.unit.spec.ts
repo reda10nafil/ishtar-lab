@@ -1,11 +1,14 @@
 import MailComposer from "nodemailer/lib/mail-composer"
 import {
   automatico,
+  bustaDaTestata,
+  idClientDaMessageId,
   idMessaggioEmail,
   ILLEGGIBILE,
   intestazioniRisposta,
   messageIdNostro,
   oggettoRisposta,
+  pulisci,
   senzaCitazioni,
   testoDaHtml,
   traduciEmail,
@@ -205,5 +208,65 @@ describe("filtri, verifica del mittente e intestazioni della risposta", () => {
     expect(idMessaggioEmail(null, "1700000000", 42)).toBe("uid:1700000000:42")
     const lungo = idMessaggioEmail(`<${"x".repeat(500)}@x>`, "1", 2)
     expect(lungo).toMatch(/^sha256:[0-9a-f]{64}$/)
+  })
+})
+
+describe("email ostili: niente che il database rifiuti o che fermi la lettura", () => {
+  it("caratteri NUL tolti da testo, oggetto e nome (Postgres non li accetta)", async () => {
+    const grezzo = Buffer.from([
+      "From: =?UTF-8?Q?Cli=00ente?= <cliente@example.com>",
+      `To: ${CASELLA}`,
+      "Subject: =?UTF-8?Q?Ordine=00_12?=",
+      "Message-ID: <nul@example.com>",
+      "Content-Type: text/plain; charset=utf-8",
+      "Content-Transfer-Encoding: quoted-printable",
+      "",
+      "ciao=00mondo",
+      "",
+    ].join("\r\n"))
+    const t = await traduciEmail(grezzo, meta)
+    if (t.tipo !== "messaggio") throw new Error(t.tipo)
+    expect(t.inArrivo).toMatchObject({ testo: "ciaomondo", oggetto: "Ordine 12", nome: "Cliente" })
+    expect(JSON.stringify(t)).not.toContain("\\u0000")
+  })
+
+  it("tagli che non spezzano le emoji: un surrogato spaiato farebbe rifiutare i dettagli JSON", async () => {
+    const t = await traduciEmail(await componi({ from: "c@example.com", to: CASELLA, subject: `${"a".repeat(298)}😀😀😀`, text: "x" }), meta)
+    if (t.tipo !== "messaggio") throw new Error(t.tipo)
+    expect(t.inArrivo.oggetto).toBe(`${"a".repeat(298)}…`)
+    expect(t.inArrivo.dettagli.oggetto).toBe(`${"a".repeat(298)}…`)
+  })
+
+  it("entità HTML di surrogati restano testo; pulizia finale di NUL e surrogati spaiati", () => {
+    expect(testoDaHtml("<p>a&#xD800;b&#xDFFF;c</p>")).toBe("a&#xD800;b&#xDFFF;c")
+    expect(pulisci({ a: "x\u0000y", b: ["\ud800z", "😀"], c: new Date(0), d: null, e: 3 })).toEqual({ a: "xy", b: ["\ufffdz", "😀"], c: new Date(0), d: null, e: 3 })
+  })
+
+  it("mittente lunghissimo scartato; nome accorciato; Message-ID lunghissimi fuori dal filo", async () => {
+    const lunghissimo = `${"a".repeat(300)}@example.com`
+    expect(await traduciEmail(await componi({ from: lunghissimo, to: CASELLA, subject: "x", text: "x" }), meta)).toEqual({ tipo: "automatico", motivo: "invalid sender address" })
+    expect(await traduciEmail(null, { ...meta, busta: { mittente: lunghissimo } })).toEqual({ tipo: "automatico", motivo: "invalid sender address" })
+    const idLungo = `<${"b".repeat(300)}@example.com>`
+    const t = await traduciEmail(await componi({
+      from: { name: "N".repeat(500), address: "c@example.com" }, to: CASELLA, subject: "x", text: "x",
+      messageId: idLungo, inReplyTo: idLungo, references: [idLungo, "<corto@example.com>"],
+    }), meta)
+    if (t.tipo !== "messaggio") throw new Error(t.tipo)
+    expect(t.inArrivo.nome).toHaveLength(200)
+    expect(t.inArrivo.id_messaggio).toMatch(/^sha256:/)
+    expect(t.inArrivo.dettagli).toMatchObject({ message_id: null, in_reply_to: null, references: ["<corto@example.com>"] })
+  })
+
+  it("busta dalla testata: mittente, nome, oggetto e Message-ID, anche con parole codificate", async () => {
+    const testata = Buffer.from("From: =?UTF-8?Q?Jos=C3=A9?= <Jose@Example.com>\r\nSubject: =?UTF-8?B?Q2lhbyDwn5iA?=\r\nMessage-ID: <x1@example.com>\r\n\r\nCorpo che non serve")
+    expect(await bustaDaTestata(testata)).toEqual({ mittente: "Jose@Example.com", nome: "José", oggetto: "Ciao 😀", message_id: "<x1@example.com>" })
+    expect(await bustaDaTestata(Buffer.from("niente intestazioni"))).toEqual({ mittente: null, nome: null, oggetto: null, message_id: null })
+  })
+
+  it("rimbalzo di una nostra risposta: l'id della risposta si ricava dal Message-ID", () => {
+    expect(idClientDaMessageId(messageIdNostro("8f14e45f-ceea-467f-a8f5-1c2b3d4e5f60", CASELLA))).toBe("8f14e45f-ceea-467f-a8f5-1c2b3d4e5f60")
+    expect(idClientDaMessageId("<crm.a1@ishtar.example>")).toBe("a1")
+    expect(idClientDaMessageId("<abc@example.com>")).toBeNull()
+    expect(idClientDaMessageId("<crm.@ishtar.example>")).toBeNull()
   })
 })

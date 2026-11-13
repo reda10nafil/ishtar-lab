@@ -5,6 +5,7 @@ import { Cursore } from "./models/cursore"
 import { Identita } from "./models/identita"
 import { Messaggio } from "./models/messaggio"
 import { RispostaRapida } from "./models/risposta-rapida"
+import { idClientDaMessageId } from "./canali/email-regole"
 import { chiaveInArrivo, chiaveUscita, decidiInvio, estratto, filtroNuoviDopo, statoDopo, statoDopoFallimento, type Decisione } from "./regole"
 import type { InArrivo } from "./tipi"
 
@@ -206,6 +207,23 @@ export default class ConversazioniModuleService extends MedusaService({ Conversa
     const messaggio = await this.updateBattutas({ id: messaggio_id, stato_consegna: esito.stato, errore: esito.errore }, contesto)
     const conversazione = await this.retrieveConversazione(messaggio.conversazione_id, {}, contesto)
     await this.updateConversaziones({ id: conversazione.id, stato: statoDopoFallimento(conversazione.stato) }, contesto)
+  }
+
+  /**
+   * Rimbalzo di una nostra email: la risposta con quel Message-ID non è arrivata. Diventa «fallita» con il motivo del
+   * server e la conversazione torna al team. La risposta si trova dalla sua chiave (il Message-ID contiene il suo id); un
+   * rimbalzo che non riguarda una nostra risposta si ignora.
+   */
+  @InjectTransactionManager()
+  async segnaRimbalzo(message_id: string, motivo: string, @MedusaContext() contesto: Context = {}): Promise<boolean> {
+    const id_client = idClientDaMessageId(message_id)
+    if (!id_client) return false
+    const [risposta] = await this.listBattutas({ chiave_unica: chiaveUscita(id_client), direzione: "uscita" }, { take: 1 }, contesto)
+    if (!risposta || (risposta.id_esterno && risposta.id_esterno !== message_id)) return false
+    await this.updateBattutas({ id: risposta.id, stato_consegna: "fallito", errore: `The email was not delivered: ${motivo}` }, contesto)
+    const conversazione = await this.retrieveConversazione(risposta.conversazione_id, {}, contesto)
+    await this.updateConversaziones({ id: conversazione.id, stato: statoDopoFallimento(conversazione.stato) }, contesto)
+    return true
   }
 
   /**
