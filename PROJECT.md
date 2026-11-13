@@ -2,7 +2,7 @@
 
 Aggiornato: 12 novembre 2026 (Europe/Berlin).
 
-**Proposta del 12 novembre (ramo `avvio-linux` di satria64, autorizzata dal titolare nella issue #1 e in attesa di revisione):** avvio su Linux, riferimento RustFS pubblico e preparazione protetta. Seconda proposta (ramo `correzioni-dati-csv`): dati demo separati dalle scorte reali e import CSV conservativo. Terza proposta (ramo `affidabilita-salvataggi`): modifiche conservate con il server spento, ricollegamento automatico e ponte più chiaro. Quarta proposta (ramo `sicurezza-riservatezza`): costo d'acquisto e dati interni fuori dal negozio online e dai ruoli senza margini, connettori, console di sviluppo e carte regalo. Dettagli nelle sezioni finali. Finché non vengono integrate, lo stato seguente resta quello delle consegne del titolare.
+**Proposta del 12 novembre (ramo `avvio-linux` di satria64, autorizzata dal titolare nella issue #1 e in attesa di revisione):** avvio su Linux, riferimento RustFS pubblico e preparazione protetta. Seconda proposta (ramo `correzioni-dati-csv`): dati demo separati dalle scorte reali e import CSV conservativo. Terza proposta (ramo `affidabilita-salvataggi`): modifiche conservate con il server spento, ricollegamento automatico e ponte più chiaro. Quarta proposta (ramo `sicurezza-riservatezza`): costo d'acquisto e dati interni fuori dal negozio online e dai ruoli senza margini, connettori, console di sviluppo e carte regalo. Quinta proposta (ramo `salvataggi-atomici-magazzino`, blocco 3 parte A): salvataggio «tutto o niente», lucchetto, campi obbligatori e campi nativi. Dettagli nelle sezioni finali. Finché non vengono integrate, lo stato seguente resta quello delle consegne del titolare.
 
 **Ultimo stato:** consegna al collaboratore ampliata con la seconda app in `versione 2/`, sorgenti backend e tre nuove guide nel vault. Prima app conservata, nessuna correzione applicativa applicata in questa consegna. Stato di pubblicazione e verifiche nel rapporto `verifiche/consegna-versione2-2026-11-12.json`; leggere l'ultimo aggiornamento in fondo. Il tentativo locale di audit dell'8 novembre non è iniziato; l'analisi esterna fotografata è distinta.
 
@@ -339,4 +339,18 @@ Quarta proposta di satria64 (ramo `sicurezza-riservatezza`, sopra `affidabilita-
 Revisione indipendente con il solo codice: 5 rilievi sulle correzioni (il più importante: la scheda pubblica nel negozio online) e 2 problemi preesistenti, tutti corretti e riprovati. Restano documentati: qualunque programma locale può chiedere il token della console di sviluppo (non avviarla con `--host`); i campi personalizzati creati a mano restano visibili ai ruoli con `products:view`.
 
 Verifiche in `verifiche/sicurezza-riservatezza-2026-11-12.json`: jest 100/100, 67 test `node --test`, typecheck 0 errori, prove sul database vero e prove end-to-end del pannello 18/18 e 32/32. Non provati Windows, un utente reale senza permesso sui margini e il rinnovo verso un servizio esterno reale.
+
+## 12 novembre 2026 — Salvataggi atomici, blocco 3 parte A (versione modificata da satria64)
+
+Quinta proposta di satria64 (ramo `salvataggi-atomici-magazzino`, sopra `sicurezza-riservatezza`), autorizzata da Reda Zahloul nella issue #1 e in attesa di revisione. Il blocco 3 è diviso in due: la parte A non richiede decisioni di gestione; la parte B (conflitti, movimenti di scorte, in arrivo e riordino) dipende dalle risposte del titolare alle domande inviate il 12 novembre.
+
+- **Salvataggio «tutto o niente».** Prima la creazione dal pannello eseguiva fino a quattro workflow separati e la modifica tre: un errore a metà lasciava prodotti senza scheda Ishtar (invisibili nel pannello e con lo SKU occupato) o prezzo nuovo con scorte vecchie. Ora due workflow unici in `src/workflows/catalogo/salvataggio-prodotto.ts`. La compensazione di `updateProductsWorkflow` non ripristina metadati e categorie: un passo dedicato fotografa il prodotto e lo riscrive se il salvataggio viene annullato (`ripristino.ts`). L'esito distingue annullato e «a metà» (`esito.ts`).
+- **Lucchetto.** Modifiche dello stesso prodotto e creazioni dello stesso SKU passano una alla volta; anche il primo deposito di un'azienda.
+- **Campi obbligatori aggiunti dopo.** Richiesti alla creazione, entrando nella categoria del campo o svuotando un valore: scorte, prezzo e stato dei prodotti esistenti si salvano.
+- **Campi nativi.** Stato, categoria, materiale e genere letti dai campi del prodotto: il pannello non annulla più le modifiche della console.
+- **Scorte e offerta.** Scritte solo se cambiano; livello di magazzino creato nello stesso salvataggio; più depositi o nessuna voce di magazzino danno un errore esplicito; nessun prezzo di 0 € al posto di uno assente.
+
+La scheda prodotto conserva i valori che non sa mostrare (scelta tolta dall'elenco, colore mai scelto, numero non valido, genere vuoto) e uno SKU già usato da una voce di magazzino viene rifiutato prima di creare.
+
+Verifiche in `verifiche/salvataggi-atomici-2026-11-12.json`: workflow di comprensione a cinque lettori e revisione avversariale a otto agenti (31 rilievi confermati, quelli di questa parte corretti); jest 131/131, 69 test node, typecheck 0 errori; guasti provocati sul database vero; prove end-to-end 18/18, 32/32 e 8/8; catalogo identico a quello di partenza. Limiti noti, rimandati alla parte B: una copia vecchia del pannello può ancora riscrivere campi cambiati altrove; scorte come valore assoluto senza storico; in arrivo e riordino nei metadati.
 

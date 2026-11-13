@@ -58,4 +58,28 @@ describe("catalogo Ishtar: costo d'acquisto e metadati", () => {
     expect(catalogoIshtar(malformati as any, offerte, true)).toEqual([])
     expect(() => vistaProdotto({ ...prodotto, metadata: { ishtar_v1: "x" as any } }, offerta, true)).not.toThrow()
   })
+
+  it("stato, categoria, materiale e genere dai campi del prodotto, che modifica anche la console", () => {
+    const p = { ...prodotto, status: "published", material: "Lino", categories: [{ name: "Altro" }, { name: "Pellicce" }],
+      metadata: { genere: "Uomo", ishtar_v1: { ...scheda, status: "draft", category: "Borse", material: "Pelle", gender: "Donna" } } }
+    expect(vistaProdotto(p, offerta, true, ["Borse", "Pellicce"])).toMatchObject({ status: "active", category: "Pellicce", material: "Lino", gender: "Uomo" })
+  })
+
+  it("archiviato: nel prodotto è una bozza e la scheda lo distingue; una bozza della console resta bozza", () => {
+    const archiviato = { ...prodotto, status: "draft", metadata: { ishtar_v1: { ...scheda, status: "archived" } } }
+    expect(vistaProdotto(archiviato, offerta, true, []).status).toBe("archived")
+    const bozzaConsole = { ...prodotto, status: "draft", metadata: { ishtar_v1: { ...scheda, status: "active" } } }
+    expect(vistaProdotto(bozzaConsole, offerta, true, []).status).toBe("draft")
+  })
+
+  it("categoria nativa fuori dal catalogo Ishtar: resta quella della scheda (il salvataggio successivo non viene rifiutato)", () => {
+    const p = { ...prodotto, categories: [{ name: "Saldi" }], metadata: { ishtar_v1: { ...scheda, category: "Borse" } } }
+    expect(vistaProdotto(p, offerta, true, ["Borse", "Pellicce"]).category).toBe("Borse")
+  })
+
+  it("genere tolto dalla console (chiave presente ma vuota): il pannello non rimette il valore vecchio", () => {
+    const p = { ...prodotto, metadata: { genere: null, ishtar_v1: { ...scheda, gender: "Donna" } } }
+    expect(vistaProdotto(p as any, offerta, true, []).gender).toBe("")
+  })
 })
+

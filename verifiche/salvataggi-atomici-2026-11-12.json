@@ -1,0 +1,113 @@
+{
+  "date": "2026-11-12",
+  "scope": "Blocco 3, parte A: salvataggio «tutto o niente» di prodotti, offerte e scorte; lucchetto per prodotto e per SKU; campi obbligatori aggiunti dopo; stato, categoria, materiale e genere letti dai campi nativi",
+  "modified_by": "satria64 — versione modificata, autorizzata dal titolare nella issue #1, in attesa di revisione",
+  "branch": "salvataggi-atomici-magazzino",
+  "base_branch": "sicurezza-riservatezza",
+  "base_commit": "a2aa0f6",
+  "analysis": "workflow di comprensione con cinque lettori in parallelo (salvataggio, magazzino, conflitti, campi obbligatori, primitive Medusa/Mercur) e una sintesi che ha ricontrollato nel codice e con SELECT in sola lettura le affermazioni dei lettori",
+  "defects": [
+    {
+      "id": "salvataggio-a-passi",
+      "before": "la creazione dal pannello eseguiva fino a quattro workflow separati (prodotto, deposito, offerte, scheda Ishtar) e la modifica tre (offerta, scorte, prodotto): un errore a metà lasciava un prodotto senza scheda Ishtar, invisibile nel pannello e con lo SKU occupato, oppure prezzo nuovo con scorte vecchie; l'annullamento copriva solo le offerte della creazione",
+      "after": "due workflow unici (src/workflows/catalogo/salvataggio-prodotto.ts): «ishtar-crea-prodotto» annida creazione di Mercur, varianti, deposito se manca e offerte, con la scheda Ishtar già nei metadati; «ishtar-aggiorna-prodotto» annida scheda, scorte e prezzo per ultimo. Se un passo fallisce, quelli fatti vengono annullati; un passo dedicato riscrive il prodotto com'era perché la compensazione di Medusa non rimette metadati e categorie. creaProdotto è condivisa con console e portale aziende"
+    },
+    {
+      "id": "esito-annullamento",
+      "before": "con throwOnError non si distingueva un salvataggio annullato da uno rimasto a metà",
+      "after": "esito «fatto», «annullato» o «a metà» (workflows/catalogo/esito.ts); il falso «failed» dei workflow annidati, la cui transazione non si trova più dopo essersi annullati da soli, non conta come annullamento mancato; «a metà» risponde 500 con un messaggio esplicito e scrive nel log i passi non annullati"
+    },
+    {
+      "id": "lucchetto",
+      "before": "due salvataggi dello stesso prodotto potevano intrecciarsi; due creazioni con lo stesso SKU o il primo deposito di un'azienda potevano partire insieme",
+      "after": "lucchetto Redis per prodotto in modifica e per SKU (più il deposito dell'azienda) in creazione, con attesa fino a 30 s; il lucchetto della creazione vale anche per console e portale aziende"
+    },
+    {
+      "id": "campo-obbligatorio-aggiunto",
+      "before": "un campo personalizzato reso obbligatorio dopo bloccava con «Compilare …» ogni salvataggio di scorte, prezzo e stato dei prodotti che ancora non lo avevano, anche nell'import CSV e nella scheda",
+      "after": "richiesto alla creazione, quando il prodotto entra nella categoria del campo o quando si svuota un valore presente; tipo e scelte si controllano sui valori nuovi, cambiati o diventati applicabili; stessa regola nel server, nell'import CSV e nella scheda"
+    },
+    {
+      "id": "console-annullata",
+      "before": "il pannello leggeva stato, categoria, materiale e genere dalla scheda Ishtar nei metadati, mentre la console scrive i campi nativi: le modifiche della console non comparivano e il salvataggio successivo del pannello le annullava",
+      "after": "letti dai campi nativi (la scheda resta come riserva e per distinguere «archiviato»); la scheda del pannello conserva un genere della console fuori elenco (Women, Men, Girls, Boys) invece di mostrarne un altro"
+    },
+    {
+      "id": "scorte-e-prezzo-sempre-riscritti",
+      "before": "ogni salvataggio riscriveva le scorte come valore assoluto e l'offerta, anche se cambiava solo un testo; un prezzo o un costo assenti diventavano un prezzo di 0 €; il livello di magazzino mancante (74 offerte su 82) nasceva con un run separato; un'offerta senza voce di magazzino non salvava le scorte e rispondeva ok",
+      "after": "scorte scritte solo se cambiano, livello creato nello stesso workflow, errore esplicito senza voce di magazzino e con più depositi (le scorte si cambiano dal Magazzino); offerta aggiornata solo per ciò che cambia, nessun prezzo di 0 € al posto di uno assente, il solo costo non tocca i prezzi"
+    },
+    {
+      "id": "scheda-valori-non-mostrabili",
+      "before": "la scheda prodotto cancellava o sostituiva i valori che non sapeva mostrare: una scelta tolta dall'elenco diventava vuota, un colore mai scelto diventava nero (#000000), un numero non valido diventava NaN, un genere vuoto diventava «Uomo»",
+      "after": "valori conservati: la scelta fuori elenco compare tra le opzioni, colore non #rrggbb e numero non valido si mostrano come testo, un colore mai toccato resta vuoto, un genere vuoto resta vuoto"
+    },
+    {
+      "id": "sku-voce-orfana",
+      "before": "il controllo dei codici guardava solo le varianti: con lo SKU di una voce di magazzino orfana la creazione falliva a metà strada, dopo aver creato prodotto e variante",
+      "after": "anche le voci di magazzino vengono controllate prima di creare (400 «already used by a stock item»); dopo una creazione annullata si verifica che non resti nulla con quegli SKU, altrimenti l'esito è «a metà»"
+    }
+  ],
+  "tests": {
+    "jest_security": "131/131 (prima 100)",
+    "node_test_verifiche": "69/69",
+    "typecheck_api": "0 errori"
+  },
+  "real_checks": {
+    "environment": "istanza locale con 82 articoli DEMO; backup del database (pg_dump) prima delle prove; API riavviata con il nuovo codice; script temporanei di verifica rimossi dopo l'uso",
+    "creazione_con_guasto": "offerte fallite dopo la creazione di prodotto e variante (deposito inesistente): esito «annullato»; resti 0 prodotti, 0 varianti, 0 offerte, 0 voci di magazzino anche contando gli eliminati; legami azienda-prodotto di nuovo 82",
+    "modifica_con_guasto": "ultimo passo fallito (offerta inesistente) dopo aver cambiato titolo, descrizione, materiale, stato, foto, categoria, scheda Ishtar e genere: esito «annullato» e prodotto identico a prima; la prima versione senza il passo di ripristino lasciava metadati e categoria nuovi (trovato dalla revisione e riprodotto)",
+    "campo_obbligatorio": "con un campo obbligatorio aggiunto, modifica di scorte di un prodotto esistente 200, creazione senza il campo 400 «Compilare …»; configurazione ripristinata",
+    "console": "pubblicazione nativa mostrata «attivo» nel pannello e non più annullata da un salvataggio del pannello",
+    "scorte": "prodotto senza livello: livello creato nello stesso salvataggio; prova annullata",
+    "creazione_dal_pannello": "prodotto creato con scorte, prezzo e costo giusti, poi eliminato",
+    "solo_costo": "costo cambiato: prezzo con lo stesso id e lo stesso importo",
+    "catalogo_finale": "82 prodotti identici al catalogo di partenza, campo per campo",
+    "voce_orfana": "voce di magazzino orfana con uno SKU di prova: creazione dal pannello rifiutata subito con 400, nessuna variante né prodotto creati (nemmeno eliminati); voce rimossa",
+    "pulizia_dopo_le_prove": "la prima prova di annullamento, fatta prima della correzione del ripristino, aveva lasciato su SKU-003 categoria, genere, colore e una chiave di prova: trovati con il confronto sul catalogo di partenza e ripristinati"
+  },
+  "end_to_end": {
+    "catalogo": "18/18",
+    "collegamento": "32/32",
+    "parte_a": "8/8 (genere «Women» conservato; modifica rapida di scorte con un campo obbligatorio aggiunto; campo non obbligatorio per un prodotto esistente e obbligatorio per uno nuovo; scelta tolta dall'elenco conservata; colore mai scelto non diventa nero; genere vuoto conservato; catalogo e campi identici alla fine)"
+  },
+  "known_limits_part_b": [
+    "una copia del pannello rimasta indietro riscrive ancora i campi cambiati nel frattempo altrove (console, altra finestra, ordini): serve il confronto «valore di prima» della parte B",
+    "le scorte restano un valore assoluto, senza movimento nello storico del Magazzino",
+    "«In arrivo» e «Riordino» restano nei metadati del prodotto"
+  ],
+  "not_tested": [
+    "Windows (codice TypeScript del backend e dell'adattatore, senza percorsi o comandi di sistema)",
+    "creazione dalla console e dal portale aziende attraverso le loro interfacce (usano la stessa funzione provata)",
+    "due salvataggi davvero contemporanei dello stesso prodotto da due schede"
+  ],
+  "secrets_included": false,
+  "independent_review": {
+    "method": "workflow di revisione avversariale: quattro revisori (atomicità, concorrenza, regressioni, regole) e un verificatore per ciascuno che ha provato a smentire ogni rilievo nel codice di Medusa e Mercur; 33 rilievi, 31 confermati, 2 non dimostrati",
+    "fixed": [
+      "modifica annullata che lasciava metadati e categorie nuovi (alta): passo «ricorda prodotto» con ripristino esplicito, provato sul database",
+      "workflow annidato che non riesce ad annullarsi da solo segnalato come «annullato» (media): in creazione controllo dei resti con quegli SKU e controllo delle voci di magazzino prima di creare",
+      "prezzo o costo assenti trasformati in 0 € (media)",
+      "genere della console (Women, Men, Girls, Boys) trasformato in «Uomo» dalla scheda (media) e genere tolto dalla console rimesso dal pannello",
+      "chiave genere non tolta dall'annullamento (media)",
+      "passo del deposito rinominato dentro when, quindi senza compensazione",
+      "deposito di un'azienda creabile due volte da salvataggi paralleli; lucchetto dello SKU solo nel pannello",
+      "campi obbligatori validi per tutte le categorie richiesti al cambio di categoria; valori di altre categorie non controllati entrando nella loro categoria",
+      "esito «a metà» senza i passi non annullati nel log; stati inattesi considerati riusciti",
+      "scheda che cancellava valori fuori elenco, colori non esadecimali e numeri non validi",
+      "materiale nativo oltre 200 caratteri che bloccava i salvataggi del pannello"
+    ],
+    "part_b": [
+      "scorte riscritte con il valore vecchio del pannello (alta): un salvataggio del solo prezzo può annullare evasioni e resi registrati nel frattempo",
+      "copia vecchia del pannello che riscrive prezzo, stato, testi, categoria e genere cambiati altrove (media)",
+      "scorte in valore assoluto senza il lucchetto della voce di magazzino usato da evasioni e resi"
+    ],
+    "accepted_low": [
+      "un errore del workflow delle offerte durante il suo stesso aggiornamento non ripristina l'importo aggiornato sul posto (ultimo passo, raro)",
+      "il lucchetto può segnalare un errore dopo un salvataggio già riuscito (il nuovo tentativo riscrive gli stessi valori)",
+      "le richieste in attesa del lucchetto non passano in ordine di arrivo",
+      "nel portale aziende il legame azienda-prodotto resta fuori dal salvataggio unico (lo crea il subscriber prodotto-esclusivo)",
+      "stati proposed e rejected (solo prodotti delle aziende, esclusi dal pannello) e categoria della console fuori dal catalogo Ishtar: risolti dalla scrittura dei soli campi cambiati della parte B"
+    ]
+  }
+}

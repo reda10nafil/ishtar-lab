@@ -164,3 +164,13 @@ Aggiornamento caricato su GitHub, commit d5235b84b5f2078294c953bda5cea9a89c7ba70
 - Carte regalo: con la sola lettura la ricerca non guarda più il codice, che si poteva ricostruire un carattere alla volta.
 - Verifiche: jest 100/100, 67 test node, typecheck 0 errori, prove sul database vero (negozio, pulizia, carte, connettori, console) e prove end-to-end 18/18 e 32/32. Revisione indipendente: 5 rilievi e 2 problemi preesistenti, corretti. Rapporto `verifiche/sicurezza-riservatezza-2026-11-12.json`.
 
+## 2026-11-12 — Salvataggi atomici, blocco 3 parte A (versione modificata da satria64, proposta)
+
+- Salvataggio «tutto o niente»: creazione e modifica dal pannello diventano due workflow unici (`src/workflows/catalogo/salvataggio-prodotto.ts`) invece di tre o quattro run separati. Un errore a metà non lascia più prodotti senza scheda Ishtar (invisibili e con lo SKU occupato) né prezzo nuovo con scorte vecchie. Un passo dedicato rimette il prodotto com'era, perché la compensazione di Medusa non ripristina metadati e categorie. `creaProdotto` è condivisa con console e portale aziende.
+- Esito distinto fra «annullato» e «a metà», con il falso «failed» dei workflow annidati riconosciuto; lucchetto Redis per prodotto e per SKU, anche per il primo deposito di un'azienda.
+- Campi personalizzati obbligatori aggiunti dopo: richiesti alla creazione, entrando nella categoria del campo o svuotando un valore; non bloccano più scorte, prezzo e stato dei prodotti esistenti (server, import CSV e scheda).
+- Stato, categoria, materiale e genere letti dai campi nativi: il pannello non annulla più le modifiche della console; la scheda conserva un genere della console fuori elenco.
+- Scorte scritte solo se cambiano, livello di magazzino creato nello stesso salvataggio, errore esplicito con più depositi o senza voce di magazzino; offerta aggiornata solo per ciò che cambia, nessun prezzo di 0 € al posto di uno assente.
+- La scheda prodotto conserva i valori che non sa mostrare (scelta tolta dall'elenco, colore mai scelto, numero non valido, genere vuoto); uno SKU già usato da una voce di magazzino viene rifiutato prima di creare.
+- Revisione avversariale (4 revisori e 4 verificatori): 31 rilievi confermati; corretti quelli di questa parte, compreso il ripristino di metadati e categorie dopo un annullamento. Verifiche: jest 131/131, 69 test node, typecheck 0 errori, guasti provocati sul database vero, prove end-to-end 18/18, 32/32 e 8/8, catalogo identico a quello di partenza. Restano alla parte B conflitti, movimenti di scorte, in arrivo e riordino. Rapporto `verifiche/salvataggi-atomici-2026-11-12.json`.
+

@@ -102,7 +102,9 @@ export function prodottoDaRiga(riga,{mappatura,campi=[],categorie=[],campiExtra=
       else if(f.type==='select'){const o=(f.options||[]).find(o=>normalizza(o)===normalizza(v));if(!o)throw Error(`${f.label}: valore non valido «${v}»`);p.custom[f.id]=o;}
       else if(f.type==='date')p.custom[f.id]=valoreData(v,f.label);
     }
-    if(f.required&&!presente(p.custom[f.id]))throw Error(`Campo richiesto: ${f.label}`);
+    // Obbligatorio per i prodotti nuovi e per chi entra nella categoria del campo: un campo aggiunto dopo non blocca
+    // l'aggiornamento degli altri valori di un prodotto che ancora non lo ha (il CSV non svuota mai un valore salvato).
+    if(f.required&&!presente(p.custom[f.id])&&(!esistente||(f.category&&p.category!==esistente.category)))throw Error(`Campo richiesto: ${f.label}`);
   }
   if(esistente)p.id=esistente.id;
   return p;

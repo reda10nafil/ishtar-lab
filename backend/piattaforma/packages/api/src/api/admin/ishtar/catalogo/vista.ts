@@ -9,27 +9,50 @@ export const CAMPI_METADATI = ["category", "gender", "size", "color", "material"
 type Scheda = Record<string, unknown>
 const oggetto = (valore: unknown): valore is Scheda => Boolean(valore) && typeof valore === "object" && !Array.isArray(valore)
 
-export function metadatiIshtar(scheda: Scheda, id: string) {
-  return { id, ...Object.fromEntries(CAMPI_METADATI.filter((k) => k in scheda).map((k) => [k, scheda[k]])) }
+export function metadatiIshtar(scheda: Scheda, id?: string) {
+  return { ...(id === undefined ? {} : { id }), ...Object.fromEntries(CAMPI_METADATI.filter((k) => k in scheda).map((k) => [k, scheda[k]])) }
 }
 
 type Prodotto = {
   id: string
   title?: string | null
   description?: string | null
+  status?: string | null
+  material?: string | null
+  categories?: Array<{ name?: string | null } | null> | null
   images?: Array<{ url: string }> | null
   variants?: Array<{ sku?: string | null }> | null
-  metadata?: { ishtar_v1?: Scheda } | null
+  metadata?: { ishtar_v1?: Scheda; genere?: unknown } | null
 }
 type Offerta = { prodotto_id?: string | null; prezzo?: number | null; prezzo_cessione?: number | null; scorte?: number | null } | undefined
+
+/**
+ * Stato, categoria, materiale e genere vengono dai campi del prodotto, che modifica anche la console: letti dalla scheda
+ * Ishtar, il pannello non vedeva quelle modifiche e al salvataggio successivo le annullava. La scheda resta come riserva
+ * (campo non letto, categoria fuori dal catalogo Ishtar) e per distinguere «archiviato», che nel prodotto è una bozza.
+ */
+function fontiNative(prodotto: Prodotto, scheda: Scheda, categorie: string[]) {
+  const nativa = (prodotto.categories ?? []).map((c) => c?.name).find((nome) => nome && categorie.includes(nome))
+  const genere = prodotto.metadata?.genere
+  const stato = prodotto.status
+  return {
+    status: stato === "published" ? "active" : scheda.status === "archived" ? "archived" : stato ? "draft" : scheda.status ?? "draft",
+    category: nativa ?? scheda.category,
+    material: prodotto.material !== undefined ? prodotto.material ?? "" : scheda.material,
+    // Chiave presente ma vuota: genere tolto dalla console, il pannello non rimette il valore vecchio.
+    gender: typeof genere === "string" && genere ? genere : prodotto.metadata && "genere" in prodotto.metadata ? "" : scheda.gender,
+  }
+}
 
 /**
  * Scheda per il pannello. Il costo d'acquisto esce solo verso chi ha il permesso sui margini, come nel resto del
  * catalogo (`vedeMargini`), e arriva sempre dall'offerta: un costo rimasto nei metadati di un prodotto vecchio non esce.
  */
-export function vistaProdotto(prodotto: Prodotto, offerta: Offerta, conMargini: boolean) {
+export function vistaProdotto(prodotto: Prodotto, offerta: Offerta, conMargini: boolean, categorie: string[] = []) {
+  const scheda = oggetto(prodotto.metadata?.ishtar_v1) ? prodotto.metadata.ishtar_v1 : {}
   const vista: Scheda = {
-    ...metadatiIshtar(oggetto(prodotto.metadata?.ishtar_v1) ? prodotto.metadata.ishtar_v1 : {}, prodotto.id),
+    ...metadatiIshtar(scheda, prodotto.id),
+    ...fontiNative(prodotto, scheda, categorie),
     name: prodotto.title,
     description: prodotto.description ?? "",
     sku: prodotto.variants?.[0]?.sku,
@@ -46,12 +69,12 @@ export function vistaProdotto(prodotto: Prodotto, offerta: Offerta, conMargini: 
  * per azienda). Un prodotto di un'altra azienda con una chiave `ishtar_v1` nei metadati, che un fornitore può impostare,
  * non entra nel catalogo; una scheda malformata non blocca l'intero elenco.
  */
-export function catalogoIshtar(prodotti: Prodotto[], offerte: NonNullable<Offerta>[], conMargini: boolean) {
+export function catalogoIshtar(prodotti: Prodotto[], offerte: NonNullable<Offerta>[], conMargini: boolean, categorie: string[] = []) {
   const perProdotto = new Map<string, NonNullable<Offerta>>()
   for (const o of offerte) if (o.prodotto_id && !perProdotto.has(o.prodotto_id)) perProdotto.set(o.prodotto_id, o)
   return prodotti.flatMap((p) => {
     const offerta = perProdotto.get(p.id)
-    return offerta && oggetto(p.metadata?.ishtar_v1) ? [vistaProdotto(p, offerta, conMargini)] : []
+    return offerta && oggetto(p.metadata?.ishtar_v1) ? [vistaProdotto(p, offerta, conMargini, categorie)] : []
   })
 }
 
