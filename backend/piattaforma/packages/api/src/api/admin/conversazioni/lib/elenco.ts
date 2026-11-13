@@ -55,8 +55,23 @@ export const rigaConversazione = (c: ConversazioneLetta) => ({
 
 export const vistaIdentita = (i: IdentitaLetta) => ({ id: i.id, canale: i.canale, nome: i.nome, recapito: i.recapito, cliente_id: i.cliente_id })
 
-type MessaggioLetto = { id: string; direzione: string; testo: string; quando: Date | string; stato_consegna: string; errore: string | null; autore_nome: string | null }
+type MessaggioLetto = {
+  id: string
+  direzione: string
+  testo: string
+  quando: Date | string
+  stato_consegna: string
+  errore: string | null
+  autore_nome: string | null
+  chiave_unica?: string | null
+}
 
+const USCITA = "uscita:"
+
+/**
+ * `id_client`: l'id che il pannello ha dato alla risposta. Con questo il pannello riconosce la propria risposta nella
+ * conversazione riletta e la ritenta con lo stesso id. La chiave dei messaggi in arrivo non si espone.
+ */
 export const vistaMessaggio = (m: MessaggioLetto) => ({
   id: m.id,
   direzione: m.direzione,
@@ -65,6 +80,7 @@ export const vistaMessaggio = (m: MessaggioLetto) => ({
   stato_consegna: m.stato_consegna,
   errore: m.errore,
   autore_nome: m.autore_nome,
+  id_client: m.direzione === "uscita" && m.chiave_unica?.startsWith(USCITA) ? m.chiave_unica.slice(USCITA.length) : null,
 })
 
 /** Testo cercato con ILIKE: `%` e `_` scritti dall'utente valgono come caratteri, non come jolly. */
