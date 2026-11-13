@@ -88,6 +88,8 @@ Per il porting riutilizzare Compose e i sorgenti TypeScript; adattare lancio/sto
 
 Nel Compose **pubblicato della prima app** RustFS è già riferito tramite digest pubblico, mentre il Compose operativo sul PC del titolare e quello storico di versione 2 hanno il tag locale `rustfs/rustfs:local-d30c5e04efc4`. Il digest della consegna è `rustfs/rustfs@sha256:d30c5e04efc48cea32dfcf9550ccc5a01840564bc99c113d1a04471d43d4872f`. È una sostituzione già effettuata nella sola consegna principale; disponibilità odierna, architettura e download su Linux vanno controllati. Non è stato rieseguito un pull in questa sessione e la seconda copia resta fedele alla sorgente.
 
+**Aggiornamento del 12 novembre, proposta di satria64 (PR #2, in attesa di revisione):** launcher `prepara-ishtar-lab.sh`, `avvia-ishtar-lab.sh` e `ferma-ishtar-lab.sh`, runtime con `backend/infra/processi.mjs` (riconoscimento e arresto dei soli processi della copia su Linux e macOS) e preparazione riprendibile e protetta, provati a macchina pulita su Ubuntu 26.04 (`verifiche/avvio-linux-2026-11-12.json`). Il riferimento `rustfs/rustfs@sha256:d30c5e04…` è l'ID locale dell'immagine, non un digest del registro: il pull risponde 404 su qualunque PC nuovo. La proposta usa `rustfs/rustfs:1.0.5@sha256:b81d16a9…`.
+
 ## Cosa è integrato e cosa deve fare il collaboratore
 
 Catalogo, foto, campi configurabili, CSV e scorte della prima app hanno prove storiche del collegamento al DB. Dashboard, ordini, clienti, analisi, marketing e altri moduli del primo frontend restano dimostrativi; le prove di navigazione non dimostrano flussi commerciali completi. Varianti multiple nella stessa scheda, ordini/pagamenti/spedizioni reali e integrazioni complete richiedono lavoro e verifica.

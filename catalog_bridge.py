@@ -75,6 +75,6 @@ def handle(handler):
         handler.send_response(503)
         handler.send_header("Content-Type", "application/json")
         handler.end_headers()
-        handler.wfile.write(json.dumps({"message":"Backend Ishtar Lab non disponibile. Avviare Avvia Ishtar Lab.cmd e riprovare."}).encode())
+        handler.wfile.write(json.dumps({"message":"Backend Ishtar Lab non disponibile. Avviare Ishtar Lab (Avvia Ishtar Lab.bat su Windows, ./avvia-ishtar-lab.sh su Linux/macOS) e riprovare."}).encode())
     except (ValueError, KeyError):
         handler.send_error(503, "Configurazione locale non valida")

@@ -2,6 +2,8 @@
 
 Aggiornato: 12 novembre 2026 (Europe/Berlin).
 
+**Proposta del 12 novembre (ramo `avvio-linux` di satria64, autorizzata dal titolare nella issue #1 e in attesa di revisione):** avvio su Linux, riferimento RustFS pubblico e preparazione protetta; dettagli nella sezione finale. Finché non viene integrata, lo stato seguente resta quello delle consegne del titolare.
+
 **Ultimo stato:** consegna al collaboratore ampliata con la seconda app in `versione 2/`, sorgenti backend e tre nuove guide nel vault. Prima app conservata, nessuna correzione applicativa applicata in questa consegna. Stato di pubblicazione e verifiche nel rapporto `verifiche/consegna-versione2-2026-11-12.json`; leggere l'ultimo aggiornamento in fondo. Il tentativo locale di audit dell'8 novembre non è iniziato; l'analisi esterna fotografata è distinta.
 
 ## Obiettivo e ambito
@@ -283,3 +285,16 @@ Risorse condivise: AGENTS.md/RISORSE.md della raccolta consultati; REA e prompts
 La consegna per GitHub usa la copia pulita consegne/Ishtar-Lab. Esito effettivo, commit, verifiche e pacchetto sono registrati localmente in verifiche/consegna-versione2-2026-11-12.json. I manifest dei pacchetti precedenti restano storici; non vanno riscritti come se descrivessero la nuova revisione. Nessun invito, messaggio diretto o accesso a credenziali del titolare viene effettuato.
 
 Prossimo passo: il collaboratore salva il proprio lavoro, legge Consegna tecnica al collaboratore e confronta la base usata nell'analisi con la nuova consegna; poi ambiente separato, rapporto completo, verifica dei problemi e PR con test/migrazioni/rollback. Nessuna delle 107 attività è chiusa dalla copia.
+
+## 12 novembre 2026 — Avvio su Linux (versione modificata da satria64)
+
+Proposta di modifica di satria64, autorizzata da Reda Zahloul nella issue #1 (commento del 12 novembre 2026) e in attesa di revisione prima dell'integrazione. Licenza Ishtar, titolarità e avvisi dei terzi restano invariati, come richiesto dal permesso. Lavoro svolto su un clone del repository pubblico (ramo `avvio-linux`, base `bf7bf01`) su Ubuntu 26.04, con Docker Engine 29.1.3 e Compose 2.40.3, Node.js 22.23.3, Python 3.14.4 e Bun 1.4.4. Istanza nuova con gli 82 articoli DEMO del CSV della consegna; nessun dato del titolare usato.
+
+- **Preparazione bloccata su ogni PC nuovo, corretta.** Il riferimento RustFS della consegna (`sha256:d30c5e04…`) era l'ID locale dell'immagine e Docker Hub rispondeva 404. Ora è `rustfs/rustfs:1.0.5@sha256:b81d16a9…`, build pubblicata il 10/11/2026 e diversa da `rustfs/rustfs:local-d30c5e04efc4` della copia operativa. Corretta anche la sostituzione in `tools/prepara-consegna.py`. **Non copiare `compose.yaml` nella copia operativa** senza verificare prima i dati RustFS già presenti nel volume.
+- **Runtime portabile.** `backend/infra/processi.mjs` riconosce e arresta i soli processi della copia anche su Linux (`/proc`) e macOS (`ps`); su Windows restano la query PowerShell e `taskkill /T /F`. `runtime.mjs` va sempre riportato insieme a `processi.mjs`.
+- **Launcher Linux e macOS.** `prepara-ishtar-lab.sh`, `avvia-ishtar-lab.sh` e `ferma-ishtar-lab.sh`; `tools/ferma-ishtar-lab.mjs` ferma pannello, API e servizi. L'avvio registra il PID del pannello in `backend/.runtime/pannello.json` (log del pannello solo fuori da Windows), riusa un pannello già attivo e apre il browser con xdg-open o open.
+- **Preparazione protetta, anche su Windows.** Registro `backend/.runtime/preparazione.json` e opzione `--riprendi`; arresto con indicazioni se manca un solo .env o se esistono già i volumi di un'altra copia. `prepara-ambiente.mjs` conserva le chiavi esistenti, ricava le password dei servizi dagli URL di `packages/api/.env`, non sovrascrive mai le credenziali del proprietario, avvisa se cambiano le chiavi dei connettori e salva copie `.env.*` (permessi 600) dei file che cambiano.
+
+Verifiche in `verifiche/avvio-linux-2026-11-12.json`: preparazione a macchina pulita; avvio in circa 11 s; secondo avvio senza duplicati; arresto e riavvio con dati conservati; import demo; controlli del ponte; foto caricata e riletta con RustFS 1.0.5; ripresa della preparazione con chiavi invariate; 21 verifiche sui segreti; simulazione del ramo Windows; test 7 + 13 + 80 e typecheck API. Catalogo e Inventario visibili in Chrome senza errori. Revisione indipendente in quattro prospettive con verifica avversariale; i rilievi confermati sono stati corretti. Non provati: Windows dopo la modifica, macOS, avvio dopo un riavvio del sistema.
+
+Osservazioni emerse dall'analisi e non corrette in questa proposta: le azioni demo di cassa, ordini e resi modificano le scorte reali nel DB tramite `ishtar:legacy-change`; l'import CSV in modalità «Aggiorna» riporta i prodotti a valori predefiniti (stato bozza, foto e campi assenti dal file); `numberCSV` legge «1.200» come 1,2.

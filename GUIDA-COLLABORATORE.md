@@ -10,10 +10,10 @@ Un utilizzo commerciale richiede un accordo scritto separato.
 
 ## Preparazione
 
-- Clonare il repository o estrarre lo ZIP in una propria cartella Windows.
+- Clonare il repository o estrarre lo ZIP in una propria cartella (Windows; per Linux e macOS vedere la sezione dedicata del README).
 - Installare i prerequisiti indicati nel README dalle fonti ufficiali.
-- Avviare Docker Desktop. La preparazione richiede rete per immagini e dipendenze e può durare diversi minuti.
-- Eseguire Prepara Ishtar Lab.bat una volta, poi Avvia Ishtar Lab.bat.
+- Avviare Docker Desktop (su Linux il servizio docker). La preparazione richiede rete per immagini e dipendenze e può durare diversi minuti.
+- Eseguire Prepara Ishtar Lab.bat una volta, poi Avvia Ishtar Lab.bat. Su Linux e macOS: `./prepara-ishtar-lab.sh`, poi `./avvia-ishtar-lab.sh`; arresto con `./ferma-ishtar-lab.sh`.
 - Il database e le chiavi vengono creati localmente. Non chiedere né copiare le chiavi del PC del titolare.
 - Il dataset CSV consegnato è esplicitamente dimostrativo e ripulito dai link foto remoti della sorgente; associarvi immagini autorizzate per le prove.
 
@@ -43,5 +43,5 @@ La sincronizzazione avviene con normali commit/push/pull: non è stato installat
 
 ## Limiti della consegna
 
-Non è un installer autonomo né un database completo del titolare. L'avvio già configurato è stato provato nelle fasi precedenti; il bootstrap completo su una macchina pulita resta da verificare.
+Non è un installer autonomo né un database completo del titolare. L'avvio già configurato è stato provato nelle fasi precedenti; il bootstrap completo su una macchina pulita è stato provato su Linux il 12 novembre 2026 e resta da verificare su Windows.
 Le licenze dei componenti terzi rimangono applicabili; prima di redistribuire pubblicamente servono le verifiche descritte nei documenti legali.

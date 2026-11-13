@@ -20,9 +20,23 @@ Indirizzo: http://127.0.0.1:4273/ishtar-lab/#/home.
 4. Usare **Avvia Ishtar Lab.bat**. La preparazione genera chiavi nuove sul PC: le credenziali del titolare non vengono distribuite.
 5. Il database nuovo nasce senza l'inventario privato del titolare. Per le prove si può importare il CSV dimostrativo da frontend/catalogo/inventario-demo.csv.
 
-La preparazione su macchina pulita non è stata provata end-to-end; controlli e limiti sono in verifiche/consegna-github.json.
+Su Windows la preparazione su macchina pulita non è stata provata end-to-end; controlli e limiti sono in verifiche/consegna-github.json.
+Su Linux è stata provata a macchina pulita il 12 novembre 2026: esiti in verifiche/avvio-linux-2026-11-12.json.
 Il runtime mantiene porte fisse e si rifiuta di arrestare processi di cui non riconosce l'identità.
 Non avviare due copie con le stesse porte sul medesimo PC.
+
+## Linux e macOS
+
+Provato su Ubuntu 26.04 il 12 novembre 2026; su macOS gli script sono predisposti ma non provati.
+
+1. Clonare il repository oppure scaricare lo ZIP del ramo main: lo ZIP «Windows» delle release precedenti non contiene questi script né la correzione dell'immagine RustFS.
+2. Prerequisiti: Docker Engine con il plugin compose (su macOS Docker Desktop avviato), Node.js almeno 22.22, `python3` e Bun 1.4.4. Su Linux l'utente deve essere nel gruppo `docker`, poi serve un nuovo accesso; l'appartenenza al gruppo concede privilegi equivalenti a root, mentre Docker rootless non è stato provato. Gli script aggiungono da soli `~/.bun/bin` al PATH.
+3. Aprire un terminale nella cartella del progetto ed eseguire una sola volta `./prepara-ishtar-lab.sh`. Se si interrompe, rieseguirlo: riprende senza rigenerare le chiavi. Una preparazione rimasta a metà con una versione precedente si completa con `./prepara-ishtar-lab.sh --riprendi`.
+4. Avvio: `./avvia-ishtar-lab.sh`, che apre anche il browser (`--no-browser` per non aprirlo).
+5. Arresto di pannello, API e servizi: `./ferma-ishtar-lab.sh`. I dati restano nei volumi Docker.
+
+Se compare «Permesso negato» (file estratti senza bit di esecuzione), usare `bash ./prepara-ishtar-lab.sh`, e allo stesso modo gli altri due script, oppure `chmod +x *.sh`.
+Dati demo facoltativi, a pannello avviato: `python3 tools/importa_demo_ishtar.py`; scrive un rapporto locale in verifiche/.
 
 ## Cosa funziona e cosa resta dimostrativo
 
