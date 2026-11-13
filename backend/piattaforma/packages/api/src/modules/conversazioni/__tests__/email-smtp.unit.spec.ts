@@ -1,7 +1,8 @@
 import PostalMime from "postal-mime"
-import { credenzialiEmail } from "../canali/email-connessioni"
+import { credenzialiEmail, provaCasella } from "../canali/email-connessioni"
 import { inviaEmail, type RispostaEmail } from "../canali/email-smtp"
 import { NON_CONFERMATO } from "../service"
+import { avviaImapFinto } from "./finti/imap"
 import { avviaSmtpFinto, type SmtpFinto } from "./finti/smtp"
 
 const CASELLA = "negozio@ishtar.example"
@@ -83,6 +84,23 @@ describe("invio delle risposte email (SMTP finto)", () => {
       daSegnalare: "The mailbox refused the username or password",
     })
     expect(JSON.stringify(esito)).not.toContain("sbagliata-segreta-7")
+  })
+
+  it("accesso rifiutato per un guasto passeggero (454): fallito, connettore non toccato", async () => {
+    smtp.modo = "auth454"
+    expect(await inviaEmail(cred(), RISPOSTA, { primaDellInvio: async () => {} })).toEqual({ esito: { stato: "fallito", errore: "The mail server is busy: try again later" } })
+  })
+
+  it("server che chiude prima del saluto: mai «password rifiutata», né nell'invio né nella prova della casella", async () => {
+    smtp.modo = "chiudeSubito"
+    expect(await inviaEmail(cred(), RISPOSTA, { primaDellInvio: async () => {} })).toEqual({ esito: { stato: "fallito", errore: "The mail server can't be reached" } })
+    const imap = await avviaImapFinto({ utente: CASELLA, password: SEGRETO })
+    try {
+      expect(await provaCasella({ indirizzo: CASELLA, password: SEGRETO, imap_host: "127.0.0.1", imap_porta: String(imap.porta), smtp_host: "127.0.0.1", smtp_porta: String(smtp.porta) }))
+        .toEqual({ ok: false, errore: "The mail server can't be reached" })
+    } finally {
+      await imap.chiudi()
+    }
   })
 
   it("server non pubblico: fallito e connettore da segnalare", async () => {

@@ -60,6 +60,7 @@
   font-size: var(--fs-2xs); font-weight: 600; cursor: pointer;
 }
 .chat-bolla__citato:hover { text-decoration: underline; }
+.chat-bolla__avviso { color: var(--warn); font-size: var(--fs-2xs); font-weight: 600; max-width: 100%; }
 .chat-bolla__azioni { display: flex; gap: 6px; flex-wrap: wrap; }
 .chat-nuovi { position: sticky; bottom: 4px; align-self: center; list-style: none; }
 .chat-stato--good { color: var(--good); }

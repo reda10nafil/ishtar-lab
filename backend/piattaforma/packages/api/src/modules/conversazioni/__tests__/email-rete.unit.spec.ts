@@ -1,8 +1,8 @@
 import { eseguiProva } from "../../connectors/prova"
-import { trovaServizio, valoriValidi } from "../../connectors/catalogo"
+import { segretoDaRiscrivere, trovaServizio, valoriValidi } from "../../connectors/catalogo"
 import { stessiValori } from "../../connectors/service"
 import { destinazione } from "../canali/email-rete"
-import { classificaErrore, credenzialiEmail, opzioniImap, opzioniSmtp, provaCasella } from "../canali/email-connessioni"
+import { classificaErrore, credenzialiEmail, MESSAGGI_ERRORE, opzioniImap, opzioniSmtp, provaCasella } from "../canali/email-connessioni"
 import { avviaImapFinto, type ImapFinto } from "./finti/imap"
 import { avviaSmtpFinto, type SmtpFinto } from "./finti/smtp"
 
@@ -70,6 +70,17 @@ describe("rete sicura della casella email", () => {
     }
     expect(classificaErrore(Object.assign(new Error("x"), { code: "ECONNREFUSED" }))).toBe("rete")
   })
+
+  it("rifiuti passeggeri all'accesso: «temporaneo», mai una password sbagliata", () => {
+    for (const serverResponseCode of ["UNAVAILABLE", "INUSE", "LIMIT", "SERVERBUG"]) {
+      expect(classificaErrore(Object.assign(new Error("x"), { authenticationFailed: true, serverResponseCode }))).toBe("temporaneo")
+    }
+    expect(classificaErrore(Object.assign(new Error("x"), { authenticationFailed: true, serverResponseCode: "AUTHENTICATIONFAILED" }))).toBe("credenziali")
+    expect(classificaErrore(Object.assign(new Error("x"), { code: "EAUTH", responseCode: 454 }))).toBe("temporaneo")
+    expect(classificaErrore(Object.assign(new Error("x"), { code: "EAUTH", responseCode: 421 }))).toBe("temporaneo")
+    expect(classificaErrore(Object.assign(new Error("x"), { code: "EAUTH", responseCode: 535 }))).toBe("credenziali")
+    expect(MESSAGGI_ERRORE.temporaneo).toBe("The mail server is busy: try again later")
+  })
 })
 
 describe("prova della casella e voce del connettore", () => {
@@ -119,6 +130,20 @@ describe("prova della casella e voce del connettore", () => {
     expect(valoriValidi(servizio, valori({ smtp_host: "smtp://x.example/percorso" }))).toMatch(/server name/i)
     expect(valoriValidi(servizio, valori({ imap_porta: "abc" }))).toMatch(/port/i)
     expect(valoriValidi(servizio, valori())).toBeNull()
+  })
+
+  it("cambiare server, porte, utente o indirizzo richiede di riscrivere la password (che andrebbe al server nuovo)", () => {
+    const casella = trovaServizio("casella_email")!
+    const salvati = { indirizzo: CASELLA, password: "p", imap_host: "imap.a.example", smtp_host: "smtp.a.example" }
+    expect(segretoDaRiscrivere(casella, salvati, { imap_host: "imap.b.example" })).toBe(true)
+    expect(segretoDaRiscrivere(casella, salvati, { smtp_porta: "587" })).toBe(true)
+    expect(segretoDaRiscrivere(casella, salvati, { utente: "altro" })).toBe(true)
+    expect(segretoDaRiscrivere(casella, salvati, { imap_host: "imap.b.example", password: "nuova" })).toBe(false)
+    expect(segretoDaRiscrivere(casella, salvati, { nome: "Negozio", imap_host: " imap.a.example " })).toBe(false)
+    expect(segretoDaRiscrivere(casella, undefined, { imap_host: "imap.b.example" })).toBe(false)
+    const woo = trovaServizio("woocommerce")!
+    expect(segretoDaRiscrivere(woo, { site: "https://a.example", consumer_key: "k", consumer_secret: "s" }, { site: "https://b.example" })).toBe(true)
+    expect(segretoDaRiscrivere(trovaServizio("telegram")!, { bot_token: "t" }, {})).toBe(false)
   })
 
   it("errore del connettore solo se le credenziali salvate sono ancora quelle usate", () => {

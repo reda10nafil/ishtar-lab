@@ -53,7 +53,9 @@ export default class ConversazioniModuleService extends MedusaService({ Conversa
     const [gia] = await this.listBattutas({ chiave_unica: chiave }, { take: 1 }, contesto)
     if (gia) return { conversazione_id: gia.conversazione_id, messaggio_id: gia.id, nuovo: false }
 
-    const identita = await this.identitaPer(e, contesto)
+    // Un'email che non passa DMARC può essere falsa: non cambia il nome del contatto né l'oggetto della conversazione.
+    const sospetta = (e.dettagli as { verifica?: string } | null | undefined)?.verifica === "non_verificato"
+    const identita = await this.identitaPer(e, contesto, !sospetta)
     const [ultima] = await this.listConversaziones({ identita_id: identita.id }, { order: { ultimo_messaggio_il: "DESC" }, take: 1 }, contesto)
     const conversazione = ultima ?? (await this.createConversaziones({
       canale: e.canale,
@@ -82,7 +84,7 @@ export default class ConversazioniModuleService extends MedusaService({ Conversa
       id: conversazione.id,
       stato: statoDopo(conversazione.stato, "entrata"),
       non_letti: conversazione.non_letti + 1,
-      ...(piuVecchio ? {} : { ultimo_messaggio_il: e.quando, ultimo_estratto: estratto(e.testo), ...(e.oggetto ? { oggetto: e.oggetto } : {}) }),
+      ...(piuVecchio ? {} : { ultimo_messaggio_il: e.quando, ultimo_estratto: estratto(e.testo), ...(e.oggetto && !sospetta ? { oggetto: e.oggetto } : {}) }),
     }, contesto)
     return { conversazione_id: conversazione.id, messaggio_id: messaggio.id, nuovo: true }
   }
@@ -102,10 +104,11 @@ export default class ConversazioniModuleService extends MedusaService({ Conversa
   }
 
   /** Identità del contatto per canale e account: creata la prima volta, nome e recapito aggiornati se il canale li cambia. */
-  private async identitaPer(e: InArrivo, contesto: Context) {
+  private async identitaPer(e: InArrivo, contesto: Context, aggiorna = true) {
     const filtro = { canale: e.canale, account: e.account, id_contatto: e.id_contatto }
     const [esistente] = await this.listIdentitas(filtro, { take: 1 }, contesto)
     if (!esistente) return this.createIdentitas({ ...filtro, nome: e.nome, recapito: e.recapito }, contesto)
+    if (!aggiorna) return esistente
     const cambi = {
       ...(e.nome && e.nome !== esistente.nome ? { nome: e.nome } : {}),
       ...(e.recapito && e.recapito !== esistente.recapito ? { recapito: e.recapito } : {}),
@@ -194,10 +197,13 @@ export default class ConversazioniModuleService extends MedusaService({ Conversa
     return { messaggio: inCoda, decisione }
   }
 
-  /** Ultimo messaggio del cliente nella conversazione, in ordine di arrivo: le sue intestazioni dicono a cosa si risponde. */
+  /**
+   * Ultimo messaggio del cliente nella conversazione, in ordine di arrivo: le sue intestazioni dicono a cosa si risponde.
+   * Si salta un'email che non passa DMARC (forse falsa): la risposta non ne prende oggetto e filo.
+   */
   async ultimoInArrivo(conversazione_id: string): Promise<MessaggioDTO | null> {
-    const [ultimo] = await this.listBattutas({ conversazione_id, direzione: "entrata" }, { order: ORDINE_MESSAGGI, take: 1 })
-    return ultimo ?? null
+    const ultimi = await this.listBattutas({ conversazione_id, direzione: "entrata" }, { order: ORDINE_MESSAGGI, take: 20 })
+    return ultimi.find((m) => (m.dettagli as { verifica?: string } | null)?.verifica !== "non_verificato") ?? null
   }
 
   /**
@@ -229,19 +235,29 @@ export default class ConversazioniModuleService extends MedusaService({ Conversa
   }
 
   /**
-   * Rimbalzo di una nostra email: la risposta con quel Message-ID non è arrivata. Diventa «fallita» con il motivo del
-   * server e la conversazione torna al team. La risposta si trova dalla sua chiave (il Message-ID contiene il suo id); un
-   * rimbalzo che non riguarda una nostra risposta si ignora.
+   * Rimbalzo di una nostra email (rapporto «Action: failed»): la risposta con quel Message-ID non è arrivata. Diventa
+   * «fallita» con il motivo del server; la conversazione torna al team anche se era chiusa, con un segno da leggere, perché
+   * il rimbalzo arriva quando nessuno la guarda. Si ignora un rapporto che non riguarda una nostra risposta, il suo
+   * destinatario o il suo ultimo tentativo (uno più vecchio, riletto dopo un cambio di UIDVALIDITY).
    */
   @InjectTransactionManager()
-  async segnaRimbalzo(message_id: string, motivo: string, @MedusaContext() contesto: Context = {}): Promise<boolean> {
+  async segnaRimbalzo(
+    message_id: string,
+    motivo: string,
+    { destinatari, quando }: { destinatari: string[]; quando: Date },
+    @MedusaContext() contesto: Context = {}
+  ): Promise<boolean> {
     const id_client = idClientDaMessageId(message_id)
     if (!id_client) return false
     const [risposta] = await this.listBattutas({ chiave_unica: chiaveUscita(id_client), direzione: "uscita" }, { take: 1 }, contesto)
     if (!risposta || (risposta.id_esterno && risposta.id_esterno !== message_id)) return false
+    if (!["inviato", "incerto", "fallito"].includes(risposta.stato_consegna)) return false
+    // Due minuti di tolleranza per gli orologi del server di posta e dell'API.
+    if (risposta.tentato_il && new Date(quando).getTime() < new Date(risposta.tentato_il).getTime() - 2 * 60_000) return false
+    const conversazione = await this.retrieveConversazione(risposta.conversazione_id, { relations: ["identita"] }, contesto)
+    if (!destinatari.includes(conversazione.identita.id_contatto.toLowerCase())) return false
     await this.updateBattutas({ id: risposta.id, stato_consegna: "fallito", errore: `The email was not delivered: ${motivo}` }, contesto)
-    const conversazione = await this.retrieveConversazione(risposta.conversazione_id, {}, contesto)
-    await this.updateConversaziones({ id: conversazione.id, stato: statoDopoFallimento(conversazione.stato) }, contesto)
+    await this.updateConversaziones({ id: conversazione.id, stato: "aperta", non_letti: conversazione.non_letti + 1 }, contesto)
     return true
   }
 

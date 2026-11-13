@@ -95,6 +95,22 @@ describe("lettura della casella (IMAP finto)", () => {
     expect(fetch.every((c) => !/BODY\[/.test(c))).toBe(true)
   })
 
+  it("email che il server non dà (NO alla FETCH del contenuto): le altre si leggono, quella resta con la busta", async () => {
+    for (let n = 1; n <= 3; n++) imap.aggiungi(await email(n))
+    imap.guasti.fetchRifiutato = [2]
+    const letta = await leggiCasella(cred(), { uidvalidity: UV, ultimo_uid: 0 })
+    expect(letta.messaggi.map((m) => [m.uid, m.grezzo ? "contenuto" : m.illeggibile ? "illeggibile" : "?"])).toEqual([[1, "contenuto"], [2, "illeggibile"], [3, "contenuto"]])
+    expect(letta.messaggi[1].busta).toMatchObject({ mittente: "cliente2@example.com", oggetto: "Domanda 2" })
+  })
+
+  it("email che il server salta senza errore: segnaposto senza busta, il cursore la supera", async () => {
+    for (let n = 1; n <= 3; n++) imap.aggiungi(await email(n))
+    imap.guasti.fetchSenza = [2]
+    const letta = await leggiCasella(cred(), { uidvalidity: UV, ultimo_uid: 0 })
+    expect(letta.messaggi.map((m) => [m.uid, m.grezzo ? "contenuto" : m.illeggibile ? "illeggibile" : "?"])).toEqual([[1, "contenuto"], [2, "illeggibile"], [3, "contenuto"]])
+    expect(letta.messaggi[1].busta).toBeUndefined()
+  })
+
   it("password sbagliata: errore di credenziali, mai la password", async () => {
     const errore = await leggiCasella({ ...cred(), password: "sbagliata-segreta" }, null).catch((e) => e)
     expect(classificaErrore(errore)).toBe("credenziali")
@@ -108,7 +124,7 @@ describe("registrazione delle email lette", () => {
 
   function deps(rifiuta?: (e: InArrivo) => boolean) {
     const registrati: InArrivo[] = []
-    const rimbalzi: [string, string][] = []
+    const rimbalzi: [string, string, unknown][] = []
     const cursori: CursoreEmail[] = []
     return {
       registrati, rimbalzi, cursori,
@@ -118,7 +134,7 @@ describe("registrazione delle email lette", () => {
           if (rifiuta?.(e)) throw new Error("database non disponibile")
           registrati.push(e)
         },
-        rimbalzo: async (id: string, motivo: string) => { rimbalzi.push([id, motivo]) },
+        rimbalzo: async (id: string, motivo: string, extra: { destinatari: string[]; quando: Date }) => { rimbalzi.push([id, motivo, extra]) },
         salva: async (c: CursoreEmail) => { cursori.push(c) },
       },
     }
@@ -130,13 +146,13 @@ describe("registrazione delle email lette", () => {
     const dsn = Buffer.from([
       "From: MAILER-DAEMON@mx.example", `To: ${CASELLA}`, "Subject: Undelivered", "MIME-Version: 1.0",
       'Content-Type: multipart/report; report-type=delivery-status; boundary="B"', "", "--B", "Content-Type: message/delivery-status", "",
-      "Status: 5.1.1", "Diagnostic-Code: smtp; 550 User unknown", "--B", "Content-Type: text/rfc822-headers", "",
+      "Final-Recipient: rfc822; cliente13@example.com", "Action: failed", "Status: 5.1.1", "Diagnostic-Code: smtp; 550 User unknown", "--B", "Content-Type: text/rfc822-headers", "",
       "Message-ID: <crm.x1@ishtar.example>", "--B--", "",
     ].join("\r\n"))
     const esito = await elaboraEmail(lettura([letta(11, await email(11)), letta(12, fuoriSede), letta(13, dsn)]), d.dipendenze)
-    expect(esito).toEqual({ registrati: 1, rimbalzi: 1, scartati: 1 })
+    expect(esito).toEqual({ registrati: 1, rimbalzi: 1, scartati: 1, illeggibili: 0 })
     expect(d.registrati.map((e) => e.id_messaggio)).toEqual(["<m11@example.com>"])
-    expect(d.rimbalzi).toEqual([["<crm.x1@ishtar.example>", expect.stringContaining("5.1.1")]])
+    expect(d.rimbalzi).toEqual([["<crm.x1@ishtar.example>", expect.stringContaining("5.1.1"), { destinatari: ["cliente13@example.com"], quando: new Date("2026-11-13T10:00:00Z") }]])
     expect(d.cursori).toEqual([11, 12, 13].map((ultimo_uid) => ({ uidvalidity: UV, ultimo_uid })))
   })
 
@@ -151,7 +167,7 @@ describe("registrazione delle email lette", () => {
   it("email che il database rifiuta per il contenuto: si registra il segnaposto e la lettura va avanti", async () => {
     const d = deps((e) => e.id_messaggio === "<m12@example.com>" && e.testo !== ILLEGGIBILE)
     const tutte = lettura([letta(11, await email(11)), letta(12, await email(12)), letta(13, await email(13))])
-    expect(await elaboraEmail(tutte, d.dipendenze)).toEqual({ registrati: 3, rimbalzi: 0, scartati: 0 })
+    expect(await elaboraEmail(tutte, d.dipendenze)).toEqual({ registrati: 3, rimbalzi: 0, scartati: 0, illeggibili: 0 })
     expect(d.registrati.map((e) => [e.id_messaggio, e.testo])).toEqual([
       ["<m11@example.com>", "Testo 11"],
       ["<m12@example.com>", ILLEGGIBILE],
@@ -170,6 +186,25 @@ describe("registrazione delle email lette", () => {
       expect.objectContaining({ id_contatto: "rotto@example.com", nome: "Cliente Rotto", oggetto: "Ordine", testo: ILLEGGIBILE, id_messaggio: "<rotto@example.com>" }),
     ])
     expect(d.cursori.map((c) => c.ultimo_uid)).toEqual([11])
+  })
+
+  it("email illeggibile: con la busta entra come segnaposto, senza busta si salta e si conta; il cursore avanza", async () => {
+    const d = deps()
+    const conBusta = { ...letta(11, null), illeggibile: true, busta: { mittente: "cliente11@example.com", nome: "Cliente 11", oggetto: "Domanda 11", message_id: "<m11@example.com>" } }
+    const senzaBusta = { ...letta(12, null), illeggibile: true }
+    expect(await elaboraEmail(lettura([conBusta, senzaBusta]), d.dipendenze)).toEqual({ registrati: 1, rimbalzi: 0, scartati: 0, illeggibili: 1 })
+    expect(d.registrati[0]).toMatchObject({ id_contatto: "cliente11@example.com", testo: ILLEGGIBILE, oggetto: "Domanda 11" })
+    expect(d.cursori.map((c) => c.ultimo_uid)).toEqual([11, 12])
+  })
+
+  it("verifica DMARC con il server fidato della casella", async () => {
+    const conAR = await email(11, { headers: { "Authentication-Results": "mx.example.org; dmarc=pass header.from=example.com" } })
+    const fidato = deps()
+    await elaboraEmail(lettura([letta(11, conAR)]), { ...fidato.dipendenze, fidato: "example.org" })
+    expect(fidato.registrati[0].dettagli).toMatchObject({ verifica: "verificato" })
+    const senza = deps()
+    await elaboraEmail(lettura([letta(11, conAR)]), senza.dipendenze)
+    expect(senza.registrati[0].dettagli).toMatchObject({ verifica: "sconosciuto" })
   })
 
   it("nessun messaggio: si salva il cursore finale (primo collegamento o casella rinumerata)", async () => {

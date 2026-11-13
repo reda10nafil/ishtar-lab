@@ -2,7 +2,7 @@ import { Readable } from "node:stream"
 import MailComposer from "nodemailer/lib/mail-composer"
 import type SMTPConnection from "nodemailer/lib/smtp-connection"
 import { NON_CONFERMATO, type EsitoUscita } from "../service"
-import { apriSmtp, classificaErrore, MESSAGGI_ERRORE, type CredenzialiEmail } from "./email-connessioni"
+import { apriSmtp, classificaErrore, daCorreggere, MESSAGGI_ERRORE, type CredenzialiEmail } from "./email-connessioni"
 import { destinazione, ErroreRete, type Risolvi } from "./email-rete"
 
 /*
@@ -106,5 +106,5 @@ function erroreDiAccesso(errore: unknown): EsitoInvioEmail {
   if (errore instanceof ErroreRete) return errore.transitoria ? { esito: fallito(errore.message) } : { esito: fallito(errore.message), daSegnalare: errore.message }
   const tipo = classificaErrore(errore)
   const messaggio = MESSAGGI_ERRORE[tipo]
-  return tipo === "rete" ? { esito: fallito(messaggio) } : { esito: fallito(messaggio), daSegnalare: messaggio }
+  return daCorreggere(tipo) ? { esito: fallito(messaggio), daSegnalare: messaggio } : { esito: fallito(messaggio) }
 }

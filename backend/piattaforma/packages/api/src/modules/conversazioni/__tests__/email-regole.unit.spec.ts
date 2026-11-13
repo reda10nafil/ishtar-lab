@@ -10,6 +10,7 @@ import {
   oggettoRisposta,
   pulisci,
   senzaCitazioni,
+  serverFidato,
   testoDaHtml,
   traduciEmail,
   verificaMittente,
@@ -179,14 +180,28 @@ describe("filtri, verifica del mittente e intestazioni della risposta", () => {
     expect(automatico([], "mario@example.com")).toBeNull()
   })
 
-  it("verifica: vale solo il primo Authentication-Results, quello del server della casella", () => {
+  it("verifica: vale solo il primo Authentication-Results del server della casella", () => {
     const vero = ["authentication-results", "mx.google.com; dkim=pass header.i=@example.com; spf=pass; dmarc=pass (p=REJECT) header.from=example.com"] as [string, string]
     const falso = ["authentication-results", "mx.google.com; dmarc=pass header.from=example.com"] as [string, string]
     const fallito = ["authentication-results", "mx.google.com; dmarc=fail (p=NONE) header.from=example.com"] as [string, string]
-    expect(verificaMittente(intestazioni([vero]), "example.com")).toBe("verificato")
-    expect(verificaMittente(intestazioni([fallito, falso]), "example.com")).toBe("non_verificato")
-    expect(verificaMittente(intestazioni([vero]), "altro.com")).toBe("non_verificato")
-    expect(verificaMittente([], "example.com")).toBe("sconosciuto")
+    const altrui = ["authentication-results", "mx.example.org; dmarc=pass header.from=example.com"] as [string, string]
+    expect(verificaMittente(intestazioni([vero]), "example.com", "google.com")).toBe("verificato")
+    expect(verificaMittente(intestazioni([fallito, falso]), "example.com", "google.com")).toBe("non_verificato")
+    expect(verificaMittente(intestazioni([vero]), "altro.com", "google.com")).toBe("non_verificato")
+    expect(verificaMittente([], "example.com", "google.com")).toBe("sconosciuto")
+    // Server della casella che non aggiunge Authentication-Results: quello scritto dal mittente non conta.
+    expect(verificaMittente(intestazioni([falso]), "example.com", "aruba.it")).toBe("sconosciuto")
+    expect(verificaMittente(intestazioni([altrui, fallito]), "example.com", "google.com")).toBe("non_verificato")
+    expect(verificaMittente(intestazioni([["authentication-results", "mx.google.com.evil.example; dmarc=pass header.from=example.com"]]), "example.com", "google.com")).toBe("sconosciuto")
+    expect(verificaMittente(intestazioni([vero]), "example.com", null)).toBe("sconosciuto")
+  })
+
+  it("server fidato: dal server IMAP (Gmail: google.com) o scelto nel connettore", () => {
+    expect(serverFidato({ imap_host: "imap.gmail.com" })).toBe("google.com")
+    expect(serverFidato({ imap_host: "imaps.aruba.it" })).toBe("aruba.it")
+    expect(serverFidato({ imap_host: "imap.mail.yahoo.co.jp" })).toBe("yahoo.co.jp")
+    expect(serverFidato({ imap_host: "127.0.0.1" })).toBeNull()
+    expect(serverFidato({ imap_host: "imap.gmail.com", server_verifica: " MX.Esempio.it " })).toBe("mx.esempio.it")
   })
 
   it("risposta nello stesso filo: In-Reply-To, References accumulate e un solo «Re:»", () => {
@@ -268,5 +283,101 @@ describe("email ostili: niente che il database rifiuti o che fermi la lettura", 
     expect(idClientDaMessageId("<crm.a1@ishtar.example>")).toBe("a1")
     expect(idClientDaMessageId("<abc@example.com>")).toBeNull()
     expect(idClientDaMessageId("<crm.@ishtar.example>")).toBeNull()
+  })
+})
+
+describe("rapporti di consegna: solo i rimbalzi veri segnano la risposta", () => {
+  const rapporto = ({ azione = "failed", stato = "5.1.1", tipo = "delivery-status", destinatario = "cliente@example.com", da = "Mail Delivery Subsystem <mailer-daemon@googlemail.com>" } = {}) => Buffer.from([
+    `From: ${da}`, `To: ${CASELLA}`, "Subject: Delivery Status Notification", "Message-ID: <dsn9@mx.example>", "MIME-Version: 1.0",
+    `Content-Type: multipart/report; report-type=${tipo}; boundary="R"`, "", "--R", "Content-Type: text/plain", "", "THIS IS A WARNING MESSAGE ONLY.", "",
+    "--R", `Content-Type: message/${tipo}`, "", "Reporting-MTA: dns; mx.example", "",
+    `Final-Recipient: rfc822; ${destinatario}`, `Action: ${azione}`, `Status: ${stato}`, "Diagnostic-Code: smtp; 452 4.2.2 Mailbox full", "",
+    "--R", "Content-Type: text/rfc822-headers", "", `From: Negozio <${CASELLA}>`, "Message-ID: <crm.r1abcdefgh@ishtar.example>", "", "--R--", "",
+  ].join("\r\n"))
+
+  it("Action: failed: rimbalzo con il motivo e i destinatari non raggiunti", async () => {
+    expect(await traduciEmail(rapporto({ destinatario: "Cliente@Example.com" }), meta)).toEqual({
+      tipo: "rimbalzo", message_id_originale: "<crm.r1abcdefgh@ishtar.example>", motivo: "Status 5.1.1: 452 4.2.2 Mailbox full", destinatari: ["cliente@example.com"],
+    })
+  })
+
+  it("avviso di ritardo, consegna confermata, inoltro: non segnano nulla e non aprono conversazioni", async () => {
+    for (const azione of ["delayed", "delivered", "relayed", "expanded"]) {
+      expect(await traduciEmail(rapporto({ azione, stato: "4.4.1" }), meta)).toEqual({ tipo: "automatico", motivo: "report" })
+    }
+  })
+
+  it("ricevuta di lettura e altri rapporti: automatici; un rapporto da un mittente qualsiasi non è un messaggio", async () => {
+    const mdn = Buffer.from([
+      "From: Giulia <cliente@example.com>", `To: ${CASELLA}`, "Subject: Read: Re: Ordine", "Message-ID: <mdn1@example.com>", "MIME-Version: 1.0",
+      'Content-Type: multipart/report; report-type=disposition-notification; boundary="M"', "", "--M", "Content-Type: text/plain", "", "Letta", "",
+      "--M", "Content-Type: message/disposition-notification", "", "Original-Message-ID: <crm.r1abcdefgh@ishtar.example>", "Disposition: manual-action/MDN-sent-manually; displayed", "",
+      "--M--", "",
+    ].join("\r\n"))
+    expect(await traduciEmail(mdn, meta)).toEqual({ tipo: "automatico", motivo: "report" })
+    expect(await traduciEmail(rapporto({ azione: "delayed", da: "Avvisi <avvisi@hosting.example>" }), meta)).toEqual({ tipo: "automatico", motivo: "report" })
+  })
+
+  it("testo di un MAILER-DAEMON senza rapporto: automatico, nessuna risposta segnata", async () => {
+    const vecchioStile = Buffer.from([
+      "From: MAILER-DAEMON@mx.example", `To: ${CASELLA}`, "Subject: failure notice", "Message-ID: <q1@mx.example>", "",
+      "I'm afraid I wasn't able to deliver your message. This is a temporary error, I'll keep trying.", "", "Message-ID: <crm.r1abcdefgh@ishtar.example>", "",
+    ].join("\r\n"))
+    expect(await traduciEmail(vecchioStile, meta)).toEqual({ tipo: "automatico", motivo: "system sender" })
+  })
+})
+
+describe("email costruite per consumare tempo: elaborazione in tempo lineare", () => {
+  const tempo = async (grezzo: Buffer) => {
+    const inizio = Date.now()
+    await traduciEmail(grezzo, meta)
+    return Date.now() - inizio
+  }
+  const conTesto = (tipo: string, corpo: string) => Buffer.from(`From: c@example.com\r\nTo: ${CASELLA}\r\nSubject: x\r\nContent-Type: ${tipo}; charset=utf-8\r\n\r\n${corpo}`)
+
+  it("migliaia di righe citate chiuse da una riga normale", async () => {
+    expect(await tempo(conTesto("text/plain", `${"> a\r\n".repeat(25_000)}fine\r\n`))).toBeLessThan(1000)
+  })
+
+  it("HTML con «<» e «<li» senza chiusura, commenti e script mai chiusi", async () => {
+    expect(await tempo(conTesto("text/html", "<".repeat(60_000)))).toBeLessThan(1000)
+    expect(await tempo(conTesto("text/html", "<li".repeat(30_000)))).toBeLessThan(1000)
+    expect(await tempo(conTesto("text/html", "<!--".repeat(25_000)))).toBeLessThan(1000)
+    expect(await tempo(conTesto("text/html", "<script".repeat(15_000)))).toBeLessThan(1000)
+  })
+
+  it("rapporto di consegna con migliaia di Diagnostic-Code senza «;» e righe vuote prima di Message-ID", async () => {
+    const lungo = Buffer.from([
+      "From: MAILER-DAEMON@mx.example", `To: ${CASELLA}`, "Subject: x", "MIME-Version: 1.0", 'Content-Type: multipart/report; report-type=delivery-status; boundary="R"', "",
+      "--R", "Content-Type: text/plain", "", "\r\n".repeat(40_000), "--R", "Content-Type: message/delivery-status", "",
+      "Final-Recipient: rfc822; c@example.com", "Action: failed", "Diagnostic-Code: x\r\n".repeat(10_000), "--R--", "",
+    ].join("\r\n"))
+    expect(await tempo(lungo)).toBeLessThan(1000)
+  })
+})
+
+describe("allegati e mittenti", () => {
+  it("allegati di iPhone e Mac (inline con un nome) elencati; le immagini usate dall'HTML no", async () => {
+    const apple = Buffer.from([
+      "From: Giulia <cliente@example.com>", `To: ${CASELLA}`, "Subject: Vaso rotto", "MIME-Version: 1.0", 'Content-Type: multipart/mixed; boundary="A"', "",
+      "--A", "Content-Type: text/plain; charset=utf-8", "", "Ecco la foto del vaso arrivato rotto", "",
+      "--A", "Content-Type: image/jpeg; name=IMG_1234.jpeg", "Content-Disposition: inline; filename=IMG_1234.jpeg", "Content-Transfer-Encoding: base64", "", Buffer.alloc(3072, 1).toString("base64"), "",
+      "--A", "Content-Type: text/plain; charset=utf-8", "", "Grazie", "", "--A--", "",
+    ].join("\r\n"))
+    const t = await traduciEmail(apple, meta)
+    if (t.tipo !== "messaggio") throw new Error(t.tipo)
+    expect(t.inArrivo.testo).toContain("[Attachment: IMG_1234.jpeg, 3 KB]")
+    const conLogo = await componi({
+      from: "c@example.com", to: CASELLA, subject: "x", text: "Ciao", html: '<p>Ciao</p><img src="cid:logo@negozio">',
+      attachments: [{ filename: "logo.png", content: Buffer.alloc(100, 1), cid: "logo@negozio" }, { filename: "fattura.pdf", content: Buffer.alloc(2048, 1) }],
+    })
+    const u = await traduciEmail(conLogo, meta)
+    if (u.tipo !== "messaggio") throw new Error(u.tipo)
+    expect(u.inArrivo.dettagli.allegati.map((a) => a.nome)).toEqual(["fattura.pdf"])
+  })
+
+  it("From con indirizzo vuoto («\"mario@cliente.it\" <>»): nessun mittente, nessuna conversazione di Mario", async () => {
+    const t = await traduciEmail(Buffer.from(`From: "mario@cliente.it" <>\r\nTo: ${CASELLA}\r\nSubject: Ordine\r\n\r\nSpedite in via X\r\n`), meta)
+    expect(t).toEqual({ tipo: "automatico", motivo: "no sender" })
   })
 })

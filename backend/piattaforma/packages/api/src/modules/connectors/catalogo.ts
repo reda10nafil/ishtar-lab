@@ -15,6 +15,8 @@ export type Campo = {
   segnaposto?: string
   aiuto?: string
   facoltativo?: boolean
+  /** Server o account a cui vanno i campi segreti: cambiarlo richiede di riscriverli (non vanno a un server nuovo da soli). */
+  legatoAlSegreto?: boolean
 }
 
 export type Valori = Record<string, string>
@@ -340,19 +342,27 @@ export const CATALOGO: Servizio[] = [
       "The shop's email address: customer emails appear in Chats and replies go out in the same thread. Works with Gmail, Aruba, Libero, Register.it, iCloud and Yahoo; Outlook and Microsoft 365 are not supported yet.",
     accesso: "chiave",
     campi: [
-      { chiave: "indirizzo", etichetta: "Email address", segreto: false, segnaposto: "shop@example.com", aiuto: "The address customers write to" },
+      { chiave: "indirizzo", etichetta: "Email address", segreto: false, segnaposto: "shop@example.com", aiuto: "The address customers write to", legatoAlSegreto: true },
       { chiave: "nome", etichetta: "Sender name", segreto: false, facoltativo: true, segnaposto: "Ishtar Hub", aiuto: "Shown to customers next to the address" },
-      { chiave: "utente", etichetta: "Username", segreto: false, facoltativo: true, aiuto: "Leave empty to use the email address" },
+      { chiave: "utente", etichetta: "Username", segreto: false, facoltativo: true, aiuto: "Leave empty to use the email address", legatoAlSegreto: true },
       {
         chiave: "password",
         etichetta: "Password",
         segreto: true,
         aiuto: "Gmail, iCloud and Yahoo: an app password (needs two-step verification). Aruba, Libero and Register.it: the mailbox password",
       },
-      { chiave: "imap_host", etichetta: "IMAP server", segreto: false, segnaposto: "imap.gmail.com", aiuto: "Aruba: imaps.aruba.it · Libero: imapmail.libero.it" },
-      { chiave: "imap_porta", etichetta: "IMAP port", segreto: false, facoltativo: true, segnaposto: "993" },
-      { chiave: "smtp_host", etichetta: "SMTP server", segreto: false, segnaposto: "smtp.gmail.com", aiuto: "Aruba: smtps.aruba.it · Libero: smtp.libero.it" },
-      { chiave: "smtp_porta", etichetta: "SMTP port", segreto: false, facoltativo: true, segnaposto: "465", aiuto: "465 (SSL) or 587 (STARTTLS)" },
+      { chiave: "imap_host", etichetta: "IMAP server", segreto: false, segnaposto: "imap.gmail.com", aiuto: "Aruba: imaps.aruba.it · Libero: imapmail.libero.it", legatoAlSegreto: true },
+      { chiave: "imap_porta", etichetta: "IMAP port", segreto: false, facoltativo: true, segnaposto: "993", legatoAlSegreto: true },
+      { chiave: "smtp_host", etichetta: "SMTP server", segreto: false, segnaposto: "smtp.gmail.com", aiuto: "Aruba: smtps.aruba.it · Libero: smtp.libero.it", legatoAlSegreto: true },
+      { chiave: "smtp_porta", etichetta: "SMTP port", segreto: false, facoltativo: true, segnaposto: "465", aiuto: "465 (SSL) or 587 (STARTTLS)", legatoAlSegreto: true },
+      {
+        chiave: "server_verifica",
+        etichetta: "Sender check server",
+        segreto: false,
+        facoltativo: true,
+        segnaposto: "mx.google.com",
+        aiuto: "Optional: the name your mail server writes in Authentication-Results, to tell customers' real addresses from forged ones",
+      },
     ],
     documentazione: "https://support.google.com/mail/answer/7126229",
     confermato: true,
@@ -496,7 +506,7 @@ export const CATALOGO: Servizio[] = [
     descrizione: "Import products and orders from a WordPress site.",
     accesso: "chiave",
     campi: [
-      { chiave: "site", etichetta: "Site address", segreto: false, segnaposto: "https://yourshop.com" },
+      { chiave: "site", etichetta: "Site address", segreto: false, segnaposto: "https://yourshop.com", legatoAlSegreto: true },
       { chiave: "consumer_key", etichetta: "Consumer key", segreto: false },
       { chiave: "consumer_secret", etichetta: "Consumer secret", segreto: true },
     ],
@@ -592,4 +602,15 @@ export function valoriValidi(servizio: Servizio, valori: Valori): string | null 
     if (valore && valore.length > 4096) return `${campo.etichetta} is too long`
   }
   return servizio.valida?.(valori) ?? null
+}
+
+/**
+ * Vero se i valori inseriti cambiano un server o un account legato ai campi segreti senza riscriverli: il segreto salvato
+ * andrebbe da solo al server nuovo, scelto da chi modifica (che i segreti non li vede).
+ */
+export function segretoDaRiscrivere(servizio: Servizio, salvati: Valori | undefined, inseriti: Record<string, unknown>): boolean {
+  if (!salvati) return false
+  const scritto = (chiave: string) => typeof inseriti[chiave] === "string" && (inseriti[chiave] as string).trim() !== ""
+  const cambiato = servizio.campi.some((c) => c.legatoAlSegreto && scritto(c.chiave) && (inseriti[c.chiave] as string).trim() !== (salvati[c.chiave] ?? ""))
+  return cambiato && servizio.campi.some((c) => c.segreto && !scritto(c.chiave))
 }

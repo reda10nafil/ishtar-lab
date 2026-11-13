@@ -19,6 +19,8 @@ export type CredenzialiEmail = {
   imap_porta: number
   smtp_host: string
   smtp_porta: number
+  /** Server della casella negli Authentication-Results (facoltativo: altrimenti si ricava dal server IMAP). */
+  server_verifica: string | null
 }
 
 export function credenzialiEmail(valori: Record<string, string | undefined>): CredenzialiEmail {
@@ -33,6 +35,7 @@ export function credenzialiEmail(valori: Record<string, string | undefined>): Cr
     imap_porta: porta(valori.imap_porta, 993),
     smtp_host: (valori.smtp_host ?? "").trim(),
     smtp_porta: porta(valori.smtp_porta, 465),
+    server_verifica: valori.server_verifica?.trim() || null,
   }
 }
 
@@ -82,11 +85,19 @@ const CERTIFICATO = new Set([
   "UNABLE_TO_VERIFY_LEAF_SIGNATURE", "UNABLE_TO_GET_ISSUER_CERT_LOCALLY", "UNABLE_TO_GET_ISSUER_CERT", "CERT_UNTRUSTED", "CERT_REVOKED",
 ])
 
-export type TipoErrore = "credenziali" | "certificato" | "rete"
+/** `temporaneo`: il server rifiuta l'accesso per un guasto passeggero; si riprova, la configurazione è giusta. */
+export type TipoErrore = "credenziali" | "certificato" | "rete" | "temporaneo"
+
+// Codici delle risposte IMAP per i rifiuti passeggeri (RFC 5530): imapflow li segna come accesso fallito.
+const TEMPORANEI = new Set(["UNAVAILABLE", "INUSE", "LIMIT", "SERVERBUG"])
 
 export function classificaErrore(errore: unknown): TipoErrore {
-  const e = errore as { authenticationFailed?: boolean; code?: string; serverResponseCode?: string; cause?: { code?: string } } | null
-  if (e?.authenticationFailed || e?.code === "EAUTH" || e?.serverResponseCode === "AUTHENTICATIONFAILED") return "credenziali"
+  const e = errore as { authenticationFailed?: boolean; code?: string; responseCode?: number; serverResponseCode?: string; cause?: { code?: string } } | null
+  const codiceServer = e?.serverResponseCode?.toUpperCase()
+  if (codiceServer && TEMPORANEI.has(codiceServer)) return "temporaneo"
+  // SMTP: un 4xx all'AUTH (454 «try again later», 421) è un guasto passeggero, non una password sbagliata.
+  if (e?.code === "EAUTH" && typeof e.responseCode === "number" && e.responseCode >= 400 && e.responseCode < 500) return "temporaneo"
+  if (e?.authenticationFailed || e?.code === "EAUTH" || codiceServer === "AUTHENTICATIONFAILED") return "credenziali"
   if ((e?.code && CERTIFICATO.has(e.code)) || (e?.cause?.code && CERTIFICATO.has(e.cause.code))) return "certificato"
   return "rete"
 }
@@ -95,7 +106,11 @@ export const MESSAGGI_ERRORE: Record<TipoErrore, string> = {
   credenziali: "The mailbox refused the username or password",
   certificato: "The server's security certificate is not valid",
   rete: "The mail server can't be reached",
+  temporaneo: "The mail server is busy: try again later",
 }
+
+/** Errori che solo una nuova configurazione risolve: il connettore va in errore (gli altri si riprovano al giro dopo). */
+export const daCorreggere = (tipo: TipoErrore) => tipo === "credenziali" || tipo === "certificato"
 
 /** Client IMAP con la gestione degli errori: imapflow emette «error» e senza ascoltatore il processo cadrebbe. */
 export function nuovoImap(cred: CredenzialiEmail, dest: Destinazione): ImapFlow {
@@ -126,7 +141,9 @@ export function apriSmtp(cred: CredenzialiEmail, dest: Destinazione): Promise<SM
       ko(errore)
     }
     connessione.once("error", fallisci)
-    connessione.connect(() => {
+    // Un server che chiude prima del saluto passa l'errore qui, senza «error»: è la rete, non il login mancante.
+    connessione.connect((errore?: Error) => {
+      if (errore) return fallisci(errore)
       if (!(connessione as unknown as { allowsAuth: boolean }).allowsAuth) {
         if (proveLocali()) { finito = true; return ok(connessione) }
         return fallisci(Object.assign(new Error("Login not offered by the server"), { code: "EAUTH" }))

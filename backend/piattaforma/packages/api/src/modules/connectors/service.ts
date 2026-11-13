@@ -1,7 +1,7 @@
 import { MedusaError, MedusaService } from "@medusajs/framework/utils"
 import { ConnectorAccount } from "./models/connector-account"
 import { OauthState } from "./models/oauth-state"
-import { catalogoAttivo, trovaServizio, valoriValidi, type Servizio, type Token, type Valori } from "./catalogo"
+import { catalogoAttivo, segretoDaRiscrivere, trovaServizio, valoriValidi, type Servizio, type Token, type Valori } from "./catalogo"
 import { cifra, controllaChiave, decifra } from "./crypto"
 import { eseguiProva } from "./prova"
 import { creaPkce, creaStato, improntaStato, rinnovaToken, scambiaCodice, urlAutorizzazione } from "./oauth"
@@ -117,6 +117,10 @@ export default class ConnectorsModuleService extends MedusaService({ ConnectorAc
     const conto = await this.conto(id)
     // Credenziali illeggibili: si riparte dai valori inseriti ora (per i servizi con login serve un nuovo accesso).
     const precedenti = (conto ? this.leggiSegretiSicuri(conto.secret) : null) ?? { valori: {} as Valori }
+    if (conto && segretoDaRiscrivere(servizio, precedenti.valori, inseriti)) {
+      const segreti = servizio.campi.filter((c) => c.segreto).map((c) => c.etichetta.toLowerCase()).join(" and ")
+      throw new MedusaError(MedusaError.Types.INVALID_DATA, `Enter the ${segreti} again to change these settings`)
+    }
     const noti = new Set(servizio.campi.map((c) => c.chiave))
     const pulito: Valori = { ...precedenti.valori }
     for (const [k, v] of Object.entries(inseriti)) {

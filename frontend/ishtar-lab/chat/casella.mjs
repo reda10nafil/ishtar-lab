@@ -165,10 +165,34 @@ export function oggettoRisposta(oggetto) {
   return `Re: ${resto || 'Your message'}`;
 }
 
-/** Ultimo messaggio del cliente, in ordine di arrivo (anche un segnaposto senza dettagli): la risposta continua il suo filo. */
+/**
+ * Ultimo messaggio del cliente, in ordine di arrivo (anche un segnaposto senza dettagli): la risposta continua il suo filo.
+ * Si salta un'email che non passa DMARC (forse falsa), come fa il server.
+ */
 export function ultimaEmail(messaggi) {
-  for (let i = (messaggi?.length ?? 0) - 1; i >= 0; i--) if (messaggi[i]?.direzione === 'entrata') return messaggi[i];
+  for (let i = (messaggi?.length ?? 0) - 1; i >= 0; i--) {
+    const m = messaggi[i];
+    if (m?.direzione === 'entrata' && m.email?.verifica !== 'non_verificato') return m;
+  }
   return null;
+}
+
+/** Avviso nella bolla di un'email che non passa DMARC: l'indirizzo del mittente può essere falso. */
+export const avvisoVerifica = m => (m?.email?.verifica === 'non_verificato'
+  ? 'This email failed the sender check (DMARC): it may not come from this address.'
+  : null);
+
+/** Verifica del contatto per la proposta del cliente: «non verificato» se una sua email non è passata, altrimenti l'ultima. */
+export function verificaContatto(messaggi) {
+  const dalCliente = (messaggi ?? []).filter(m => m?.direzione === 'entrata' && m.email);
+  if (dalCliente.some(m => m.email.verifica === 'non_verificato')) return 'non_verificato';
+  return dalCliente.length ? dalCliente[dalCliente.length - 1].email.verifica ?? null : null;
+}
+
+/** Invio con il tasto Invio: nelle chat email Invio va a capo e si invia con Ctrl o Cmd + Invio (un'email non si ritira). */
+export function inviaConTasto(evento, email) {
+  if (evento?.key !== 'Enter' || evento.isComposing) return false;
+  return email ? Boolean(evento.ctrlKey || evento.metaKey) : !evento.shiftKey;
 }
 
 /** Avviso quando l'email chiede di rispondere a un altro indirizzo: le risposte vanno sempre a chi l'ha mandata. */

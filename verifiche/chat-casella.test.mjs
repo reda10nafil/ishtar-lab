@@ -5,7 +5,8 @@ const {default: assert} = await import('node:assert/strict');
 const {
   etichettaCanale, etichettaStato, nomeContatto, quandoElenco, quandoMessaggio, soldi, statoOrdine,
   percorsoElenco, unisci, ultimoVisto, statoRisposta, testoErrore, nuovoId,
-  oggettoRisposta, ultimaEmail, avvisoRispondiA, clienteConEmail, testoVerifica, testoCompleto,
+  oggettoRisposta, ultimaEmail, avvisoRispondiA, clienteConEmail, testoVerifica, testoCompleto, avvisoVerifica, inviaConTasto,
+  verificaContatto,
 } = await import('../frontend/ishtar-lab/chat/casella.mjs');
 
 // Venerdì 13 novembre 2026, 15:30 a Roma.
@@ -214,4 +215,38 @@ test('email: testo intero con le citazioni, con gli allegati come nel testo most
   assert.equal(testoCompleto({testo: 'Va bene', email: {testo_completo: 'Va bene\n> citato', allegati: [{nome: 'n.txt', byte: 10}]}}), 'Va bene\n> citato\n\n[Attachment: n.txt, 1 KB]');
   assert.equal(testoCompleto({testo: 'Solo testo'}), 'Solo testo');
   assert.equal(testoCompleto({testo: 'x', email: {testo_completo: null, allegati: []}}), 'x');
+});
+
+test('email: un\'email che non passa DMARC ha un avviso e non decide il filo della risposta', () => {
+  const vera = {id: 'a', direzione: 'entrata', testo: 'Ciao', email: {oggetto: 'Ordine', verifica: 'verificato', reply_to: null, allegati: [], testo_completo: null}};
+  const falsa = {id: 'b', direzione: 'entrata', testo: 'Spedite altrove', email: {oggetto: 'Cambio indirizzo', verifica: 'non_verificato', reply_to: null, allegati: [], testo_completo: null}};
+  const ignota = {id: 'c', direzione: 'entrata', testo: 'Altro', email: {oggetto: 'Altro', verifica: 'sconosciuto', reply_to: null, allegati: [], testo_completo: null}};
+  assert.equal(ultimaEmail([vera, falsa]).id, 'a');
+  assert.equal(ultimaEmail([falsa]), null);
+  assert.equal(ultimaEmail([vera, falsa, ignota]).id, 'c');
+  assert.equal(avvisoVerifica(falsa), 'This email failed the sender check (DMARC): it may not come from this address.');
+  assert.equal(avvisoVerifica(vera), null);
+  assert.equal(avvisoVerifica(ignota), null);
+  assert.equal(avvisoVerifica({direzione: 'entrata', testo: 'Telegram'}), null);
+});
+
+test('Invio: nelle chat email va a capo (si invia con Ctrl o Cmd + Invio), nelle altre invia', () => {
+  const tasto = (extra = {}) => ({key: 'Enter', shiftKey: false, ctrlKey: false, metaKey: false, isComposing: false, ...extra});
+  assert.equal(inviaConTasto(tasto(), false), true);
+  assert.equal(inviaConTasto(tasto({shiftKey: true}), false), false);
+  assert.equal(inviaConTasto(tasto({isComposing: true}), false), false);
+  assert.equal(inviaConTasto(tasto(), true), false);
+  assert.equal(inviaConTasto(tasto({ctrlKey: true}), true), true);
+  assert.equal(inviaConTasto(tasto({metaKey: true}), true), true);
+  assert.equal(inviaConTasto(tasto({ctrlKey: true, isComposing: true}), true), false);
+  assert.equal(inviaConTasto({...tasto(), key: 'a', ctrlKey: true}, true), false);
+});
+
+test('proposta del cliente: la verifica del contatto è «non verificato» se una sua email non è passata', () => {
+  const email = (id, verifica) => ({id, direzione: 'entrata', testo: id, email: {oggetto: null, verifica, reply_to: null, allegati: [], testo_completo: null}});
+  assert.equal(verificaContatto([email('a', 'verificato')]), 'verificato');
+  assert.equal(verificaContatto([email('a', 'non_verificato'), email('b', 'verificato')]), 'non_verificato');
+  assert.equal(verificaContatto([email('a', 'verificato'), email('b', 'sconosciuto')]), 'sconosciuto');
+  assert.equal(verificaContatto([{id: 'r', direzione: 'uscita', testo: 'x', email: {verifica: null}}]), null);
+  assert.equal(verificaContatto(undefined), null);
 });

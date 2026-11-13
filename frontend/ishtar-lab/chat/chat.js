@@ -9,7 +9,8 @@ import {richiesta} from './api.mjs';
 import {creaCasella} from './controllo.mjs';
 import {
   etichettaCanale, etichettaStato, nomeContatto, quandoElenco, quandoMessaggio, soldi, statoOrdine, unisci, statoRisposta,
-  testoErrore, nuovoId, oggettoRisposta, ultimaEmail, avvisoRispondiA, clienteConEmail, testoVerifica, testoCompleto,
+  testoErrore, nuovoId, oggettoRisposta, ultimaEmail, avvisoRispondiA, clienteConEmail, testoVerifica, testoCompleto, avvisoVerifica,
+  verificaContatto, inviaConTasto,
 } from './casella.mjs';
 import {attesaRiprova} from '../catalogo/collegamento.mjs';
 
@@ -306,11 +307,11 @@ function Aperta({s, scheda, id, conv, dati, larghezza}) {
         h('form', {className: 'chat-scrivi', onSubmit: e => { e.preventDefault(); manda(); }},
           h('textarea', {
             ref: area, className: 'textarea chat-scrivi__testo', value: testo, maxLength: MASSIMO_RISPOSTA, rows: 1, disabled: !dati,
-            placeholder: `Reply to ${nome.split(/\s+/)[0]}…`, 'aria-label': `Reply to ${nome}`,
+            placeholder: `Reply to ${nome.split(/\s+/)[0]}…`, 'aria-label': `Reply to ${nome}`, 'aria-keyshortcuts': email ? 'Control+Enter Meta+Enter' : 'Enter',
             onChange: e => scrivi(e.target.value),
-            onKeyDown: e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); manda(); } },
+            onKeyDown: e => { if (inviaConTasto(e, email)) { e.preventDefault(); manda(); } },
           }),
-          h('button', {type: 'submit', className: 'btn btn--primary', disabled: !dati || !testo.trim()}, h(Icona, {name: 'send'}), 'Send')),
+          h('button', {type: 'submit', className: 'btn btn--primary', disabled: !dati || !testo.trim(), title: email ? 'Send (Ctrl+Enter)' : undefined}, h(Icona, {name: 'send'}), 'Send')),
         testo.length > MASSIMO_RISPOSTA - 500 && h('small', {className: 'chat-conta', 'aria-live': 'polite'}, `${testo.length} / ${MASSIMO_RISPOSTA}`)));
 }
 
@@ -370,6 +371,7 @@ function Bolla({m, adesso, conversazione_id, riprendi, chiusa}) {
     h('p', {className: 'chat-bolla__testo'}, citato ? testoCompleto(m) : m.testo),
     m.email?.testo_completo && h('button', {type: 'button', className: 'chat-bolla__citato', 'aria-expanded': citato, onClick: () => cambiaCitato(!citato)},
       citato ? 'Hide quoted text' : 'Show quoted text'),
+    avvisoVerifica(m) && h('small', {className: 'chat-bolla__avviso', role: 'note'}, avvisoVerifica(m)),
     h('div', {className: 'chat-bolla__piede'},
       h('small', null, [chi, quandoMessaggio(m.quando, adesso)].filter(Boolean).join(' · ')),
       stato && h('small', {className: `chat-stato chat-stato--${stato.tono}`}, stato.testo)),
@@ -405,7 +407,7 @@ function SchedaCliente({idConversazione}) {
       h('div', {className: 'chat-scheda__testa'}, h(Avatar, {name: contatto, size: 'lg'}), h('b', null, contatto), h('small', null, canale)),
       h('p', {className: 'chat-scheda__nota'}, 'Not linked to a shop customer.'),
       identita.canale === 'email' && identita.recapito && h(PropostaEmail, {
-        key: identita.recapito, idConversazione, indirizzo: identita.recapito, verifica: ultimaEmail(dati.messaggi)?.email?.verifica,
+        key: identita.recapito, idConversazione, indirizzo: identita.recapito, verifica: verificaContatto(dati.messaggi),
       }),
       h('p', {className: 'chat-aiuto'}, 'Link this chat to a shop customer to see their details and orders.'),
       h('button', {type: 'button', className: 'btn btn--primary', onClick: () => apriCollega(idConversazione, contatto, etichettaCanale(identita.canale))}, h(Icona, {name: 'user'}), 'Link to customer'));

@@ -5,7 +5,7 @@ import net from "node:net"
  * la caduta della connessione dopo il contenuto (DATA), il caso in cui chi invia non sa se il messaggio è arrivato.
  */
 
-export type Modo = "ok" | "rcpt550" | "dati554" | "cadeDopoDati" | "lento"
+export type Modo = "ok" | "rcpt550" | "dati554" | "cadeDopoDati" | "lento" | "auth454" | "chiudeSubito"
 export type Consegna = { da: string; a: string[]; grezzo: string }
 export type SmtpFinto = { porta: number; consegne: Consegna[]; modo: Modo; comandi: string[]; chiudi: () => Promise<void> }
 
@@ -22,6 +22,8 @@ export async function avviaSmtpFinto({ utente, password, conAuth = true }: { ute
     prese.add(presa)
     presa.on("close", () => prese.delete(presa))
     presa.on("error", () => {})
+    // Server che accetta la connessione e la chiude prima del saluto (bilanciatore senza server dietro).
+    if (finto.modo === "chiudeSubito") { presa.destroy(); return }
     let buffer = ""
     let dati: string | null = null
     let da = ""
@@ -30,7 +32,11 @@ export async function avviaSmtpFinto({ utente, password, conAuth = true }: { ute
     let attesaLogin: "utente" | "password" | null = null
     let utenteLogin = ""
     const scrivi = (s: string) => { if (!presa.destroyed) presa.write(`${s}\r\n`) }
-    const verifica = (u: string, p: string) => { autenticato = u === utente && p === password; scrivi(autenticato ? "235 2.7.0 Authentication successful" : "535 5.7.8 Authentication failed") }
+    const verifica = (u: string, p: string) => {
+      if (finto.modo === "auth454") return scrivi("454 4.7.0 Temporary authentication failure, try again later")
+      autenticato = u === utente && p === password
+      scrivi(autenticato ? "235 2.7.0 Authentication successful" : "535 5.7.8 Authentication failed")
+    }
     scrivi("220 finto ESMTP")
 
     const comando = (riga: string) => {

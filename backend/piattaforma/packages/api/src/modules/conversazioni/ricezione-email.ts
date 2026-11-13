@@ -2,8 +2,9 @@ import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { CONNECTORS_MODULE } from "../connectors"
 import type ConnectorsModuleService from "../connectors/service"
-import { classificaErrore, credenzialiEmail, MESSAGGI_ERRORE } from "./canali/email-connessioni"
+import { classificaErrore, credenzialiEmail, daCorreggere, MESSAGGI_ERRORE } from "./canali/email-connessioni"
 import { elaboraEmail, leggiCasella, type Lettura } from "./canali/email-imap"
+import { serverFidato } from "./canali/email-regole"
 import { ErroreRete, type Risolvi } from "./canali/email-rete"
 import { CONVERSAZIONI_MODULE } from "./index"
 import type { EsitoLettura } from "./ricezione"
@@ -43,19 +44,21 @@ async function leggiEmail(container: MedusaContainer, risolvi?: Risolvi): Promis
     const rete = errore instanceof ErroreRete ? errore : null
     const tipo = classificaErrore(errore)
     const messaggio = rete ? rete.message : MESSAGGI_ERRORE[tipo]
-    const daCorreggere = rete ? !rete.transitoria : tipo !== "rete"
+    const configurazione = rete ? !rete.transitoria : daCorreggere(tipo)
     // Con i valori usati: se nel frattempo la casella è stata riconfigurata, l'errore non tocca la configurazione nuova.
-    if (daCorreggere) await connettori.segnaErrore("casella_email", messaggio, credenziali.valori)
+    if (configurazione) await connettori.segnaErrore("casella_email", messaggio, credenziali.valori)
     logger.warn(`Customer inbox, email: ${messaggio}`)
     return "errore"
   }
   try {
-    await elaboraEmail(lettura, {
+    const { illeggibili } = await elaboraEmail(lettura, {
       account: cred.indirizzo,
+      fidato: serverFidato(cred),
       registra: (e) => conversazioni.registraInArrivo(e),
-      rimbalzo: (message_id, motivo) => conversazioni.segnaRimbalzo(message_id, motivo),
+      rimbalzo: (message_id, motivo, extra) => conversazioni.segnaRimbalzo(message_id, motivo, extra),
       salva: (cursore) => conversazioni.salvaCursore("email", cred.indirizzo, "INBOX", cursore),
     })
+    if (illeggibili) logger.warn(`Customer inbox, email: ${illeggibili} email${illeggibili === 1 ? "" : "s"} could not be read and ${illeggibili === 1 ? "was" : "were"} skipped`)
     return "fatto"
   } catch (errore) {
     logger.error(`Customer inbox, email: a message was not saved and will be read again (${(errore as Error)?.name ?? "error"})`)

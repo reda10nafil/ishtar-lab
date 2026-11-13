@@ -8,7 +8,19 @@ import net from "node:net"
  */
 
 export type EmailFinta = { uid: number; grezzo: Buffer; internaldate: Date; flags: string[] }
-export type Guasti = { rifiutaLogin?: boolean; chiudiAlFetch?: boolean; senzaUidnext?: boolean }
+/**
+ * `fetchRifiutato`: UID il cui contenuto il server non riesce a dare (NO alla FETCH del contenuto che lo comprende);
+ * `fetchSenza`: UID che il server salta senza errore in ogni FETCH (sparito o illeggibile); `loginTemporaneo`: accesso
+ * rifiutato per un guasto passeggero (NO [UNAVAILABLE]).
+ */
+export type Guasti = {
+  rifiutaLogin?: boolean
+  loginTemporaneo?: boolean
+  chiudiAlFetch?: boolean
+  senzaUidnext?: boolean
+  fetchRifiutato?: number[]
+  fetchSenza?: number[]
+}
 export type ImapFinto = {
   porta: number
   comandi: string[]
@@ -105,6 +117,7 @@ export async function avviaImapFinto({ utente, password, uidvalidity = 170000000
         case "CAPABILITY": scrivi("* CAPABILITY IMAP4rev1\r\n"); return ok()
         case "NOOP": return ok()
         case "LOGIN":
+          if (finto.guasti.loginTemporaneo) return scrivi(`${tag} NO [UNAVAILABLE] Temporary authentication failure\r\n`)
           if (finto.guasti.rifiutaLogin || argomenti[0] !== utente || argomenti[1] !== password) return scrivi(`${tag} NO [AUTHENTICATIONFAILED] Invalid credentials\r\n`)
           return ok("[CAPABILITY IMAP4rev1] LOGIN completed")
         case "LIST":
@@ -142,10 +155,15 @@ export async function avviaImapFinto({ utente, password, uidvalidity = 170000000
           if (finto.guasti.chiudiAlFetch) { presa.destroy(); return }
           const insieme = argomenti[0]
           const voci = (argomenti[1] ?? "").replace(/^\(|\)$/g, "").toUpperCase()
+          const conContenuto = voci.includes("BODY.PEEK[]") || voci.includes("BODY[]")
+          const scelto = (m: EmailFinta, i: number) => (nome === "FETCH" ? nelInsieme(insieme, i + 1, finto.messaggi.length) : nelInsieme(insieme, m.uid, massimo))
+          if (conContenuto && finto.messaggi.some((m, i) => scelto(m, i) && finto.guasti.fetchRifiutato?.includes(m.uid))) {
+            return scrivi(`${tag} NO Some messages could not be FETCHed (Failure)\r\n`)
+          }
           finto.messaggi.forEach((m, i) => {
+            if (finto.guasti.fetchSenza?.includes(m.uid)) return
             // FETCH senza UID: l'insieme indica i numeri d'ordine dei messaggi (1 = il primo), «*» l'ultimo.
-            const scelto = nome === "FETCH" ? nelInsieme(insieme, i + 1, finto.messaggi.length) : nelInsieme(insieme, m.uid, massimo)
-            if (!scelto) return
+            if (!scelto(m, i)) return
             const parti: (string | Buffer)[] = [`* ${i + 1} FETCH (UID ${m.uid}`]
             if (voci.includes("RFC822.SIZE")) parti.push(` RFC822.SIZE ${m.grezzo.length}`)
             if (voci.includes("INTERNALDATE")) parti.push(` INTERNALDATE "${dataImap(m.internaldate)}"`)
