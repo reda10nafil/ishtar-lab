@@ -1,4 +1,4 @@
-import { chiaveInArrivo, chiaveUscita, decidiInvio, estratto, ID_CLIENT, statoDopo, statoDopoFallimento } from "../regole"
+import { chiaveInArrivo, chiaveUscita, decidiInvio, estratto, filtroNuoviDopo, ID_CLIENT, ORDINE_MESSAGGI, statoDopo, statoDopoFallimento } from "../regole"
 
 describe("regole della casella", () => {
   it("estratto: spazi compressi e taglio con i puntini", () => {
@@ -47,3 +47,21 @@ describe("regole della casella", () => {
     expect(ID_CLIENT.test("a b c d e f g h")).toBe(false)
   })
 })
+
+describe("ordine dei messaggi e messaggi nuovi", () => {
+  it("la conversazione si mostra nell'ordine di arrivo nella casella, lo stesso dei messaggi nuovi", () => {
+    // Un messaggio registrato in ritardo (data Telegram più vecchia di una risposta già partita) va in fondo, non sopra.
+    expect(ORDINE_MESSAGGI).toEqual({ created_at: "DESC", id: "DESC" })
+  })
+
+  it("nuovi dopo l'ultimo mostrato: arrivati dopo, o nello stesso istante con un id successivo", () => {
+    const quando = new Date("2026-11-13T10:00:30.123Z")
+    expect(filtroNuoviDopo("conv_A", null)).toEqual({ conversazione_id: "conv_A", direzione: "entrata" })
+    expect(filtroNuoviDopo("conv_A", { id: "msgc_B", created_at: quando })).toEqual({
+      conversazione_id: "conv_A",
+      direzione: "entrata",
+      $or: [{ created_at: { $gt: quando } }, { created_at: quando, id: { $gt: "msgc_B" } }],
+    })
+  })
+})
+

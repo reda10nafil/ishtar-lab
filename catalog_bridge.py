@@ -2,9 +2,11 @@
 Le credenziali rimangono sul server. Nessun proxy aperto verso URL arbitrari.
 """
 import json
+import re
 import threading
 import time
 from pathlib import Path
+from urllib.parse import parse_qs, urlencode, urlsplit
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 
@@ -14,6 +16,51 @@ ORIGIN = "http://127.0.0.1:4273"
 _lock = threading.Lock()
 _token = ""
 _until = 0
+
+CATALOGO = {"/api/catalogo": "/admin/ishtar/catalogo", "/api/foto": "/admin/uploads"}
+_ID = "[0-9A-Za-z]{8,64}"
+# Casella dei clienti (pagina Chats): metodi, percorso del pannello, destinazione nell'API, parametri ammessi.
+# Gli id si riconoscono dal prefisso: un percorso con «..», caratteri codificati o un id di un altro tipo non passa.
+CASELLA = [
+    ({"GET"}, re.compile(r"/api/conversazioni"), "/admin/conversazioni", {"stato", "canale", "q", "limit", "offset"}),
+    ({"GET"}, re.compile(rf"/api/conversazioni/(conv_{_ID})"), "/admin/conversazioni/{0}", set()),
+    ({"POST"}, re.compile(rf"/api/conversazioni/(conv_{_ID})/(messaggi|stato|letta|cliente)"), "/admin/conversazioni/{0}/{1}", set()),
+    ({"GET", "POST"}, re.compile(r"/api/risposte-rapide"), "/admin/risposte-rapide", set()),
+    ({"POST", "DELETE"}, re.compile(rf"/api/risposte-rapide/(rrap_{_ID})"), "/admin/risposte-rapide/{0}", set()),
+    ({"GET"}, re.compile(r"/api/clienti"), "/admin/clienti", {"q", "limit"}),
+    ({"GET"}, re.compile(rf"/api/clienti/(cus_{_ID})"), "/admin/clienti/{0}", set()),
+]
+LIMITE_CATALOGO = 25 * 1024 * 1024
+LIMITE_CASELLA = 64 * 1024
+NON_RICONOSCIUTO = "Indirizzo del ponte non riconosciuto"
+
+
+class Rifiuto(Exception):
+    def __init__(self, codice, messaggio):
+        super().__init__(messaggio)
+        self.codice = codice
+
+
+def instrada(metodo, indirizzo):
+    """Destinazione nell'API e limite del corpo per un indirizzo previsto; Rifiuto per tutto il resto."""
+    parti = urlsplit(indirizzo)
+    if parti.path in CATALOGO:
+        if parti.query or metodo not in ("GET", "POST") or (parti.path == "/api/foto" and metodo != "POST"):
+            raise Rifiuto(404, NON_RICONOSCIUTO)
+        return CATALOGO[parti.path], LIMITE_CATALOGO
+    for metodi, modello, destinazione, ammessi in CASELLA:
+        trovato = modello.fullmatch(parti.path)
+        if not trovato:
+            continue
+        if metodo not in metodi or (parti.query and not ammessi):
+            raise Rifiuto(404, NON_RICONOSCIUTO)
+        # Parametri riletti e ricodificati: un «&» codificato resta dentro il suo valore, niente chiavi in più o ripetute.
+        parametri = parse_qs(parti.query, keep_blank_values=True)
+        if any(k not in ammessi or len(v) != 1 or len(v[0]) > 200 for k, v in parametri.items()):
+            raise Rifiuto(400, "Parametro non ammesso dal ponte")
+        query = urlencode({k: v[0] for k, v in parametri.items()})
+        return destinazione.format(*trovato.groups()) + (f"?{query}" if query else ""), LIMITE_CASELLA
+    raise Rifiuto(404, NON_RICONOSCIUTO)
 
 def env(path):
     return dict(line.strip().split("=", 1) for line in path.read_text(encoding="utf-8-sig").splitlines()
@@ -68,28 +115,30 @@ def handle(handler):
     if handler.headers.get("X-Ishtar-Local") != "1":
         errore(handler, 403, "Aprire il catalogo dal pannello Ishtar Lab")
         return
-    targets = {"/api/catalogo": "/admin/ishtar/catalogo", "/api/foto": "/admin/uploads"}
-    if handler.path not in targets or handler.command not in ("GET", "POST") or (handler.path == "/api/foto" and handler.command != "POST"):
-        errore(handler, 404, "Indirizzo del ponte non riconosciuto")
+    try:
+        destinazione, limite = instrada(handler.command, handler.path)
+    except Rifiuto as rifiuto:
+        errore(handler, rifiuto.codice, str(rifiuto))
         return
     try:
         length = int(handler.headers.get("Content-Length", "0"))
-        if length < 0 or length > 25 * 1024 * 1024:
-            errore(handler, 413, "Il caricamento supera 25 MB")
+        if length < 0 or length > limite:
+            errore(handler, 413, "Il caricamento supera 25 MB" if limite == LIMITE_CATALOGO else "Richiesta troppo grande per il ponte")
             return
         body = handler.rfile.read(length) if handler.command == "POST" else None
         content_type = handler.headers.get("Content-Type", "application/json")
-        if handler.path == "/api/catalogo" and handler.command == "POST" and not content_type.startswith("application/json"):
-            errore(handler, 415, "Il catalogo accetta solo dati JSON")
+        if handler.command == "POST" and destinazione != CATALOGO["/api/foto"] and not content_type.startswith("application/json"):
+            errore(handler, 415, "Il catalogo accetta solo dati JSON" if destinazione == CATALOGO["/api/catalogo"] else "La casella accetta solo dati JSON")
             return
         try:
-            stato, payload = inoltra(handler.command, targets[handler.path], body, content_type)
+            stato, payload = inoltra(handler.command, destinazione, body, content_type)
         except HTTPError as scaduto:
-            # Accesso scaduto o revocato: si rinnova il token una sola volta e si ripete la richiesta.
+            # Accesso scaduto o revocato: si rinnova il token una sola volta e si ripete la richiesta (le risposte della
+            # casella hanno un id: ripetute non partono due volte).
             if scaduto.code != 401:
                 raise
             dimentica_token()
-            stato, payload = inoltra(handler.command, targets[handler.path], body, content_type)
+            stato, payload = inoltra(handler.command, destinazione, body, content_type)
         handler.send_response(stato)
         handler.send_header("Content-Type", "application/json; charset=utf-8")
         handler.end_headers()

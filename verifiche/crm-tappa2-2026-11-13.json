@@ -1,0 +1,63 @@
+{
+  "date": "2026-11-13",
+  "scope": "CRM omnicanale, tappa 2: pagina «Chats» nel primo pannello (elenco, conversazione con risposte rapide e invio, scheda del cliente con gli ordini) sulla casella della tappa 1, attraverso il ponte locale",
+  "modified_by": "satria64 — versione modificata, autorizzata dal titolare nella issue #1",
+  "branch": "crm-tappa2",
+  "base_branch": "main (con le PR #2–#9)",
+  "base_commit": "7a0b362",
+  "decisions": "richiesta del titolare del 13 novembre (CRM per parlare con i clienti da tutte le piattaforme); scelte tecniche di satria64 su delega di Marco: pagina scritta come componente React con il runtime e i componenti del kit originale (non una pagina nuova a parte), logica in moduli senza DOM provati con node --test, ritocchi minimi a router e menu dei bundle, ponte con i soli percorsi della casella, dati veri solo in memoria, testi in inglese come il pannello; piano in piani di implementazione/02 Roadmap/CRM omnicanale - piano tappa 2.md",
+  "features": [
+    "voce «Chats» nel menu dopo Customers con il numero delle conversazioni da leggere (aggiornato anche dalle altre pagine); schede Open e Closed con i conteggi; Chats trovata anche dalla ricerca del pannello (⌘K)",
+    "elenco con ricerca e canale, non letti, «Waiting» e segno «Reply not sent» per una risposta non riuscita mentre lo schermo mostrava altro",
+    "conversazione: messaggi in ordine di arrivo nella casella, stato di ogni risposta (Sent, Sending…, Not sent yet, Not sent: motivo, Not confirmed) con Retry, Send again (dopo conferma), Edit e Discard; risposte rapide che inseriscono il testo; Invio manda; chiusura con conferma se ci sono risposte non partite; «New messages» con il registro scorso in su",
+    "scheda del cliente (colonna sopra i 1280 px, cassetto sotto) con ordini, speso, ultimo ordine e ordini recenti; collegamento del contatto al cliente con ricerca vuota e conferma che chiede dettagli che solo quel cliente conosce",
+    "ponte locale: solo /api/conversazioni, /api/risposte-rapide e /api/clienti verso le rotte omonime sotto /admin, id riconosciuti dal prefisso, parametri ricodificati, corpi JSON fino a 64 KB, DELETE per le risposte rapide; server del pannello con X-Frame-Options DENY, frame-ancestors 'none', nosniff e no-store sulle risposte del ponte",
+    "backend: id_client nella vista dei messaggi; ordine della conversazione uguale a quello con cui si contano i messaggi nuovi; ordini recenti del cliente ordinati per data"
+  ],
+  "tests": {
+    "node_test_verifiche": "123/123 (80 prima della tappa): aiuti della casella, richieste al ponte, controllo della casella con un server finto",
+    "ponte": "15/15 (8 prima della tappa)",
+    "jest_security": "272/272 (268 prima della tappa)",
+    "typecheck_api": "0 errori",
+    "mutazioni": "5 guardie del controllo rotte una alla volta (invio in corso, dettaglio di un'altra conversazione, primo piano, riga del server, id nei tentativi): tutte prese dai test"
+  },
+  "end_to_end": {
+    "chat": "67/67 in Chrome senza testa sul database vero, con un server Telegram finto (getMe, getUpdates con attesa e offset, sendMessage con esiti 400, 403, 500 e lento) e l'API avviata con TELEGRAM_API_BASE: menu e schede; messaggio in arrivo e badge dalle altre pagine; lettura; una sola risposta anche con doppio clic e Invio insieme a Telegram lento; risposte rapide; esiti 500 (mai rimandata da sola, Send again dopo conferma) e 403 (Retry, una sola riga); API spenta durante l'invio (Not sent yet, Retry dopo il riavvio, una consegna); chiusura da una pagina rimasta indietro (412); chiusura e riapertura; collegamento del cliente di prova con 2 ordini e speso €57.00; ricerca e canale; HTML del cliente come testo e 4000 caratteri senza spazi; 1024 e 390 px con fuoco e cassetto; pagina nascosta; messaggio registrato in ritardo; risposta non riuscita mentre Reda è su Orders; chiusura con risposte non partite; ⌘K; registro scorso in su; altezza e intestazioni; demo uscita; 30 pagine e schede del pannello senza eccezioni",
+    "pannello": "nessuna regressione: catalogo 18/18, collegamento 32/32, parte A 8/8, parte B 20/20",
+    "environment": "istanza locale; backup del database prima delle prove; ogni giro della prova parte dal backup (connettore Telegram finto, cliente e due ordini di prova creati con medusa exec); alla fine database ripristinato dal backup, API riavviata senza TELEGRAM_API_BASE, script temporaneo rimosso"
+  },
+  "known_limits": [
+    "si vedono gli ultimi 200 messaggi di una conversazione e fino a 200 conversazioni per scheda",
+    "gli ordini della scheda del cliente non aprono la pagina Ordini del pannello, che è ancora dimostrativa",
+    "le risposte partono con l'utente del ponte locale (il titolare): l'autore mostrato è il suo nome o la sua email",
+    "una bozza non inviata resta finché la pagina è aperta, non dopo un ricaricamento",
+    "un messaggio del cliente registrato in ritardo compare dopo le risposte già partite (ordine di arrivo nella casella), con il suo orario Telegram"
+  ],
+  "not_tested": [
+    "Windows (JavaScript del pannello e Python del ponte, senza percorsi o comandi di sistema)",
+    "Firefox e Safari (prove con Chrome)",
+    "bot Telegram vero del negozio (da fare con il bot di prova di Marco)"
+  ],
+  "secrets_included": false,
+  "independent_review": {
+    "method": "workflow di revisione avversariale: quattro revisori (risposte e stato, sicurezza e riservatezza, integrazione con il pannello originale, contratto con l'API e casi limite) e un verificatore per ciascuno che ha provato a smentire ogni rilievo con il codice e con piccoli esperimenti; 29 rilievi, 27 confermati, 21 distinti (5 importanti, 16 minori), tutti corretti; in più 6 punti piccoli dagli elenchi lasciati fuori dai revisori",
+    "fixed": [
+      "risposta non riuscita mentre Reda è su un'altra pagina: nessun avviso; ora avviso, segno sulla conversazione e badge finché non la si apre (importante)",
+      "vista ordinata per data Telegram, messaggi nuovi contati per arrivo: con un messaggio registrato in ritardo «letta» non azzerava mai e «Close» dava sempre 412; ora un solo ordine, quello di arrivo (importante, backend)",
+      "«Recent orders» ordinati per nome del giorno (date confrontate come testo); ora per data (importante, backend)",
+      "Retry su una risposta già sul server: un nuovo esito negativo non si vedeva e in una chat chiusa non poteva riuscire; ora l'esito è sulla bolla, la chat chiusa lo dice e non offre Retry, «Close» aspetta l'invio e chiede conferma con risposte non partite (importante)",
+      "pagina aggiornata con il server del pannello vecchio ancora acceso: «Chats are offline» senza spiegazione; ora invito a riavviare Ishtar Lab (importante)",
+      "risposta riuscita ma illeggibile trattata come rifiutata (Edit con id nuovo): ora in attesa con lo stesso id (minore)",
+      "ultimo_visto null dopo una navigazione con la conferma aperta; «Send again» che cancellava la bozza e si poteva ripetere sulla stessa risposta; avviso contraddittorio per le risposte incerte (minori)",
+      "«letta» con il registro scorso in su; badge che toglieva 1 invece di rileggere; «letta» ripetuta (minori)",
+      "letture e «letta» con la demo «uscita»; risposte rapide mai rilette dopo un errore; «Loading messages…» senza fine con un errore (minori)",
+      "ricerca del cliente da collegare precompilata con il nome scelto da chi scrive e limitata a 8 senza dirlo (minori)",
+      "pannello mostrabile in una cornice di un altro sito; risposte del ponte nella cache del browser (minori)",
+      "pagina 24 px più alta della finestra; fuoco perso a una colonna; Chats assente dalla ricerca ⌘K (minori)"
+    ],
+    "refuted": [
+      "ricerche dei clienti nel registro del pannello su Linux: le stesse richieste sono già nel log HTTP di Medusa e la correzione proposta non toglieva nulla dal disco",
+      "risposta 200 troncata dal ponte: il ponte legge tutta la risposta dell'API prima di scrivere, quindi il browser riceve una connessione chiusa (esito ignoto, stesso id)"
+    ]
+  }
+}

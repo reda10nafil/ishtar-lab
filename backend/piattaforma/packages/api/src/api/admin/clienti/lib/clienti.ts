@@ -2,6 +2,7 @@ import type { AuthenticatedMedusaRequest } from "@medusajs/framework/http"
 import { z } from "@medusajs/framework/zod"
 import { interroga } from "../../../utili"
 import { assente } from "../../magazzino/lib/assente"
+import { ordiniRecenti } from "./ordini"
 import { SEGMENTI, CAMPO_SEGMENTO, appartenenze, statistiche, type OrdineCliente } from "./segmenti"
 
 type Metadati = Record<string, unknown> | null | undefined
@@ -158,17 +159,7 @@ export async function leggiCliente(req: AuthenticatedMedusaRequest, id: string) 
     grezzo: cliente,
     scheda: schedaDi(cliente, ordini),
     indirizzi: (cliente.addresses ?? []).map(indirizzoPubblico),
-    ordini: ordini
-      .map((o) => ({
-        id: o.id,
-        numero: o.display_id ?? null,
-        stato: o.status ?? null,
-        bozza: Boolean(o.is_draft_order),
-        totale: Number(o.total ?? 0),
-        valuta: o.currency_code ?? null,
-        creato_il: o.created_at,
-      }))
-      .sort((a, b) => String(b.creato_il).localeCompare(String(a.creato_il))),
+    ordini: ordiniRecenti(ordini),
   }
 }
 

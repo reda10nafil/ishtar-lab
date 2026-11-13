@@ -1,4 +1,4 @@
-import { filtriElenco } from "../lib/elenco"
+import { filtriElenco, vistaMessaggio } from "../lib/elenco"
 
 describe("filtri dell'elenco delle conversazioni", () => {
   it("valori predefiniti", () => {
@@ -17,5 +17,15 @@ describe("filtri dell'elenco delle conversazioni", () => {
   it("canale o stato sconosciuti: errore 400", () => {
     expect(() => filtriElenco({ canale: "fax" })).toThrow("Unknown channel")
     expect(() => filtriElenco({ stato: "tutte" })).toThrow(/status/)
+  })
+})
+
+describe("vista dei messaggi", () => {
+  const base = { id: "msgc_1", testo: "Ciao", quando: "2026-11-13T10:00:00Z", stato_consegna: "inviato", errore: null, autore_nome: "Reda" }
+
+  it("id della risposta solo per i messaggi in uscita", () => {
+    expect(vistaMessaggio({ ...base, direzione: "uscita", chiave_unica: "uscita:abc12345" }).id_client).toBe("abc12345")
+    expect(vistaMessaggio({ ...base, direzione: "entrata", chiave_unica: "telegram:bot:42" }).id_client).toBeNull()
+    expect(vistaMessaggio({ ...base, direzione: "uscita", chiave_unica: null }).id_client).toBeNull()
   })
 })

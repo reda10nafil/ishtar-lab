@@ -203,3 +203,11 @@ Aggiornamento caricato su GitHub, commit d5235b84b5f2078294c953bda5cea9a89c7ba70
 - Rotte `/admin/conversazioni` e `/admin/risposte-rapide` con il permesso nuovo «Customer messages». Una risposta non parte mai due volte; una pagina rimasta indietro non segna letti né chiude messaggi che nessuno ha visto (412).
 - Revisione avversariale (4 revisori e 4 verificatori): 27 rilievi confermati, 18 distinti, tutti corretti. Verifiche: jest 268/268, 80 test node, typecheck 0 errori, 25/25 prove dal vivo con un Telegram finto, job contro il vero Telegram con un token finto, permessi con utenti veri, pannello 18/18, 32/32, 8/8 e 20/20; database ripristinato. Rapporto `verifiche/crm-tappa1-2026-11-13.json`.
 
+## 2026-11-13 — Pagina «Chats», tappa 2 del CRM (versione modificata da satria64, proposta)
+
+- Nel primo pannello la pagina «Chats» sulla casella dei clienti della tappa 1: voce del menu con il numero da leggere, schede Open e Closed, elenco con ricerca e canale, conversazione con lo stato di ogni risposta, risposte rapide, chiusura e riapertura, scheda del cliente con ordini e speso, collegamento del contatto al cliente dopo una conferma.
+- Scritta con il runtime e i componenti del kit originale e con i soli token del pannello; ritocchi minimi a router e menu dei bundle. Logica in moduli senza DOM (`chat/casella.mjs`, `chat/api.mjs`, `chat/controllo.mjs`) provati con `node --test`.
+- Ponte locale: solo i percorsi della casella, con id e parametri verificati; DELETE per le risposte rapide. Backend: la vista dei messaggi porta `id_client`.
+- Una risposta non parte mai due volte e non sparisce in silenzio; «letta» solo con la pagina visibile e in primo piano; i dati veri restano in memoria.
+- Revisione avversariale (4 revisori e 4 verificatori): 27 rilievi confermati, 21 distinti, tutti corretti (fra questi, nel backend, l'ordine della conversazione uguale a quello dei messaggi nuovi e gli ordini recenti del cliente per data). Verifiche: jest 272/272, 123 test node, ponte 15/15, prova nel browser 67/67 con un Telegram finto, pannello 18/18, 32/32, 8/8 e 20/20; database ripristinato. Rapporto `verifiche/crm-tappa2-2026-11-13.json`.
+

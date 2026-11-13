@@ -43,7 +43,7 @@ Browser -> Python 127.0.0.1:4273 -> catalog_bridge.py -> API Node Medusa/Mercur 
 
 Docker avvia PostgreSQL, Redis, RustFS e Mailpit. **L'API applicativa non ha un container in questo Compose: gira sul computer tramite Node.** Avere Docker acceso senza avviare l'API non basta. Pubblicare i sorgenti su GitHub non avvia un server remoto e non mette a disposizione il database del titolare. Anche tutti i riferimenti `127.0.0.1` del clone indicano il computer del collaboratore.
 
-Il catalogo della prima app usa `/api/catalogo` e `/api/foto` sul server Python, inoltrati rispettivamente a `/admin/ishtar/catalogo` e `/admin/uploads`. Il ponte legge `.env` e credenziali solo sul server e richiede intestazione locale e origine ammessa. Non esporlo su Internet e non trasformarlo in un proxy generico. Il login visivo della demo non è il login dell'API.
+Il catalogo della prima app usa `/api/catalogo` e `/api/foto` sul server Python, inoltrati rispettivamente a `/admin/ishtar/catalogo` e `/admin/uploads`. La pagina «Chats» usa `/api/conversazioni`, `/api/risposte-rapide` e `/api/clienti`, inoltrati alle rotte omonime sotto `/admin`: solo i percorsi elencati in `catalog_bridge.py`, con gli id riconosciuti dal prefisso (`conv_`, `rrap_`, `cus_`) e i soli parametri previsti. Il ponte legge `.env` e credenziali solo sul server e richiede intestazione locale e origine ammessa. Non esporlo su Internet e non trasformarlo in un proxy generico. Il login visivo della demo non è il login dell'API.
 
 ## Prima app: ambiente Windows nuovo
 
