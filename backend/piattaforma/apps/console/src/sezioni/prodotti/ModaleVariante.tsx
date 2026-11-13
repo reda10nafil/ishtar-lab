@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query"
 import { useState, type FormEvent } from "react"
 import { Link } from "react-router-dom"
-import { api } from "../../api/client"
+import { api, ErroreApi } from "../../api/client"
 import { useAvvisi } from "../../componenti"
 import { usePermessi } from "../../permessi"
 import { Campo, Conferma, Modale } from "../../ui"
@@ -19,9 +19,28 @@ const valoriOfferta = (o: OffertaScheda): ValoriOfferta => ({
 
 const VUOTA: ValoriOfferta = { prezzo: "", cessione: "", consigliato: "", quantita: "" }
 
-type CampiOffertaProprieta = { valori: ValoriOfferta; onCambia: (valori: ValoriOfferta) => void; conCessione: boolean; conScorte: boolean; depositi: number }
+/** Campo della finestra per ogni campo dei conflitti del server (412). */
+const CAMPI_OFFERTA: Record<string, keyof ValoriOfferta> = { prezzo: "prezzo", prezzo_cessione: "cessione", prezzo_consigliato: "consigliato", quantita: "quantita" }
+const CAMPI_VARIANTE = ["titolo", "sku", "ean"] as const
 
-function CampiOfferta({ valori, onCambia, conCessione, conScorte, depositi }: CampiOffertaProprieta) {
+type Conflitto = { campo: string; attuale: unknown; offerta?: string }
+type PartenzaOfferta = { prezzo: number | null; prezzo_consigliato: number | null; quantita: number; prezzo_cessione?: number | null }
+type Partenza = { variante: { titolo: string | null; sku: string | null; ean: string | null }; offerte: Record<string, PartenzaOfferta> }
+
+const testoCampo = (campo: string, valore: unknown) =>
+  valore === null || valore === undefined ? "" : campo === "quantita" ? String(valore) : typeof valore === "number" ? testoDa(valore) : String(valore)
+
+type CampiOffertaProprieta = {
+  valori: ValoriOfferta
+  onCambia: (valori: ValoriOfferta) => void
+  conCessione: boolean
+  conScorte: boolean
+  depositi: number
+  /** Giacenza di partenza: sotto zero dopo un'evasione oltre le scorte, non deve bloccare il modulo se non la si tocca. */
+  scorteIniziali?: number
+}
+
+function CampiOfferta({ valori, onCambia, conCessione, conScorte, depositi, scorteIniziali = 0 }: CampiOffertaProprieta) {
   const cambia = (chiave: keyof ValoriOfferta) => (e: { target: { value: string } }) => onCambia({ ...valori, [chiave]: e.target.value })
   return (
     <div className="griglia-due">
@@ -38,7 +57,7 @@ function CampiOfferta({ valori, onCambia, conCessione, conScorte, depositi }: Ca
       </Campo>
       {conScorte && depositi <= 1 ? (
         <Campo etichetta="Stock">
-          <input type="number" min="0" step="1" inputMode="numeric" value={valori.quantita} onChange={cambia("quantita")} />
+          <input type="number" min={Math.min(0, scorteIniziali)} step="1" inputMode="numeric" value={valori.quantita} onChange={cambia("quantita")} />
         </Campo>
       ) : null}
       {conScorte && depositi > 1 ? <p className="testo-tenue">Stock across several warehouses is changed from <Link to="/magazzino">Inventory</Link>.</p> : null}
@@ -51,7 +70,7 @@ type Proprieta = { scheda: SchedaProdotto; variante: VarianteScheda | null; onCh
 /** Aggiunge o modifica una variante con i prezzi e le scorte di ogni azienda che la vende. */
 export function ModaleVariante({ scheda, variante, onChiudi }: Proprieta) {
   const { puo } = usePermessi()
-  const { avvisa } = useAvvisi()
+  const { avvisa, segnalaErrore } = useAvvisi()
   const aggiorna = useAggiornaCatalogo()
   const aziende = useAziende()
   const conCessione = puo("margini", "view")
@@ -64,6 +83,46 @@ export function ModaleVariante({ scheda, variante, onChiudi }: Proprieta) {
   const [azienda, setAzienda] = useState(scheda.aziende[0]?.id ?? "")
   const [nuova, setNuova] = useState<ValoriOfferta>(VUOTA)
   const [elimina, setElimina] = useState(false)
+  // Valori con cui la finestra si è aperta: il server scrive un campo solo se è ancora quello e non è cambiato qui
+  // (altrimenti risponde 412 con il valore attuale), così una finestra aperta da tempo non riscrive vendite o prezzi nuovi.
+  const [partenza, setPartenza] = useState<Partenza>(() => ({
+    variante: { titolo: variante?.titolo ?? null, sku: variante?.sku ?? null, ean: variante?.ean ?? null },
+    offerte: Object.fromEntries((variante?.offerte ?? []).map((o) => [o.id, {
+      prezzo: o.prezzo,
+      prezzo_consigliato: o.prezzo_consigliato,
+      quantita: o.scorte,
+      ...(o.prezzo_cessione !== undefined ? { prezzo_cessione: o.prezzo_cessione } : {}),
+    }])),
+  }))
+
+  /**
+   * 412: niente salvato. I campi cambiati altrove mostrano il valore attuale, che diventa quello di partenza; gli altri
+   * tengono ciò che si è scritto. Si controlla e si salva di nuovo.
+   */
+  const allinea = (conflitti: Conflitto[]) => {
+    setPartenza((p) => {
+      const dopo: Partenza = { variante: { ...p.variante }, offerte: { ...p.offerte } }
+      for (const c of conflitti) {
+        if (c.offerta && dopo.offerte[c.offerta]) dopo.offerte[c.offerta] = { ...dopo.offerte[c.offerta], [c.campo]: c.attuale }
+        else if ((CAMPI_VARIANTE as readonly string[]).includes(c.campo)) dopo.variante = { ...dopo.variante, [c.campo]: (c.attuale as string | null) ?? null }
+      }
+      return dopo
+    })
+    setOfferte((attuali) => {
+      const dopo = { ...attuali }
+      for (const c of conflitti) {
+        const chiave = CAMPI_OFFERTA[c.campo]
+        if (c.offerta && dopo[c.offerta] && chiave) dopo[c.offerta] = { ...dopo[c.offerta], [chiave]: testoCampo(c.campo, c.attuale) }
+      }
+      return dopo
+    })
+    for (const c of conflitti) {
+      if (c.offerta) continue
+      if (c.campo === "titolo") setTitolo(testoCampo(c.campo, c.attuale))
+      if (c.campo === "sku") setSku(testoCampo(c.campo, c.attuale))
+      if (c.campo === "ean") setEan(testoCampo(c.campo, c.attuale))
+    }
+  }
 
   const senzaOfferte = !variante?.offerte.length
   const percorsoProdotto = `/admin/catalogo/prodotti/${scheda.id}/varianti`
@@ -72,7 +131,9 @@ export function ModaleVariante({ scheda, variante, onChiudi }: Proprieta) {
     prezzo_consigliato: numeroDa(v.consigliato),
     ...(conCessione ? { prezzo_cessione: numeroDa(v.cessione) } : {}),
   })
-  const quantita = (v: ValoriOfferta, depositi: number) => (conScorte && depositi <= 1 && v.quantita !== "" ? { quantita: Number(v.quantita) } : {})
+  // La quantità parte solo se è stata scritta (diversa da quella di partenza): è un conteggio nello storico del Magazzino.
+  const quantita = (v: ValoriOfferta, depositi: number, iniziale?: number) =>
+    conScorte && depositi <= 1 && v.quantita !== "" && Number(v.quantita) !== iniziale ? { quantita: Number(v.quantita) } : {}
 
   const salva = useMutation({
     mutationFn: () => {
@@ -86,7 +147,8 @@ export function ModaleVariante({ scheda, variante, onChiudi }: Proprieta) {
           titolo,
           sku,
           ean: ean || null,
-          offerte: variante.offerte.map((o) => ({ id: o.id, ...prezzi(offerte[o.id]), ...quantita(offerte[o.id], o.depositi) })),
+          prima: partenza.variante,
+          offerte: variante.offerte.map((o) => ({ id: o.id, prima: partenza.offerte[o.id], ...prezzi(offerte[o.id]), ...quantita(offerte[o.id], o.depositi, partenza.offerte[o.id]?.quantita) })),
           ...(senzaOfferte && azienda ? { nuova_offerta: { azienda_id: azienda, ...prezzi(nuova), ...quantita(nuova, 0) } } : {}),
         },
       })
@@ -95,6 +157,13 @@ export function ModaleVariante({ scheda, variante, onChiudi }: Proprieta) {
       avvisa(variante ? "Variant saved" : "Variant added")
       aggiorna(scheda.id)
       onChiudi()
+    },
+    onError: (errore) => {
+      // Valore cambiato altrove: niente salvato. La finestra resta aperta con i valori attuali dei campi cambiati.
+      if (errore instanceof ErroreApi && errore.stato === 412) {
+        allinea((errore.dettagli as { conflitti?: Conflitto[] } | undefined)?.conflitti ?? [])
+        aggiorna(scheda.id)
+      }
     },
   })
   const togli = useMutation({
@@ -110,6 +179,7 @@ export function ModaleVariante({ scheda, variante, onChiudi }: Proprieta) {
     salva.mutate()
   }
   const errore = salva.error ?? togli.error
+  const conflitto = salva.error instanceof ErroreApi && salva.error.stato === 412
   const sceltaAziende = scheda.aziende.length ? scheda.aziende : (aziende.data ?? [])
 
   return (
@@ -130,7 +200,7 @@ export function ModaleVariante({ scheda, variante, onChiudi }: Proprieta) {
         {variante?.offerte.map((o) => (
           <fieldset key={o.id} className="gruppo">
             <legend>{o.azienda.nome}</legend>
-            <CampiOfferta valori={offerte[o.id]} onCambia={(valori) => setOfferte({ ...offerte, [o.id]: valori })} conCessione={conCessione} conScorte={conScorte} depositi={o.depositi} />
+            <CampiOfferta valori={offerte[o.id]} onCambia={(valori) => setOfferte({ ...offerte, [o.id]: valori })} conCessione={conCessione} conScorte={conScorte} depositi={o.depositi} scorteIniziali={partenza.offerte[o.id]?.quantita} />
           </fieldset>
         ))}
 
@@ -149,7 +219,11 @@ export function ModaleVariante({ scheda, variante, onChiudi }: Proprieta) {
           </fieldset>
         ) : null}
 
-        {errore ? <p className="avviso-stato avviso-stato--errore" role="alert">{errore.message}</p> : null}
+        {errore ? (
+          <p className="avviso-stato avviso-stato--errore" role="alert">
+            {errore.message}{conflitto ? " The current value is now in the window: check it and save again." : ""}
+          </p>
+        ) : null}
         <div className="riga__azioni">
           <button type="submit" className="primario" disabled={salva.isPending}>{salva.isPending ? "Saving..." : "Save variant"}</button>
           {variante && puo("products", "manage") ? <button type="button" className="pericolo" onClick={() => setElimina(true)}>Delete variant</button> : null}

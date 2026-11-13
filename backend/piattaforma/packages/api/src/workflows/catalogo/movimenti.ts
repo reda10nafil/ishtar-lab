@@ -6,8 +6,20 @@
  * il formato del Magazzino (tipo «correzione» o «conteggio»), quindi console e Magazzino lo mostrano già.
  */
 
-export type MovimentoPannello = { id: string; differenza: number; in_arrivo: number; motivo: "rettifica" | "rifornimento" }
-export type ConteggioPannello = { id: string; prima: number[]; dopo: number }
+/** Variazione relativa (pannello: +/−, Ricevi, Ordina; Magazzino: correzione di N unità), con motivo e nota del Magazzino. */
+export type MovimentoPannello = { id: string; differenza: number; in_arrivo: number; motivo: string; nota?: string | null }
+/**
+ * Quantità scritta (conteggio della scheda, del CSV o del Magazzino; «nuova quantità» di una correzione): vale solo se la
+ * giacenza è una di quelle da cui si è partiti. Il tipo è quello dello storico del Magazzino.
+ */
+export type ConteggioPannello = {
+  id: string
+  prima: number[]
+  dopo: number
+  tipo?: "conteggio" | "correzione"
+  motivo?: string | null
+  nota?: string | null
+}
 
 export type VoceStorico = {
   id: string
@@ -36,9 +48,12 @@ export const MOVIMENTI_RICORDATI = 200
 /**
  * Il valore da cui il pannello è partito non c'è più: scorte (`stock`) cambiate da un ordine, da un'altra finestra o dal
  * Magazzino, oppure unità in arrivo (`incoming`) già ricevute altrove. Il nome resta anche quando il workflow serializza
- * l'errore (serializeError di Medusa copia nome e proprietà), così la rotta lo riconosce e risponde 412.
+ * l'errore (serializeError di Medusa copia nome e proprietà), così la rotta lo riconosce e risponde 412. Voce e deposito
+ * li aggiunge il passo del workflow: con più voci dicono quale è cambiata.
  */
 export class ConflittoScorte extends Error {
+  voce?: string
+  deposito?: string
   constructor(public campo: "stock" | "incoming", public attuale: number, public tuo: number | null = null) {
     super(campo === "stock" ? `Le scorte sono state cambiate altrove: ora sono ${attuale}` : `Le unità in arrivo sono state cambiate altrove: ora sono ${attuale}`)
     this.name = "ConflittoScorte"
@@ -63,7 +78,7 @@ export function applicaMovimenti(
   const applicati = [...stato.applicati]
   const nuovi: Applicato[] = []
   let contato = false
-  const registra = (id: string, differenza: number, arrivo: number, tipo: VoceStorico["tipo"], motivo: string | null) => {
+  const registra = (id: string, differenza: number, arrivo: number, tipo: VoceStorico["tipo"], motivo: string | null, nota: string | null) => {
     // «Ricevi» o annullamento di un «Pour» su unità in arrivo che non ci sono più (ricevute in un'altra finestra): caricarle
     // in giacenza le conterebbe due volte.
     if (in_arrivo + arrivo < 0) throw new ConflittoScorte("incoming", in_arrivo)
@@ -75,7 +90,7 @@ export function applicaMovimenti(
     if (differenza || arrivo) {
       storico.unshift({
         id, quando, chi, tipo, prima, dopo: giacenza, differenza, motivo,
-        nota: arrivo ? `In arrivo ${arrivo > 0 ? "+" : ""}${arrivo} (ora ${in_arrivo})` : null,
+        nota: [nota, arrivo ? `In arrivo ${arrivo > 0 ? "+" : ""}${arrivo} (ora ${in_arrivo})` : null].filter(Boolean).join(" · ") || null,
         ...(arrivo ? { in_arrivo_prima: arrivoPrima, in_arrivo_dopo: in_arrivo } : {}),
       })
     }
@@ -84,15 +99,17 @@ export function applicaMovimenti(
   }
   for (const m of movimenti) {
     if (applicati.includes(m.id)) continue
-    registra(m.id, m.differenza, m.in_arrivo, "correzione", m.motivo)
+    registra(m.id, m.differenza, m.in_arrivo, "correzione", m.motivo, m.nota ?? null)
   }
   if (conteggio && !applicati.includes(conteggio.id)) {
-    // Giacenza già uguale al conteggio: niente da scrivere (un nuovo invio troverà lo stesso valore o un conflitto vero).
+    const tipo = conteggio.tipo ?? "conteggio"
+    // Giacenza già uguale alla quantità scritta: nessuna variazione (anche un nuovo invio dopo un timeout). Un conteggio
+    // vale comunque come conteggio e ne aggiorna la data, come nel Magazzino.
     if (giacenza === conteggio.dopo) {
-      // nessuna scrittura
+      if (tipo === "conteggio") contato = true
     } else if (conteggio.prima.includes(giacenza)) {
-      registra(conteggio.id, conteggio.dopo - giacenza, 0, "conteggio", null)
-      contato = true
+      registra(conteggio.id, conteggio.dopo - giacenza, 0, tipo, conteggio.motivo ?? null, conteggio.nota ?? null)
+      if (tipo === "conteggio") contato = true
     } else throw new ConflittoScorte("stock", giacenza, conteggio.dopo)
   }
   // Medusa lascia la giacenza sotto zero dopo un'evasione: si rifiuta solo ciò che la porterebbe (ancora più) giù.
@@ -103,7 +120,7 @@ export function applicaMovimenti(
     storico: storico.slice(0, STORICO_PER_LIVELLO),
     applicati: applicati.slice(0, MOVIMENTI_RICORDATI),
     nuovi,
-    cambiato: nuovi.length > 0,
+    cambiato: nuovi.length > 0 || contato,
     contato,
   }
 }

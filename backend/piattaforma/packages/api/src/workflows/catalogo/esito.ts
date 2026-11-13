@@ -6,10 +6,12 @@ const messaggio = (errore: unknown) => String((errore as { message?: unknown })?
  * Esito di un workflow dal suo stato finale. «failed» arriva anche quando tutto è stato annullato: un workflow annidato
  * (runAsStep) che fallisce si annulla da solo, e quando il workflow esterno chiede poi di annullare quel passo la sua
  * transazione «non si trova» più. Solo un errore di annullamento su un altro passo, o di altro tipo, lascia il
- * salvataggio a metà.
+ * salvataggio a metà. Lo stesso vale per il passo delle scorte che non è riuscito ad annullare da sé le voci già scritte
+ * (ScorteAMeta): per Medusa la transazione è annullata, ma quelle voci sono rimaste cambiate.
  */
 export function classificaEsito(stato: string, errori: ErroreTransazione[]): "fatto" | "annullato" | "a-meta" {
   if (stato === "done") return "fatto"
+  if (errori.some((e) => (e.error as { name?: unknown } | undefined)?.name === "ScorteAMeta")) return "a-meta"
   if (stato === "reverted") return "annullato"
   // Qualunque altro stato (ancora in corso, in compensazione...) non è un salvataggio concluso.
   if (stato !== "failed") return "a-meta"

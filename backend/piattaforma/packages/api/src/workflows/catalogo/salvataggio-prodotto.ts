@@ -1,10 +1,10 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { createStep, createWorkflow, StepResponse, transform, when, WorkflowResponse } from "@medusajs/framework/workflows-sdk"
-import { updateProductsWorkflow, useQueryGraphStep } from "@medusajs/medusa/core-flows"
+import { updateProductsWorkflow, updateProductVariantsWorkflow, useQueryGraphStep } from "@medusajs/medusa/core-flows"
 import { createOffersWorkflow, createProductsWorkflow, createSellerStockLocationsWorkflow, updateOffersWorkflow } from "@mercurjs/core/workflows"
 import { classificaEsito, compensazioniFallite } from "./esito"
-import { annullaMovimenti, applicaMovimenti, metadatiLivello, statoLivello, type Applicato, type ConteggioPannello, type MovimentoPannello } from "./movimenti"
+import { annullaMovimenti, applicaMovimenti, ConflittoScorte, metadatiLivello, statoLivello, type Applicato, type ConteggioPannello, type MovimentoPannello } from "./movimenti"
 import { fotografiaProdotto, ripristinoProdotto, type FotografiaProdotto } from "./ripristino"
 
 /*
@@ -138,57 +138,160 @@ type Magazzino = {
 }
 type Lucchetti = { execute: <T>(chiavi: string[], lavoro: () => Promise<T>, opzioni?: { timeout?: number }) => Promise<T> }
 
+/** Esito di una voce: giacenza prima e dopo, per le risposte della console e del Magazzino. */
+export type EsitoScorte = { voce: string; deposito: string; prima: number; dopo: number; in_arrivo: number; cambiato: boolean }
+
 /**
- * Variazioni e conteggi del pannello applicati al livello di magazzino sotto il lucchetto della voce, lo stesso di
- * evasioni e resi (adjustInventoryLevelsStep): la giacenza si legge e si scrive senza che un ordine passi in mezzo, e
- * l'annullamento toglie solo le variazioni di questo salvataggio, non quelle arrivate nel frattempo.
+ * Una voce sotto il proprio lucchetto, lo stesso di evasioni e resi (adjustInventoryLevelsStep): la giacenza si legge e si
+ * scrive senza che un ordine passi in mezzo. Restituisce come annullarla (solo le proprie variazioni).
+ */
+async function applicaVoce(lucchetti: Lucchetti, magazzino: Magazzino, s: InputScorte & { deposito: string }) {
+  return lucchetti.execute([s.voce], async () => {
+    const [livello] = await magazzino.listInventoryLevels({ inventory_item_id: s.voce, location_id: s.deposito })
+    const stato = statoLivello(livello)
+    let esito: ReturnType<typeof applicaMovimenti>
+    try {
+      esito = applicaMovimenti(stato, s, s.chi, s.quando)
+    } catch (errore) {
+      // Con più voci la rotta deve sapere quale è cambiata: la console segna quella riga o nomina quell'azienda.
+      if (errore instanceof ConflittoScorte) Object.assign(errore, { voce: s.voce, deposito: s.deposito })
+      throw errore
+    }
+    const risultato: EsitoScorte = { voce: s.voce, deposito: s.deposito, prima: stato.giacenza, dopo: esito.giacenza, in_arrivo: esito.in_arrivo, cambiato: esito.cambiato }
+    if (!esito.cambiato) return { risultato, annullamento: null as Annullamento }
+    const conteggioPrima = typeof livello?.metadata?.ultimo_conteggio === "string" ? (livello.metadata.ultimo_conteggio as string) : null
+    const dati = {
+      inventory_item_id: s.voce,
+      location_id: s.deposito,
+      stocked_quantity: esito.giacenza,
+      incoming_quantity: esito.in_arrivo,
+      metadata: metadatiLivello(livello?.metadata, esito, esito.contato ? s.quando : undefined),
+    }
+    if (livello) await magazzino.updateInventoryLevels([dati])
+    else await magazzino.createInventoryLevels([dati])
+    const annullamento: Annullamento = { voce: s.voce, deposito: s.deposito, nuovi: esito.nuovi, creato: !livello, ...(esito.contato ? { conteggioPrima } : {}) }
+    return { risultato, annullamento }
+  }, { timeout: ATTESA_VOCE })
+}
+
+/** Toglie le variazioni di un salvataggio annullato, lasciando quelle arrivate nel frattempo. */
+async function annullaVoce(lucchetti: Lucchetti, magazzino: Magazzino, annullamento: NonNullable<Annullamento>) {
+  await lucchetti.execute([annullamento.voce], async () => {
+    const [livello] = await magazzino.listInventoryLevels({ inventory_item_id: annullamento.voce, location_id: annullamento.deposito })
+    if (!livello) return
+    const stato = annullaMovimenti(statoLivello(livello), annullamento.nuovi)
+    // Livello creato da questo salvataggio e rimasto vuoto: si toglie, come faceva createInventoryLevelsWorkflow.
+    const vuoto = !stato.giacenza && !stato.in_arrivo && !Number(livello.reserved_quantity ?? 0) && !stato.storico.length
+    if (annullamento.creato && vuoto) {
+      await magazzino.deleteInventoryLevels([livello.id])
+      return
+    }
+    await magazzino.updateInventoryLevels([{
+      inventory_item_id: annullamento.voce,
+      location_id: annullamento.deposito,
+      stocked_quantity: stato.giacenza,
+      incoming_quantity: stato.in_arrivo,
+      metadata: metadatiLivello(livello.metadata, stato, "conteggioPrima" in annullamento ? annullamento.conteggioPrima : undefined),
+    }])
+  }, { timeout: ATTESA_VOCE })
+}
+
+/**
+ * Annullamento delle voci già scritte non riuscito: il salvataggio può essere rimasto a metà. Il messaggio elenca le
+ * voci (voce@deposito) da sistemare a mano; esegui lo scrive nel log e la rotta risponde 500 con un testo esplicito.
+ */
+export class ScorteAMeta extends Error {
+  constructor(messaggio: string) {
+    super(messaggio)
+    this.name = "ScorteAMeta"
+  }
+}
+
+/** Annulla le voci già scritte, dall'ultima: un annullamento che fallisce non ferma gli altri. Restituisce quelli falliti. */
+async function annullaVoci(lucchetti: Lucchetti, magazzino: Magazzino, fatte: NonNullable<Annullamento>[]) {
+  const nonAnnullate: string[] = []
+  for (const a of [...fatte].reverse()) {
+    try {
+      await annullaVoce(lucchetti, magazzino, a)
+    } catch (e) {
+      nonAnnullate.push(`${a.voce}@${a.deposito}: ${String((e as Error)?.message ?? e)}`)
+    }
+  }
+  return nonAnnullate
+}
+
+/**
+ * Variazioni e conteggi di una o più voci di magazzino (pannello, console, Magazzino delle aziende). Le voci si applicano
+ * una alla volta, ciascuna con il proprio lucchetto: tenere più lucchetti insieme mentre si aspetta il successivo può
+ * bloccarsi con un'evasione che li chiede in un altro ordine. Se una voce viene rifiutata (conflitto, scorte sotto zero)
+ * si tolgono subito le variazioni già scritte delle altre: il salvataggio resta «tutto o niente».
  */
 const movimentiScorteStep = createStep(
   "ishtar-movimenti-scorte",
-  async (s: InputScorte & { deposito: string }, { container }) => {
+  async (operazioni: (InputScorte & { deposito: string })[], { container }) => {
     const lucchetti = container.resolve(Modules.LOCKING) as unknown as Lucchetti
     const magazzino = container.resolve(Modules.INVENTORY) as unknown as Magazzino
-    return await lucchetti.execute([s.voce], async () => {
-      const [livello] = await magazzino.listInventoryLevels({ inventory_item_id: s.voce, location_id: s.deposito })
-      const esito = applicaMovimenti(statoLivello(livello), s, s.chi, s.quando)
-      if (!esito.cambiato) return new StepResponse(esito.giacenza, null as Annullamento)
-      const conteggioPrima = typeof livello?.metadata?.ultimo_conteggio === "string" ? (livello.metadata.ultimo_conteggio as string) : null
-      const dati = {
-        inventory_item_id: s.voce,
-        location_id: s.deposito,
-        stocked_quantity: esito.giacenza,
-        incoming_quantity: esito.in_arrivo,
-        metadata: metadatiLivello(livello?.metadata, esito, esito.contato ? s.quando : undefined),
+    const esiti: EsitoScorte[] = []
+    const fatte: NonNullable<Annullamento>[] = []
+    try {
+      for (const s of operazioni) {
+        const { risultato, annullamento } = await applicaVoce(lucchetti, magazzino, s)
+        esiti.push(risultato)
+        if (annullamento) fatte.push(annullamento)
       }
-      if (livello) await magazzino.updateInventoryLevels([dati])
-      else await magazzino.createInventoryLevels([dati])
-      return new StepResponse(esito.giacenza, { voce: s.voce, deposito: s.deposito, nuovi: esito.nuovi, creato: !livello, ...(esito.contato ? { conteggioPrima } : {}) } as Annullamento)
-    }, { timeout: ATTESA_VOCE })
+    } catch (errore) {
+      const nonAnnullate = await annullaVoci(lucchetti, magazzino, fatte)
+      if (nonAnnullate.length) throw new ScorteAMeta(`${String((errore as Error)?.message ?? errore)}; variazioni non annullate: ${nonAnnullate.join("; ")}`)
+      throw errore
+    }
+    return new StepResponse(esiti, fatte)
   },
-  async (annullamento: Annullamento | undefined, { container }) => {
-    if (!annullamento) return
+  async (fatte: NonNullable<Annullamento>[] | undefined, { container }) => {
+    if (!fatte?.length) return
     const lucchetti = container.resolve(Modules.LOCKING) as unknown as Lucchetti
     const magazzino = container.resolve(Modules.INVENTORY) as unknown as Magazzino
-    await lucchetti.execute([annullamento.voce], async () => {
-      const [livello] = await magazzino.listInventoryLevels({ inventory_item_id: annullamento.voce, location_id: annullamento.deposito })
-      if (!livello) return
-      const stato = annullaMovimenti(statoLivello(livello), annullamento.nuovi)
-      // Livello creato da questo salvataggio e rimasto vuoto: si toglie, come faceva createInventoryLevelsWorkflow.
-      const vuoto = !stato.giacenza && !stato.in_arrivo && !Number(livello.reserved_quantity ?? 0) && !stato.storico.length
-      if (annullamento.creato && vuoto) {
-        await magazzino.deleteInventoryLevels([livello.id])
-        return
-      }
-      await magazzino.updateInventoryLevels([{
-        inventory_item_id: annullamento.voce,
-        location_id: annullamento.deposito,
-        stocked_quantity: stato.giacenza,
-        incoming_quantity: stato.in_arrivo,
-        metadata: metadatiLivello(livello.metadata, stato, "conteggioPrima" in annullamento ? annullamento.conteggioPrima : undefined),
-      }])
-    }, { timeout: ATTESA_VOCE })
+    // Compensazione fallita: l'errore finisce fra gli annullamenti non riusciti del log di esegui, con le voci.
+    const nonAnnullate = await annullaVoci(lucchetti, magazzino, fatte)
+    if (nonAnnullate.length) throw new ScorteAMeta(`variazioni non annullate: ${nonAnnullate.join("; ")}`)
   }
 )
+
+/** Solo scorte: correzioni e conteggi del Magazzino delle aziende. Ogni operazione ha già il suo deposito. */
+export const scorteWorkflow = createWorkflow("ishtar-scorte", (input: { operazioni: (InputScorte & { deposito: string })[] }) => {
+  const esiti = movimentiScorteStep(transform({ input }, ({ input }) => input.operazioni))
+  return new WorkflowResponse(esiti)
+})
+
+export type InputVariante = {
+  /** Campi cambiati della variante (titolo, sku, ean), o null. */
+  variante: { id: string; campi: Record<string, unknown> } | null
+  /** Quantità scritte nella finestra, come conteggi con il valore di partenza; ogni operazione ha il suo deposito. */
+  scorte: (InputScorte & { deposito: string })[]
+  /** Offerte con prezzi o metadati cambiati (dei metadati solo le chiavi cambiate). */
+  offerte: { id: string; prices?: unknown[]; metadata?: Record<string, unknown> }[]
+  updated_by: string
+}
+
+/**
+ * Finestra varianti della console in un solo workflow: scorte, variante, prezzi per ultimi (stesso ordine del pannello).
+ * Un conflitto sulle scorte ferma tutto prima di scrivere altro; un errore dopo annulla ciò che era stato fatto.
+ */
+export const aggiornaVarianteWorkflow = createWorkflow("ishtar-aggiorna-variante", (input: InputVariante) => {
+  when({ input }, ({ input }) => input.scorte.length > 0).then(() => {
+    movimentiScorteStep(transform({ input }, ({ input }) => input.scorte))
+  })
+  when({ input }, ({ input }) => Boolean(input.variante)).then(() => {
+    updateProductVariantsWorkflow.runAsStep({
+      input: transform({ input }, ({ input }) => ({ selector: { id: input.variante!.id }, update: input.variante!.campi }) as any),
+    })
+  })
+  when({ input }, ({ input }) => input.offerte.length > 0).then(() => {
+    updateOffersWorkflow.runAsStep({
+      input: transform({ input }, ({ input }) => ({ offers: input.offerte, updated_by: input.updated_by }) as any),
+    })
+  })
+  return new WorkflowResponse(transform({ input }, ({ input }) => input.variante?.id ?? null))
+})
 
 export type InputModifica = {
   id: string
@@ -214,10 +317,10 @@ export const aggiornaProdottoCatalogoWorkflow = createWorkflow("ishtar-aggiorna-
     }))
 
   when({ input }, ({ input }) => Boolean(input.scorte)).then(() => {
-    movimentiScorteStep(transform({ input, nuovoDeposito }, ({ input, nuovoDeposito }) => ({
+    movimentiScorteStep(transform({ input, nuovoDeposito }, ({ input, nuovoDeposito }) => [{
       ...input.scorte!,
       deposito: input.scorte!.deposito ?? (nuovoDeposito as unknown as { id: string }[] | undefined)?.[0]?.id ?? "",
-    })))
+    }]))
   })
 
   when({ input }, ({ input }) => Boolean(input.prodotto)).then(() => {

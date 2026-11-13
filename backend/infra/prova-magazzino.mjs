@@ -136,7 +136,8 @@ try {
   // Correzioni: la quantità cambia subito, senza revisione
   const url = `/vendor/magazzino/articoli/${articoloId}/correzione`;
   const correggi = (corpo, s = a) => chiama(url, s, { corpo: { deposito_id: depositoA, motivo: 'rifornimento', ...corpo } });
-  const prima = await correggi({ quantita: 20, nota: 'Prova: primo carico' });
+  // «New quantity» con la giacenza mostrata (prima): vale solo se è ancora quella.
+  const prima = await correggi({ quantita: 20, prima: 0, nota: 'Prova: primo carico' });
   check('Correzione: nuova quantità', prima.stato === 200 && prima.corpo.dopo === 20, JSON.stringify(prima.corpo).slice(0, 90));
   check('La quantità si aggiorna subito', (await scorteProva())?.giacenza === 20);
   check('Si vede subito anche dall\'amministratore', (await scorteProva(admin, '/admin/magazzino'))?.giacenza === 20);
@@ -144,8 +145,12 @@ try {
   check('Correzione: variazione', meno.corpo.prima === 20 && meno.corpo.dopo === 17);
   const sotto = await correggi({ variazione: -100 });
   check('Non si scende sotto zero', sotto.stato === 400, sotto.corpo?.message);
-  const uguale = await correggi({ quantita: 17 });
+  const uguale = await correggi({ quantita: 17, prima: 17 });
   check('Quantità uguale rifiutata', uguale.stato === 400, uguale.corpo?.message);
+  const vecchia = await correggi({ quantita: 30, prima: 20 });
+  check('Quantità nuova partita da una giacenza vecchia: 412 con quella attuale', vecchia.stato === 412 && /now 17/.test(vecchia.corpo?.message ?? ''), vecchia.corpo?.message);
+  const senzaPrima = await correggi({ quantita: 30 });
+  check('Quantità nuova senza giacenza di partenza (console di prima): invito a ricaricare', senzaPrima.stato === 400 && /reload/i.test(senzaPrima.corpo?.message ?? ''), senzaPrima.corpo?.message);
   const doppia = await correggi({ quantita: 18, variazione: 1 });
   check('Quantità e variazione insieme rifiutate', doppia.stato === 400, doppia.corpo?.message);
   const negativa = await correggi({ quantita: -1 });
@@ -169,18 +174,20 @@ try {
 
   // Conteggio
   const misto = await chiama('/vendor/magazzino/conteggio', a, {
-    corpo: { righe: [{ articolo_id: articoloId, deposito_id: depositoA, contata: 99 }, { articolo_id: diB.articolo_id, deposito_id: diB.deposito_id, contata: 0 }] },
+    corpo: { righe: [{ articolo_id: articoloId, deposito_id: depositoA, contata: 99, prima: 17 }, { articolo_id: diB.articolo_id, deposito_id: diB.deposito_id, contata: 0, prima: diB.giacenza }] },
   });
   check('Conteggio con una riga altrui respinto', negato(misto), `HTTP ${misto.stato}`);
   check('Conteggio respinto: non cambia nulla', (await scorteProva())?.giacenza === 17);
   const riga = { articolo_id: articoloId, deposito_id: depositoA };
-  check('Riga doppia nel conteggio rifiutata', (await chiama('/vendor/magazzino/conteggio', a, { corpo: { righe: [{ ...riga, contata: 1 }, { ...riga, contata: 2 }] } })).stato === 400);
+  check('Riga doppia nel conteggio rifiutata', (await chiama('/vendor/magazzino/conteggio', a, { corpo: { righe: [{ ...riga, contata: 1, prima: 17 }, { ...riga, contata: 2, prima: 17 }] } })).stato === 400);
+  const contatoVecchio = await chiama('/vendor/magazzino/conteggio', a, { corpo: { righe: [{ ...riga, contata: 14, prima: 20 }] } });
+  check('Conteggio partito da una giacenza vecchia: 412, nessuna scrittura', contatoVecchio.stato === 412 && (await scorteProva())?.giacenza === 17, contatoVecchio.corpo?.message);
   check('Conteggio vuoto rifiutato', (await chiama('/vendor/magazzino/conteggio', a, { corpo: { righe: [] } })).stato === 400);
-  const contato = await chiama('/vendor/magazzino/conteggio', a, { corpo: { righe: [{ ...riga, contata: 15 }], nota: 'Prova: conteggio' } });
+  const contato = await chiama('/vendor/magazzino/conteggio', a, { corpo: { righe: [{ ...riga, contata: 15, prima: 17 }], nota: 'Prova: conteggio' } });
   check('Conteggio registrato', contato.stato === 200 && contato.corpo.cambiati === 1 && contato.corpo.differenza === -2, JSON.stringify(contato.corpo));
   const dopoConteggio = await scorteProva();
   check('Il conteggio aggiorna quantità e data', dopoConteggio?.giacenza === 15 && Boolean(dopoConteggio?.ultimo_conteggio));
-  const invariato = await chiama('/vendor/magazzino/conteggio', a, { corpo: { righe: [{ ...riga, contata: 15 }] } });
+  const invariato = await chiama('/vendor/magazzino/conteggio', a, { corpo: { righe: [{ ...riga, contata: 15, prima: 15 }] } });
   check('Conteggio senza differenze: nessuna variazione', invariato.corpo.cambiati === 0 && invariato.corpo.contati === 1);
 
   // Movimenti reali
@@ -198,7 +205,7 @@ try {
   // Soglie: articolo, azienda, predefinita
   const basse = async (s, base) => (await chiama(`${base}/scorte-basse`, s)).corpo;
   check('Sopra la soglia predefinita: disponibile', (await scorteProva())?.stato === 'disponibile' && (await scorteProva())?.origine_soglia === 'predefinita');
-  await correggi({ quantita: 4, motivo: 'rettifica' });
+  await correggi({ quantita: 4, prima: (await scorteProva())?.giacenza, motivo: 'rettifica' });
   const bassa = await scorteProva();
   check('A 4 unità: in esaurimento con la soglia predefinita', bassa?.stato === 'esaurimento' && bassa?.soglia === 5);
   const avvisi = await basse(admin, '/admin/magazzino');
@@ -207,7 +214,7 @@ try {
   check('Avvisi: l\'azienda vede i suoi', (await basse(a, '/vendor/magazzino')).scorte_basse?.some((r) => r.sku === skuProva));
   check('Avvisi: le altre aziende no', !(await basse(b, '/vendor/magazzino')).scorte_basse?.some((r) => r.sku === skuProva));
 
-  await correggi({ quantita: 8, motivo: 'rettifica' });
+  await correggi({ quantita: 8, prima: (await scorteProva())?.giacenza, motivo: 'rettifica' });
   const sogliaAzienda = await chiama('/vendor/magazzino/soglia', a, { corpo: { soglia: 10, azienda_id: b.azienda } });
   check('Soglia dell\'azienda salvata', sogliaAzienda.stato === 200 && sogliaAzienda.corpo.soglia === 10);
   const conAzienda = await scorteProva();
@@ -287,7 +294,7 @@ try {
   check('Contabilità aziendale respinta: soglia', negato(await chiama('/vendor/magazzino/soglia', contabile.sessione, { corpo: { soglia: 1 } })));
   check('La quantità resta quella di prima', (await scorteProva())?.giacenza === 8);
   check('Il magazziniere legge le scorte della sua azienda', (await chiama('/vendor/magazzino?limit=1', magazziniere.sessione)).corpo.righe?.every((r) => r.azienda_id === a.azienda));
-  const corretto = await correggi({ quantita: 9, motivo: 'rettifica' }, magazziniere.sessione);
+  const corretto = await correggi({ quantita: 9, prima: (await scorteProva())?.giacenza, motivo: 'rettifica' }, magazziniere.sessione);
   check('Il magazziniere corregge le quantità', corretto.stato === 200 && corretto.corpo.dopo === 9, `HTTP ${corretto.stato}`);
   const ultimo = (await chiama(`/vendor/magazzino/movimenti?q=${skuProva}`, a)).corpo.movimenti?.[0];
   check('Il movimento dice quale membro l\'ha fatto', ultimo?.chi === magazziniere.email, ultimo?.chi);

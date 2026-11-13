@@ -78,7 +78,10 @@ async function scriviPrezzi(req: AuthenticatedMedusaRequest, scheda: Scheda, azi
 
   const inRevisione = scheda.stato === "published"
   for (const offerta of offerte) {
-    const metadata = inRevisione ? { ...offerta.metadata, proposta_prezzi: { ...prezzi, proposta_il: new Date().toISOString() } } : { ...offerta.metadata, ...prezzi, proposta_prezzi: null }
+    // Solo i due prezzi e la proposta: Medusa unisce i metadati al primo livello, quindi le altre chiavi restano. I due
+    // prezzi si scrivono insieme, con i valori della scheda: anche quello non toccato torna al valore letto all'apertura,
+    // se intanto è stato cambiato altrove (la scheda dell'azienda non manda ancora i valori di partenza).
+    const metadata = inRevisione ? { proposta_prezzi: { ...prezzi, proposta_il: new Date().toISOString() } } : { ...prezzi, proposta_prezzi: null }
     await aggiornaOfferta(req.scope, offerta, { metadata }, req.auth_context.actor_id)
   }
   return inRevisione

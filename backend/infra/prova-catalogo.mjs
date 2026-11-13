@@ -489,9 +489,21 @@ const modifica = await chiama(`/admin/products/${id}`, admin, { corpo: { title: 
 const dopoModifica = (await chiama(`/admin/catalogo/prodotti/${id}`, admin)).corpo.prodotto;
 check('Modifica reale della scheda', modifica.stato === 200 && dopoModifica?.titolo.includes('modificato') && dopoModifica?.peso === 500 && dopoModifica?.brand === 'Prova Due' && dopoModifica?.stagione === 'Spring/Summer');
 const variante = dopoModifica.varianti[0];
+// La finestra varianti manda anche i valori con cui si è aperta: il server scrive solo ciò che è cambiato, e solo se il
+// valore attuale è ancora quello (altrimenti 412).
+const o0 = variante.offerte[0];
 const salva = await chiama(`/admin/catalogo/prodotti/${id}/varianti/${variante.id}`, admin, {
-  corpo: { titolo: 'S piccola', ean: '8001234567899', offerte: [{ id: variante.offerte[0].id, prezzo: 130, prezzo_cessione: 45, quantita: 9 }] },
+  corpo: {
+    titolo: 'S piccola', ean: '8001234567899', prima: { titolo: variante.titolo, sku: variante.sku, ean: variante.ean },
+    offerte: [{ id: o0.id, prima: { prezzo: o0.prezzo, prezzo_cessione: o0.prezzo_cessione, prezzo_consigliato: o0.prezzo_consigliato, quantita: o0.scorte }, prezzo: 130, prezzo_cessione: 45, quantita: 9 }],
+  },
 });
+const vecchia = await chiama(`/admin/catalogo/prodotti/${id}/varianti/${variante.id}`, admin, { corpo: { offerte: [{ id: o0.id, prezzo: 131 }] } });
+check('Finestra varianti con il codice di prima (senza valori di partenza): invito a ricaricare', vecchia.stato === 400 && /reload/i.test(vecchia.corpo?.message ?? ''), vecchia.corpo?.message);
+const indietro = await chiama(`/admin/catalogo/prodotti/${id}/varianti/${variante.id}`, admin, {
+  corpo: { offerte: [{ id: o0.id, prima: { prezzo: o0.prezzo, prezzo_cessione: o0.prezzo_cessione, prezzo_consigliato: o0.prezzo_consigliato, quantita: o0.scorte }, quantita: 12 }] },
+});
+check('Finestra varianti rimasta indietro: quantità non salvata, 412 con le scorte attuali', indietro.stato === 412 && /now 9/.test(indietro.corpo?.message ?? ''), indietro.corpo?.message);
 const dopoVariante = (await chiama(`/admin/catalogo/prodotti/${id}`, admin)).corpo.prodotto.varianti.find((v) => v.id === variante.id);
 check('Variante, prezzo, cessione e scorte salvati', salva.stato === 200 && dopoVariante?.titolo === 'S piccola' && dopoVariante?.ean === '8001234567899' && dopoVariante?.offerte[0].prezzo === 130 && dopoVariante?.offerte[0].prezzo_cessione === 45 && dopoVariante?.offerte[0].scorte === 9, JSON.stringify(salva.corpo).slice(0, 140));
 const prezziOfferta = await chiama(`/admin/offers/${variante.offerte[0].id}?fields=id,prices.amount,prices.currency_code`, admin);

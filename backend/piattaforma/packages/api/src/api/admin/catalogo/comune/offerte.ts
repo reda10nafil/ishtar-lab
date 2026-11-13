@@ -1,6 +1,6 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
-import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
-import { createInventoryLevelsWorkflow, deleteInventoryItemWorkflow, updateInventoryLevelsWorkflow } from "@medusajs/medusa/core-flows"
+import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
+import { deleteInventoryItemWorkflow } from "@medusajs/medusa/core-flows"
 import { createOffersWorkflow, createSellerStockLocationsWorkflow, deleteOffersWorkflow, updateOffersWorkflow } from "@mercurjs/core/workflows"
 import { sogliaDi } from "../../magazzino/lib/scorte"
 
@@ -117,17 +117,25 @@ export async function depositoEsistente(scope: MedusaContainer, aziendaId: strin
   return { deposito: azienda?.stock_locations?.find(Boolean)?.id ?? null, nome_deposito: `${azienda?.name ?? "Company"} warehouse` }
 }
 
-/** Le aziende invitate non hanno ancora un deposito: il primo nasce quando serve una quantità. */
+type Lucchetti = { execute: <T>(chiavi: string[], lavoro: () => Promise<T>, opzioni?: { timeout?: number }) => Promise<T> }
+
+/**
+ * Le aziende invitate non hanno ancora un deposito: il primo nasce quando serve una quantità. Lettura e creazione sotto
+ * il lucchetto del deposito dell'azienda, lo stesso della creazione dei prodotti: due salvataggi insieme non ne creano due.
+ */
 export async function depositoAzienda(scope: MedusaContainer, aziendaId: string) {
-  const query = scope.resolve(ContainerRegistrationKeys.QUERY)
-  const { data } = await query.graph({ entity: "seller", fields: ["id", "name", "stock_locations.id"], filters: { id: aziendaId } })
-  const azienda = data[0] as { name: string; stock_locations?: ({ id: string } | null)[] } | undefined
-  const esistente = azienda?.stock_locations?.find(Boolean)?.id
-  if (esistente) return esistente
-  const { result } = await createSellerStockLocationsWorkflow(scope).run({
-    input: { seller_id: aziendaId, locations: [{ name: `${azienda?.name ?? "Company"} warehouse` }] },
-  })
-  return result[0].id
+  const lucchetti = scope.resolve(Modules.LOCKING) as unknown as Lucchetti
+  return lucchetti.execute([`deposito:${aziendaId}`], async () => {
+    const query = scope.resolve(ContainerRegistrationKeys.QUERY)
+    const { data } = await query.graph({ entity: "seller", fields: ["id", "name", "stock_locations.id"], filters: { id: aziendaId } })
+    const azienda = data[0] as { name: string; stock_locations?: ({ id: string } | null)[] } | undefined
+    const esistente = azienda?.stock_locations?.find(Boolean)?.id
+    if (esistente) return esistente
+    const { result } = await createSellerStockLocationsWorkflow(scope).run({
+      input: { seller_id: aziendaId, locations: [{ name: `${azienda?.name ?? "Company"} warehouse` }] },
+    })
+    return result[0].id as string
+  }, { timeout: 30 })
 }
 
 /** Il profilo di spedizione è obbligatorio: si riusa quello dell'azienda, poi quello del negozio. */
@@ -208,23 +216,6 @@ export async function aggiornaOfferta(scope: MedusaContainer, offerta: Offerta, 
       ],
       updated_by: autore,
     },
-  })
-}
-
-/** Imposta la quantità nel deposito dell'offerta, creando il livello se manca. */
-export async function impostaScorte(scope: MedusaContainer, offerta: Offerta, quantita: number) {
-  const [livello] = offerta.livelli
-  if (livello) {
-    await updateInventoryLevelsWorkflow(scope).run({
-      input: { updates: [{ inventory_item_id: livello.voce_id, location_id: livello.deposito_id, stocked_quantity: quantita }] },
-    })
-    return
-  }
-  const [voce] = offerta.voci_magazzino
-  if (!voce) return
-  const deposito = await depositoAzienda(scope, offerta.azienda.id)
-  await createInventoryLevelsWorkflow(scope).run({
-    input: { inventory_levels: [{ inventory_item_id: voce, location_id: deposito, stocked_quantity: quantita }] },
   })
 }
 

@@ -1,49 +1,20 @@
-import { randomUUID } from "node:crypto"
 import type { AuthenticatedMedusaRequest } from "@medusajs/framework/http"
 import { z } from "@medusajs/framework/zod"
-import { createInventoryLevelsWorkflow, updateInventoryLevelsWorkflow } from "@medusajs/medusa/core-flows"
 import { interroga } from "../../../utili"
-import type { Movimento, RigaInterna } from "./scorte"
+import type { RigaInterna } from "./scorte"
 
-/** Lo storico vive nel livello di scorta, così si scrive insieme alla quantità: si tiene l'ultima parte. */
+/**
+ * Lo storico vive nel livello di scorta, così si scrive insieme alla quantità: si tiene l'ultima parte. Correzioni e
+ * conteggi si scrivono con il workflow «ishtar-scorte» (scrittura.ts), sotto il lucchetto di ogni voce.
+ */
 export const MOVIMENTI_PER_LIVELLO = 100
 
 export const MOTIVI = ["rifornimento", "reso", "danneggiato", "smarrito", "rettifica", "altro"] as const
 
-export type Variazione = { riga: RigaInterna; nuova: number; tipo: Movimento["tipo"]; motivo: string | null; nota: string | null }
-
-/** I tipi di Medusa non dichiarano `metadata` sui livelli, ma il modello lo salva. */
-type VoceLivello = { inventory_item_id: string; location_id: string; stocked_quantity: number; metadata: Record<string, unknown> }
-
-async function chiE(req: AuthenticatedMedusaRequest): Promise<string> {
+/** Email di chi scrive, per lo storico: le aziende sono membri di Mercur. */
+export async function chiE(req: AuthenticatedMedusaRequest): Promise<string> {
   const { data } = await interroga(req).graph({ entity: "member", fields: ["email"], filters: { id: req.auth_context.actor_id } })
   return (data[0] as { email?: string } | undefined)?.email ?? "Company"
-}
-
-function metadataDopo({ riga, nuova, tipo, motivo, nota }: Variazione, chi: string, quando: string) {
-  const differenza = nuova - riga.giacenza
-  const movimento: Movimento = { id: randomUUID(), quando, chi, tipo, prima: riga.giacenza, dopo: nuova, differenza, motivo, nota }
-  return {
-    ...riga.metadata_livello,
-    ...(tipo === "conteggio" ? { ultimo_conteggio: quando } : {}),
-    movimenti: differenza ? [movimento, ...riga.movimenti].slice(0, MOVIMENTI_PER_LIVELLO) : riga.movimenti,
-  }
-}
-
-/** Quantità e movimento vanno nello stesso aggiornamento: non esiste storico senza variazione. */
-export async function applicaVariazioni(req: AuthenticatedMedusaRequest, variazioni: Variazione[]) {
-  const chi = await chiE(req)
-  const quando = new Date().toISOString()
-  const voce = (v: Variazione): VoceLivello => ({
-    inventory_item_id: v.riga.articolo_id,
-    location_id: v.riga.deposito_id,
-    stocked_quantity: v.nuova,
-    metadata: metadataDopo(v, chi, quando),
-  })
-  const esistenti = variazioni.filter((v) => v.riga.ha_livello).map(voce)
-  const nuove = variazioni.filter((v) => !v.riga.ha_livello).map(voce)
-  if (esistenti.length) await updateInventoryLevelsWorkflow(req.scope).run({ input: { updates: esistenti } })
-  if (nuove.length) await createInventoryLevelsWorkflow(req.scope).run({ input: { inventory_levels: nuove } })
 }
 
 export const ParametriMovimenti = z.object({
