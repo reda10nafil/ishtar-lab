@@ -557,6 +557,14 @@ export type Routes = {
                 test: typeof import("../src/api/admin/connectors/[id]/test/route");
             };
         };
+        conversazioni: typeof import("../src/api/admin/conversazioni/route") & {
+            $id: typeof import("../src/api/admin/conversazioni/[id]/route") & {
+                cliente: typeof import("../src/api/admin/conversazioni/[id]/cliente/route");
+                letta: typeof import("../src/api/admin/conversazioni/[id]/letta/route");
+                messaggi: typeof import("../src/api/admin/conversazioni/[id]/messaggi/route");
+                stato: typeof import("../src/api/admin/conversazioni/[id]/stato/route");
+            };
+        };
         custom: typeof import("../src/api/admin/custom/route");
         impostazioni: typeof import("../src/api/admin/impostazioni/route") & {
             esporta: typeof import("../src/api/admin/impostazioni/esporta/route") & {
@@ -609,6 +617,9 @@ export type Routes = {
             me: typeof import("../src/api/admin/permessi/me/route");
         };
         registro: typeof import("../src/api/admin/registro/route");
+        risposteRapide: typeof import("../src/api/admin/risposte-rapide/route") & {
+            $id: typeof import("../src/api/admin/risposte-rapide/[id]/route");
+        };
         sconti: {
             codici: typeof import("../src/api/admin/sconti/codici/route") & {
                 $id: typeof import("../src/api/admin/sconti/codici/[id]/route") & {

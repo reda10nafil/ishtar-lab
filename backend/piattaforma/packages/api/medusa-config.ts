@@ -23,7 +23,7 @@ const dashboardAppDir = (name: string) => {
 }
 
 // Moduli delle sezioni di Ishtar Lab: ognuno si attiva da solo quando la sua cartella esiste.
-const MODULI_SEZIONI = ['outfit', 'carte-regalo', 'ingrosso', 'negozio-online', 'marketing', 'assistenza']
+const MODULI_SEZIONI = ['outfit', 'carte-regalo', 'ingrosso', 'negozio-online', 'marketing', 'assistenza', 'conversazioni']
 const moduliSezioni = MODULI_SEZIONI.filter((nome) =>
   ['index.ts', 'index.js'].some((file) => fs.existsSync(path.join(__dirname, 'src/modules', nome, file)))
 ).map((nome) => ({ resolve: `./src/modules/${nome}` }))

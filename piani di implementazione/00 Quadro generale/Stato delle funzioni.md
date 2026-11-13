@@ -33,10 +33,11 @@ tags: [ishtar-lab]
 | Visite, conversioni e funnel | Demo / integrazione proposta | Nessuna acquisizione dal sito accertata |
 | Ordini, resi e cassa | Demo | Nessun ciclo reale di pagamento/spedizione provato |
 | Clienti e segmenti | Demo + codice backend | API riutilizzabili, dati demo nel pannello |
+| Casella dei clienti (CRM) | Backend verificato (tappa 1) | Dal 13/11 (proposta satria64) conversazioni con i clienti nel backend: Telegram letto ogni minuto, risposte inviate una sola volta, risposte rapide, collegamento al cliente. Provato con un server Telegram finto; la pagina «Chats» nel pannello è la tappa 2 |
 | Sconti, gift card e ingrosso | Demo + codice backend | Richiedono integrazione e prove specifiche |
 | Campagne e automazioni | Demo | Nessun invio o attività periodica attivata |
 | Vetrina online | Anteprima demo | Non un sito pubblicato né un editor operativo |
-| Connettori OAuth/API | Codice presente | Nessun account reale/sync verificato qui. Dal 12/11 (proposta satria64) una credenziale illeggibile è segnalata senza bloccare elenco e rinnovo; tag AES-GCM a 16 byte |
+| Connettori OAuth/API | Codice presente | Nessun account reale/sync verificato qui. Dal 12/11 (proposta satria64) una credenziale illeggibile è segnalata senza bloccare elenco e rinnovo; tag AES-GCM a 16 byte. Dal 13/11 il connettore Telegram serve anche alla casella dei clienti (lettura e invio) |
 | Costo d'acquisto e negozio online | Corretto il 12/11 (proposta satria64) | Costo solo con il permesso sui margini; scheda interna Ishtar fuori da `/store`; script di pulizia per i prodotti già salvati da eseguire una volta |
 | Ricerca mercato | Proposta | Mancano acquisizione, matching e storico delle fonti |
 | Backup completo recuperabile | Non verificato | Snapshot dei file non equivale a backup DB+foto ripristinabile |

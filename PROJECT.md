@@ -2,7 +2,7 @@
 
 Aggiornato: 13 novembre 2026 (Europe/Berlin).
 
-**Proposte di satria64, autorizzate dal titolare nella issue #1:** le prime sei sono unite nel main dal 13 novembre (PR #2–#7, con merge commit): avvio su Linux (`avvio-linux`), dati demo e import CSV (`correzioni-dati-csv`), affidabilità dei salvataggi (`affidabilita-salvataggi`), sicurezza e riservatezza (`sicurezza-riservatezza`), salvataggi atomici (`salvataggi-atomici-magazzino`, blocco 3 parte A) e conflitti con movimenti di scorte (`conflitti-movimenti`, blocco 3 parte B). Settima proposta (ramo `scorte-console-magazzino`, PR #8): finestra varianti della console e Magazzino delle aziende con le stesse regole del pannello. Dettagli nelle sezioni finali; lo stato seguente descrive le consegne del titolare, a cui queste proposte si aggiungono.
+**Proposte di satria64, autorizzate dal titolare nella issue #1:** le prime sei sono unite nel main dal 13 novembre (PR #2–#7, con merge commit): avvio su Linux (`avvio-linux`), dati demo e import CSV (`correzioni-dati-csv`), affidabilità dei salvataggi (`affidabilita-salvataggi`), sicurezza e riservatezza (`sicurezza-riservatezza`), salvataggi atomici (`salvataggi-atomici-magazzino`, blocco 3 parte A) e conflitti con movimenti di scorte (`conflitti-movimenti`, blocco 3 parte B). Settima proposta (ramo `scorte-console-magazzino`, PR #8): finestra varianti della console e Magazzino delle aziende con le stesse regole del pannello. Ottava proposta (ramo `crm-tappa1`): casella dei clienti, tappa 1 del CRM omnicanale (backend e Telegram). Dettagli nelle sezioni finali; lo stato seguente descrive le consegne del titolare, a cui queste proposte si aggiungono.
 
 **Ultimo stato:** consegna al collaboratore ampliata con la seconda app in `versione 2/`, sorgenti backend e tre nuove guide nel vault. Prima app conservata, nessuna correzione applicativa applicata in questa consegna. Stato di pubblicazione e verifiche nel rapporto `verifiche/consegna-versione2-2026-11-12.json`; leggere l'ultimo aggiornamento in fondo. Il tentativo locale di audit dell'8 novembre non è iniziato; l'analisi esterna fotografata è distinta.
 
@@ -377,3 +377,16 @@ Settima proposta di satria64 (ramo `scorte-console-magazzino`, sopra il main che
 - **Console con il codice di prima:** le finestre varianti, correzione e conteggio rispondono con l'invito a ricaricare la pagina.
 
 Verifiche in `verifiche/scorte-console-magazzino-2026-11-13.json`: revisione avversariale a otto agenti (19 rilievi confermati, 12 distinti: 11 corretti, 1 rimandato); jest 233/233, 80 test node, typecheck di API e console 0 errori; 30/30 prove con le rotte vere; prove end-to-end nella console 6/6 e 7/7 e nel pannello 18/18, 32/32, 8/8 e 20/20; database ripristinato dal backup. Prossimo passo possibile: le schede prodotto della console (dell'azienda e del titolare) mandano ancora tutti i valori e possono riscrivere testi o prezzi cambiati altrove (difetto che c'era già).
+
+## 13 novembre 2026 — Casella dei clienti, tappa 1 del CRM (versione modificata da satria64)
+
+Ottava proposta di satria64 (ramo `crm-tappa1`, sopra il main con le PR #2–#8), autorizzata da Reda Zahloul nella issue #1. Risponde alla richiesta del 13 novembre: una sola casella per i messaggi dei clienti, da tutte le piattaforme. Progetto e piano: `piani di implementazione/02 Roadmap/CRM omnicanale - progetto.md` e `CRM omnicanale - piano tappa 1.md`.
+
+- **Ricognizione.** Oggi nessun canale riceve messaggi: i connettori salvano le credenziali e fanno una prova; la «chat» della versione 2 è l'assistenza fra staff e aziende; il modulo connettori della v1 è già il migliore. TikTok resta fuori: l'API dei messaggi non è disponibile per gli account europei.
+- **Casella nel backend.** Modulo nuovo `conversazioni` (contatti per canale, conversazioni, messaggi, risposte rapide), rotte `/admin/conversazioni` e `/admin/risposte-rapide`, permesso «Customer messages» dato all'operatore degli ordini.
+- **Telegram.** Il bot collegato in Connettori › Telegram è il bot della casella: le sue chat private si leggono ogni minuto e le risposte partono dall'API.
+- **Regole.** Un messaggio non si registra due volte; una risposta non parte mai due volte (un esito incerto non si rimanda); una pagina rimasta indietro non nasconde i messaggi nuovi; il token del bot non compare mai in errori o log.
+- **Dopo l'unione:** `node infra/migra.mjs` da `backend/` crea le tabelle del modulo.
+
+Verifiche in `verifiche/crm-tappa1-2026-11-13.json`: revisione avversariale a otto agenti (27 rilievi confermati, 18 distinti, tutti corretti); jest 268/268, 80 test node, typecheck 0 errori; 25/25 prove dal vivo con un Telegram finto; job provato contro il vero Telegram con un token finto; permessi provati con utenti veri; pannello senza regressioni; database ripristinato dal backup. Prossimo: tappa 2, la pagina «Chats» nel primo pannello con la scheda cliente.
+

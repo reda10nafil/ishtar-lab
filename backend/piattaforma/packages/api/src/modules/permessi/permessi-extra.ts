@@ -13,6 +13,7 @@ defineMercurPermissions([
   { key: "cassa", group: "canali", surface: ["admin"], rights: ["view", "edit"], label: "Shop till" },
   { key: "ingrosso", group: "canali", surface: ["admin"], rights: ["view", "edit", "manage"], label: "Wholesale" },
   { key: "assistenza", group: "assistenza", surface: ["admin", "vendor"], rights: ["view", "edit", "manage"], label: "Help" },
+  { key: "conversazioni", group: "clienti", surface: ["admin"], rights: ["view", "edit", "manage"], label: "Customer messages" },
   { key: "impostazioni", group: "sicurezza", surface: ["admin"], rights: ["view", "manage"], label: "Settings" },
   { key: "connettori", group: "sicurezza", surface: ["admin"], rights: ["view", "manage"], label: "Connectors" },
   { key: "registro", group: "sicurezza", surface: ["admin"], rights: ["view"], label: "Activity log" },

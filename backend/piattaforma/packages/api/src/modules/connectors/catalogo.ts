@@ -59,6 +59,23 @@ export type Servizio = {
   confermato: boolean
 }
 
+/**
+ * Indirizzo dell'API Telegram. `TELEGRAM_API_BASE` serve alle prove con un server finto: il token del bot viaggia
+ * nell'indirizzo di ogni chiamata, quindi si accetta solo HTTPS oppure un indirizzo di questo computer (l'istanza gira
+ * con NODE_ENV=development anche quando è quella vera, quindi NODE_ENV non basta a distinguere).
+ */
+export function baseTelegram(): string {
+  const scelto = process.env.TELEGRAM_API_BASE?.trim() ?? ""
+  let valido = false
+  try {
+    const indirizzo = new URL(scelto)
+    valido = indirizzo.protocol === "https:" || (indirizzo.protocol === "http:" && ["127.0.0.1", "localhost", "[::1]"].includes(indirizzo.hostname))
+  } catch {
+    valido = false
+  }
+  return (valido ? scelto : "https://api.telegram.org").replace(/\/+$/, "")
+}
+
 const appSviluppatore: Campo[] = [
   { chiave: "client_id", etichetta: "Application ID", segreto: false, aiuto: "From the service's developer dashboard" },
   { chiave: "client_secret", etichetta: "Application secret key", segreto: true },
@@ -299,13 +316,13 @@ export const CATALOGO: Servizio[] = [
     nome: "Telegram",
     fornitore: "Telegram",
     categoria: "messaggi",
-    descrizione: "Bot for customer support and team alerts.",
+    descrizione: "Bot for customer messages: its private chats appear in the shop inbox. Use it only for this.",
     accesso: "chiave",
     campi: [{ chiave: "bot_token", etichetta: "Bot token", segreto: true, aiuto: "From @BotFather" }],
     documentazione: "https://core.telegram.org/bots/api#getme",
     confermato: true,
     prova: (v) => ({
-      url: `https://api.telegram.org/bot${v.bot_token}/getMe`,
+      url: `${baseTelegram()}/bot${v.bot_token}/getMe`,
       account: (d) => d?.result?.username,
     }),
   },
