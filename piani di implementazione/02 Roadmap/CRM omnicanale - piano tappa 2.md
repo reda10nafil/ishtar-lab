@@ -438,3 +438,33 @@ it("id della risposta solo per i messaggi in uscita", () => {
 ## Lasciato a chi costruisce
 
 Nomi interni dei componenti, struttura di `chat.css`, testi secondari non elencati sopra, ordine dei casi nella prova completa.
+
+## Dopo la revisione
+
+Revisione avversariale dell'intero ramo (quattro revisori e quattro verificatori): 29 rilievi, 27 confermati, 21 distinti, tutti corretti con un test che falliva prima o con un caso della prova nel browser. Cambiano il piano in questi punti:
+
+- **Ordine dei messaggi (backend).** La conversazione si mostra nell'ordine di arrivo nella casella (`created_at`, poi `id`, costante `ORDINE_MESSAGGI` in `regole.ts`) e `nuoviDopo` conta i messaggi del cliente dopo l'ultimo mostrato nello stesso ordine (`filtroNuoviDopo`). Prima un messaggio registrato in ritardo compariva sopra la risposta già partita, restava non letto per sempre e «Close» dava sempre 412.
+- **Ordini recenti del cliente (backend, `clienti/lib/ordini.ts`).** Ordinati per data: le date di query.graph sono oggetti Date e confrontarle come testo le ordinava per nome del giorno.
+- **Controllo della casella.**
+  - Risposta non riuscita mentre lo schermo mostra altro: avviso e segno in `esiti` (anche nel badge) finché la conversazione non si apre.
+  - `ultimo_visto` per conversazione, preso dall'ultima lettura del server.
+  - «Letta» solo con il registro in fondo (`vista().inFondo`) e mai ripetuta per la stessa coppia; dopo una «letta» l'elenco e il badge si rileggono.
+  - `rimandate` per le risposte incerte già rimandate.
+  - `cercaClienti` restituisce `{righe, conteggio}`.
+  - Un esito che non è un 4xx (escluso il 409) non è mai «rifiutato».
+- **Pagina.**
+  - **Retry e chiusura.** Sulla bolla si vede l'esito del nuovo tentativo; in una chat chiusa nessun pulsante, con il motivo; «Close chat» disattivato durante l'invio e con conferma se ci sono risposte non partite.
+  - **Registro.** «New messages» con il registro scorso in su.
+  - **Collegamento al cliente.** La ricerca parte vuota e il nome del contatto è solo un suggerimento; la conferma chiede dettagli che solo quel cliente conosce.
+  - **Altri stati.** Niente letture né «letta» con la demo «uscita»; stato d'errore al posto di «Loading messages…»; risposte rapide rilette dopo un errore; invito a riavviare Ishtar Lab se il server del pannello è più vecchio della pagina.
+  - **Dimensioni e fuoco.** Altezza dal margine del pannello; fuoco a una colonna.
+- **Bundle principale.** Ottavo ritocco: la voce Chats nella ricerca del pannello (⌘K), lista `gt`.
+- **Server del pannello.** `X-Frame-Options: DENY`, `frame-ancestors 'none'`, `X-Content-Type-Options: nosniff`; `Cache-Control: no-store` sulle risposte del ponte.
+
+Verifiche finali:
+- node 123/123, ponte 15/15, jest 272/272, typecheck 0;
+- prova nel browser 67/67 da database pulito;
+- pannello 18/18, 32/32, 8/8 e 20/20.
+
+Rapporto: `verifiche/crm-tappa2-2026-11-13.json`.
+
