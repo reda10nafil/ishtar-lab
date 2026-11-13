@@ -37,44 +37,73 @@ def token():
         _until = time.time() + 1800
         return _token
 
+def risposta_json(handler, codice, corpo):
+    # Solo ASCII (accenti come \u00e0): qualunque testo arrivato dal backend resta codificabile.
+    dati = json.dumps(corpo).encode()
+    handler.send_response(codice)
+    handler.send_header("Content-Type", "application/json; charset=utf-8")
+    handler.send_header("Content-Length", str(len(dati)))
+    handler.end_headers()
+    handler.wfile.write(dati)
+
+def errore(handler, codice, messaggio):
+    """Errori del ponte sempre in JSON: il pannello mostra il motivo invece di un codice generico."""
+    risposta_json(handler, codice, {"message": messaggio})
+
+def dimentica_token():
+    global _token, _until
+    with _lock:
+        _token, _until = "", 0
+
+def inoltra(metodo, destinazione, corpo, tipo):
+    request = Request(API + destinazione, data=corpo, method=metodo,
+                      headers={"Authorization": "Bearer " + token(), "Content-Type": tipo})
+    with urlopen(request, timeout=180) as response:
+        return response.status, response.read()
+
 def handle(handler):
     if handler.headers.get("Host") != "127.0.0.1:4273" or handler.headers.get("Origin", ORIGIN) != ORIGIN or handler.headers.get("Sec-Fetch-Site", "same-origin") not in ("same-origin", "none"):
-        handler.send_error(403, "Accesso solo dal pannello locale")
+        errore(handler, 403, "Accesso solo dal pannello locale")
         return
     if handler.headers.get("X-Ishtar-Local") != "1":
-        handler.send_error(403, "Aprire il catalogo dal pannello Ishtar Lab")
+        errore(handler, 403, "Aprire il catalogo dal pannello Ishtar Lab")
         return
     targets = {"/api/catalogo": "/admin/ishtar/catalogo", "/api/foto": "/admin/uploads"}
     if handler.path not in targets or handler.command not in ("GET", "POST") or (handler.path == "/api/foto" and handler.command != "POST"):
-        handler.send_error(404)
+        errore(handler, 404, "Indirizzo del ponte non riconosciuto")
         return
     try:
         length = int(handler.headers.get("Content-Length", "0"))
         if length < 0 or length > 25 * 1024 * 1024:
-            handler.send_error(413, "Il caricamento supera 25 MB")
+            errore(handler, 413, "Il caricamento supera 25 MB")
             return
         body = handler.rfile.read(length) if handler.command == "POST" else None
         content_type = handler.headers.get("Content-Type", "application/json")
         if handler.path == "/api/catalogo" and handler.command == "POST" and not content_type.startswith("application/json"):
-            handler.send_error(415)
+            errore(handler, 415, "Il catalogo accetta solo dati JSON")
             return
-        request = Request(API + targets[handler.path], data=body, method=handler.command,
-                          headers={"Authorization": "Bearer " + token(), "Content-Type": content_type})
-        with urlopen(request, timeout=180) as response:
-            payload = response.read()
-            handler.send_response(response.status)
-            handler.send_header("Content-Type", "application/json; charset=utf-8")
-            handler.end_headers()
-            handler.wfile.write(payload)
+        try:
+            stato, payload = inoltra(handler.command, targets[handler.path], body, content_type)
+        except HTTPError as scaduto:
+            # Accesso scaduto o revocato: si rinnova il token una sola volta e si ripete la richiesta.
+            if scaduto.code != 401:
+                raise
+            dimentica_token()
+            stato, payload = inoltra(handler.command, targets[handler.path], body, content_type)
+        handler.send_response(stato)
+        handler.send_header("Content-Type", "application/json; charset=utf-8")
+        handler.end_headers()
+        handler.wfile.write(payload)
     except HTTPError as error:
-        handler.send_response(error.code)
-        handler.send_header("Content-Type", "application/json")
-        handler.end_headers()
-        handler.wfile.write(error.read())
+        dati = error.read()
+        try:
+            corpo = json.loads(dati or b"{}")
+            if not isinstance(corpo, dict) or not corpo.get("message"):
+                raise ValueError
+        except ValueError:
+            corpo = {"message": f"Il backend ha risposto con l'errore {error.code}"}
+        risposta_json(handler, error.code, corpo)
     except (URLError, TimeoutError, OSError):
-        handler.send_response(503)
-        handler.send_header("Content-Type", "application/json")
-        handler.end_headers()
-        handler.wfile.write(json.dumps({"message":"Backend Ishtar Lab non disponibile. Avviare Ishtar Lab (Avvia Ishtar Lab.bat su Windows, ./avvia-ishtar-lab.sh su Linux/macOS) e riprovare."}).encode())
+        errore(handler, 503, "Backend Ishtar Lab non disponibile. Avviare Ishtar Lab (Avvia Ishtar Lab.bat su Windows, ./avvia-ishtar-lab.sh su Linux/macOS) e riprovare.")
     except (ValueError, KeyError):
-        handler.send_error(503, "Configurazione locale non valida")
+        errore(handler, 503, "Configurazione locale non valida")

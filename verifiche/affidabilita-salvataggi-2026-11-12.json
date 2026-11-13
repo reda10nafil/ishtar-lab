@@ -1,0 +1,94 @@
+{
+  "date": "2026-11-12",
+  "scope": "Affidabilità dei salvataggi del catalogo: server non raggiungibile, coda delle modifiche, ponte locale",
+  "modified_by": "satria64 — versione modificata, autorizzata dal titolare nella issue #1, in attesa di revisione",
+  "branch": "affidabilita-salvataggi",
+  "base_branch": "correzioni-dati-csv",
+  "base_commit": "527e67a303a7fb5ba42b9d40ca48a24706d5c657",
+  "defects": [
+    {
+      "id": "coda-cancellata",
+      "before": "al primo salvataggio non riuscito, anche per un server solo momentaneamente spento, catalogo.js svuotava l'intera coda (pendingWrites.clear()) e rileggeva il catalogo: tutte le modifiche in attesa andavano perse con un solo avviso generico",
+      "after": "la coda contiene solo i campi modificati (scorte, prezzi, stato, merce in arrivo, soglia) e il corpo si compone al momento dell'invio dalla copia più recente del prodotto; una modifica esce dalla coda solo quando il server ne conferma il salvataggio; rete assente, server non disponibile, conflitto da ripetere o credenziali da correggere (0, 401, 408, 409, 425, 429, 502, 503, 504) e fino a 5 errori interni (500): si riprova con attesa crescente fino a 30 s; dato rifiutato: si scarta solo quella modifica, il prodotto torna ai valori del database e un solo avviso finale indica nome e motivo (catalogo/collegamento.mjs)"
+    },
+    {
+      "id": "caricamento-arreso",
+      "before": "dopo 12 tentativi falliti (circa due minuti) il caricamento del catalogo si fermava per sempre; la pagina Prodotti mostrava i dati dimostrativi del browser senza alcuna indicazione e le modifiche non venivano salvate né segnalate",
+      "after": "tentativi senza limite, tentativo immediato al ritorno della rete o quando la scheda torna visibile; avviso fisso nella pagina Prodotti, con il motivo, finché il catalogo non è collegato o ci sono modifiche in attesa; avviso quando si cambiano scorte, prezzi o stato senza catalogo collegato (non per le modifiche solo dimostrative)"
+    },
+    {
+      "id": "rilettura-con-coda",
+      "before": "una rilettura del catalogo con salvataggi ancora in coda riportava sullo schermo i valori vecchi, mentre la coda li avrebbe poi scritti; un import CSV partito in quel momento lavorava su dati vecchi e il salvataggio rimasto lo avrebbe coperto",
+      "after": "i campi in coda o in corso di invio restano come modificati dopo la rilettura; dopo un'interruzione la coda rilegge il catalogo prima di inviare; l'import CSV viene rifiutato finché la coda non è vuota; la scheda «Modifica prodotto» completa prima la coda; chiudendo o ricaricando la scheda del browser con salvataggi in attesa compare una richiesta di conferma"
+    },
+    {
+      "id": "finestre-chiuse-visibili",
+      "before": "dopo «Salva prodotto», «Salva campi» o il tasto Esc la finestra veniva chiusa ma restava sullo schermo (con «Salvataggio…»): la classe .modal del pannello imposta display:flex e prevale sulla regola del browser che nasconde le finestre chiuse",
+      "after": "regola ishtar-catalog .il-dialog:not([open]){display:none} in catalogo.css; trovato dalla prova end-to-end tramite le schermate"
+    },
+    {
+      "id": "token-rifiutato",
+      "before": "il ponte riusava il token del proprietario per 30 minuti anche se l'API lo rifiutava (per esempio dopo un cambio delle chiavi): ogni richiesta falliva con 401 fino alla scadenza",
+      "after": "con un 401 il token viene dimenticato, rinnovato e la richiesta ripetuta una sola volta; se anche il rinnovo è rifiutato si restituisce l'errore, senza cicli"
+    },
+    {
+      "id": "errori-html",
+      "before": "gli errori del ponte (403, 404, 413, 415, configurazione non valida) erano pagine HTML: il pannello non riusciva a leggerle e mostrava solo «Richiesta non riuscita (403)»; i corpi d'errore non JSON del backend arrivavano così come erano",
+      "after": "tutti gli errori del ponte sono JSON con un messaggio in italiano, codificati in ASCII (anche un testo del backend non codificabile non fa cadere la connessione); un errore del backend senza messaggio diventa «Il backend ha risposto con l'errore N»"
+    },
+    {
+      "id": "localhost",
+      "before": "aprendo http://localhost:4273 il pannello si caricava ma il ponte rifiutava ogni richiesta del catalogo (accetta solo l'host 127.0.0.1:4273): catalogo mai caricato",
+      "after": "localhost:4273 viene reindirizzato a 127.0.0.1:4273 con lo stesso percorso e la stessa pagina (#…)"
+    },
+    {
+      "id": "tipo-mjs",
+      "before": "il tipo dei moduli .mjs dipendeva dalla tabella del sistema (registro di Windows, versione di Python), mentre per .js era già fissato a text/javascript",
+      "after": ".mjs fissato a text/javascript come .js"
+    }
+  ],
+  "tests": {
+    "node_test_verifiche": "62/62 (collegamento 14, csv 13, importa 20, sincronizza 13, identità 2)",
+    "python_test_ponte": "8/8 contro un'API finta (errori JSON, token rinnovato una volta, rifiuto dopo il rinnovo senza cicli, API spenta, errore con carattere non codificabile, errore senza JSON, reindirizzamento localhost, tipo .mjs)"
+  },
+  "end_to_end": {
+    "tool": "Chrome 153 headless con DevTools Protocol, bundle reali del pannello, istanza locale con 82 articoli DEMO; API fermata e riavviata durante la prova (solo il processo API, servizi Docker accesi)",
+    "scenarios_passed": "32/32",
+    "scenarios": [
+      "L API spenta con catalogo caricato: 503 JSON dal ponte, modifica in coda e non scartata, avviso fisso e avviso con il motivo, conferma alla chiusura della scheda, modifica visibile dopo un cambio di pagina, import CSV rifiutato, rilettura fallita con la modifica in coda, catalogo riletto con la modifica ancora in coda e database non toccato, salvataggio al ritorno della rete, avviso di ripresa, nessuna conferma a coda vuota, ripristino",
+      "K pannello aperto con API spenta: avviso con il motivo, avviso fisso «Catalogo non collegato al server», modifica di scorte segnalata come non salvata, nessun avviso per una modifica solo dimostrativa (collezione), avviso fisso solo nella pagina Prodotti, ricollegamento automatico senza ricaricare la pagina, dati del database dopo il ricollegamento",
+      "N1 scheda «Modifica prodotto» salvata mentre una modifica rapida dello stesso prodotto è in coda: nel database sia la descrizione nuova sia le scorte; finestra non più visibile dopo il salvataggio e dopo Esc",
+      "N2 prodotto cambiato da un'altra finestra mentre una modifica è in coda: alla ripresa la descrizione cambiata altrove resta e le scorte vengono salvate",
+      "C avviso fisso intero e dentro la finestra a 1280×800 e a 390×844, sopra la barra di navigazione su telefono (schermate controllate)",
+      "M localhost reindirizzato a 127.0.0.1 con la stessa pagina, catalogo caricato, moduli .mjs serviti come JavaScript",
+      "catalogo identico a prima della prova (nome, scorte e descrizione degli 82 prodotti)"
+    ],
+    "regression": "prova precedente (scenari A–J delle correzioni ai dati demo e al CSV) 18/18 sul nuovo codice"
+  },
+  "independent_review": {
+    "method": "revisore indipendente con il solo codice e l'architettura (senza le conclusioni dell'autore), che ha anche eseguito il vero catalogo.js con un orologio e un server simulati e misurato l'avviso in Chrome; 11 rilievi, verificati uno per uno sul codice e sui bundle; gli scenari riprodotti dal revisore sono stati rieseguiti sul codice corretto",
+    "fixed": [
+      "una copia intera del prodotto rimasta in coda poteva riportare indietro descrizione, nome o foto salvati nel frattempo dalla scheda o da un'altra finestra (alta): coda con i soli campi modificati, rilettura prima della ripresa, scheda che completa prima la coda",
+      "modifica in corso di invio non protetta da una rilettura contemporanea, con possibile perdita di un aggiornamento successivo: la modifica resta in coda fino alla conferma, al ritorno della rete parte solo la coda",
+      "409 (conflitto di transazione in Medusa, «You may retry») e 500 (per esempio database spento) scartati invece che ripetuti",
+      "stato «sospeso» e conteggio dei tentativi bloccati dopo uno scarto: avviso mancante alla interruzione successiva e avviso di ripresa spurio",
+      "avviso «tutte salvate» che copriva un rifiuto (ogni nuovo avviso del pannello chiude il precedente): un solo avviso finale",
+      "avviso «non salvata» coperto dal messaggio del pannello e mostrato anche per modifiche solo dimostrative",
+      "testo dell'avviso fisso fuori dal riquadro (.chip ha altezza fissa e una sola riga)",
+      "eccezione non gestita nel ponte con un testo d'errore del backend non codificabile",
+      "motivo reale (configurazione, credenziali) non indicato: ora nell'avviso fisso"
+    ],
+    "not_fixed_documented": [
+      "un salvataggio scaduto dopo 180 s nel ponte può ancora completarsi nel backend dopo uno successivo dello stesso prodotto: serve un controllo di versione lato server (blocco 3, salvataggio atomico con 409 sui conflitti)",
+      "due finestre che cambiano gli stessi campi dello stesso prodotto: vale l'ultimo salvataggio (blocco 3)",
+      "chi apriva il pannello da localhost:4273 ora vede i dati dimostrativi salvati dal browser per 127.0.0.1, che il browser tiene separati per indirizzo; il catalogo nel database non è coinvolto"
+    ]
+  },
+  "not_tested": [
+    "Windows (le modifiche sono nel codice del browser e nel ponte Python, senza percorsi o comandi di sistema)",
+    "rete realmente assente sul computer (simulata con l'evento online e con l'API spenta)",
+    "database spento con l'API accesa (provato solo nel banco simulato del revisore)",
+    "due schede del browser reali (simulata con una scrittura diretta nel database)"
+  ],
+  "secrets_included": false
+}

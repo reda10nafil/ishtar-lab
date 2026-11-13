@@ -2,17 +2,24 @@ import {J as runtime, wt as legacy, it as mutateLegacy, F as nativeToast} from '
 import OriginalProducts from '../assets/products-DkARKCT7.js';
 import {parseCSV} from './csv.mjs';
 import {destinazione,DESTINAZIONI,prodottoDaRiga,campiCambiati,convenzioneColonna,ambigui,normalizza} from './importa.mjs';
-import {impronta,differenze,decidi} from './sincronizza.mjs';
+import {impronta,differenze,decidi,firmaProdotti,soloCampi} from './sincronizza.mjs';
+import {attesaRiprova,conModificheInAttesa,svuotaCoda} from './collegamento.mjs';
 import '../branding-ui.mjs';
 const h=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(v??0);
 const placeholder='/brand/segnaposto-prodotto.svg';
+// Messaggio come frase compiuta, per accodarlo ad altro testo negli avvisi.
+const frase=s=>{s=String(s??'').trim();return !s||/[.!?…]$/.test(s)?s:s+'.';};
 const options=(items,selected)=>items.map(v=>`<option value="${h(v)}" ${v===selected?'selected':''}>${h(v)}</option>`).join('');
 async function api(path='/api/catalogo',body){
   const form=body instanceof FormData;
-  const response=await fetch(path,{method:body?'POST':'GET',headers:{'X-Ishtar-Local':'1',...(body&&!form?{'Content-Type':'application/json'}:{})},...(body?{body:form?body:JSON.stringify(body)}:{})});
-  let data;try{data=await response.json();}catch{throw Error(`Richiesta non riuscita (${response.status})`);}
-  if(!response.ok)throw Error(data.message||`Errore ${response.status}`);return data;
+  // Ogni errore porta lo stato HTTP (0 = rete o ponte irraggiungibili) per decidere se riprovare (collegamento.mjs).
+  const fallito=(messaggio,stato)=>Object.assign(Error(messaggio),{stato});
+  let response;
+  try{response=await fetch(path,{method:body?'POST':'GET',headers:{'X-Ishtar-Local':'1',...(body&&!form?{'Content-Type':'application/json'}:{})},...(body?{body:form?body:JSON.stringify(body)}:{})});}
+  catch{throw fallito('Server del catalogo non raggiungibile',0);}
+  let data;try{data=await response.json();}catch{throw fallito(`Richiesta non riuscita (${response.status})`,response.status);}
+  if(!response.ok)throw fallito(data.message||`Errore ${response.status}`,response.status);return data;
 }
 
 class Catalogo extends HTMLElement {
@@ -22,9 +29,11 @@ class Catalogo extends HTMLElement {
   renderLoading(){this.innerHTML='<div class="il-message" role="status">Collegamento al catalogo Ishtar Lab…</div>';}
   async load(){
     if(this.loading)return;this.loading=true;
-    try{this.data=await api();this.ready=true;this.retries=0;clearTimeout(this.retryTimer);this.querySelector('.il-error')?.remove();this.render();}
-    catch(e){if(!this.retries)this.notice(e.message,true);this.retries=(this.retries||0)+1;if(this.retries<12)this.retryTimer=setTimeout(()=>this.load(),Math.min(15000,1000*2**Math.min(this.retries,4)));}
-    finally{this.loading=false;}
+    // Senza limite di tentativi: attesa crescente fino a 30 s, più un tentativo immediato al ritorno della rete o della pagina.
+    try{await this.leggi();}
+    catch(e){if(!this.ready)this.firmaDemo??=firmaProdotti(legacy.products);if(!this.retries)this.notice(e.message,true);this.offline=true;this.motivoLettura=frase(e.message);
+      this.retries=(this.retries||0)+1;clearTimeout(this.retryTimer);this.retryTimer=setTimeout(()=>this.load(),attesaRiprova(this.retries-1));}
+    finally{this.loading=false;this.statoCollegamento?.();}
   }
   notice(message,error=false){const el=this.querySelector('.il-notice');if(el){el.textContent=message;el.className='il-notice '+(error?'il-error':'');el.setAttribute('role',error?'alert':'status');}}
   modal(title,body,wide=false){this.dialog?.close();this.dialog?.remove();const dialog=document.createElement('dialog');dialog.className='il-dialog modal glass '+(wide?'modal--wide':'');
@@ -53,10 +62,12 @@ class Catalogo extends HTMLElement {
     dialog.querySelector('[data-add-url]').onclick=()=>{const input=dialog.querySelector('[aria-label="URL foto"]');try{const u=new URL(input.value);if(!['http:','https:'].includes(u.protocol))throw Error();p.photos.push(u.href);input.value='';gallery();}catch{dialog.querySelector('.il-form-error').textContent='Inserire un URL http/https valido';}};
     dialog.querySelector('input[type=file]').onchange=async e=>{if(!e.target.files.length)return;const error=dialog.querySelector('.il-form-error');this.busy=true;form.querySelector('[type=submit]').disabled=true;
       try{const fd=new FormData();for(const f of e.target.files){if(!['image/png','image/jpeg','image/webp'].includes(f.type)||f.size>10*1024*1024)throw Error('Usare PNG, JPG o WEBP fino a 10 MB');fd.append('files',f);}error.textContent='Caricamento foto…';const d=await api('/api/foto',fd);p.photos.push(...d.files.map(f=>f.url));gallery();error.textContent='Foto caricate nell’archivio Ishtar Lab';}catch(e){error.textContent=e.message;}finally{this.busy=false;form.querySelector('[type=submit]').disabled=false;}};
+    // Prima si completano le modifiche rapide in coda (scorte, prezzi…), poi si salva la scheda: contiene già quei valori e
+    // li sostituisce, così una modifica rimasta in attesa non riporta indietro descrizione, foto o campi appena salvati.
     form.onsubmit=async e=>{e.preventDefault();const error=dialog.querySelector('.il-form-error');const values=Object.fromEntries(new FormData(form));const product={...p};
       for(const k of ['name','sku','category','gender','description','material','size','color'])product[k]=values[k];for(const k of ['price','cost','stock'])product[k]=Number(values[k]);
       for(const f of this.data.fields){const v=values['custom_'+f.id];if(v!==undefined)product.custom[f.id]=f.type==='boolean'?(v==='Sì'?true:v==='No'?false:''):f.type==='number'&&v!==''?Number(v):v;}
-      this.busy=true;form.querySelector('[type=submit]').disabled=true;error.textContent='Salvataggio…';try{await api('/api/catalogo',{product});this.busy=false;dialog.close();await this.load();this.notice('Prodotto salvato nel database');}catch(e){error.textContent=e.message;}finally{this.busy=false;form.querySelector('[type=submit]').disabled=false;}};
+      this.busy=true;form.querySelector('[type=submit]').disabled=true;error.textContent='Salvataggio…';try{await this.flush();await api('/api/catalogo',{product});if(product.id)this.pendingWrites?.delete(product.id);this.busy=false;dialog.close();await this.load();this.notice('Prodotto salvato nel database');}catch(e){error.textContent=e.message;}finally{this.busy=false;form.querySelector('[type=submit]').disabled=false;}};
     form.addEventListener('invalid',e=>{const panel=e.target.closest('[data-panel]');if(panel)dialog.querySelector(`[data-tab="${panel.dataset.panel}"]`).click();},true);
   }
   fields(){let fields=structuredClone(this.data.fields);const dialog=this.modal('Personalizza campi',`<p>Questi campi verranno salvati nel database e compariranno nelle schede prodotto e nell’importazione CSV.</p><div class="il-field-list"></div><form id="il-new-field"><div class="il-form-grid">${this.field('Nome del campo','label','', 'text','required maxlength="100"')}<label class="il-field"><span>Tipo</span><select name="type">${Object.entries({text:'Testo',number:'Numero',select:'Scelta da elenco',color:'Colore',boolean:'Sì / No',date:'Data'}).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></label><label class="il-field"><span>Categoria</span><select name="category"><option value="">Tutte</option>${options(this.data.categories.map(c=>c.name))}</select></label>${this.field('Scelte separate da virgola','options','')}<label><input type="checkbox" name="required"> Obbligatorio</label><button type="submit">＋ Aggiungi campo</button></div></form><p class="il-form-error" role="alert"></p><footer><button class="il-primary" data-save>Salva configurazione</button></footer>`);
@@ -71,8 +82,9 @@ class Catalogo extends HTMLElement {
     const csv=parseCSV(testo);csv.codifica=codifica;
     // L'aggiornamento parte dai prodotti salvati: prima si completano i salvataggi in coda, poi si rilegge il database.
     clearTimeout(this.changeTimer);await this.flush();
-    try{this.data=await api();this.ready=true;}catch(e){throw Error(`Catalogo non raggiungibile (${e.message}): importazione annullata, nessun dato modificato.`);}
-    this.render();
+    // Con salvataggi ancora in coda l'importazione partirebbe da dati vecchi e il salvataggio rimasto la coprirebbe.
+    if(this.pendingWrites?.size)throw Error('Ci sono modifiche non ancora salvate perché il server non risponde: importazione annullata, nessun dato modificato. Riprovare quando scompare l\'avviso «in attesa di salvataggio».');
+    try{await this.leggi();}catch(e){throw Error(`Catalogo non raggiungibile (${e.message}): importazione annullata, nessun dato modificato.`);}
     this.importCSV(csv,file.name);}catch(e){this.notice(e.message,true);}}
   importCSV(csv,fileName){
     const mapping=csv.headers.map(destinazione);
@@ -121,8 +133,9 @@ if(!customElements.get('ishtar-catalog'))customElements.define('ishtar-catalog',
 // La pagina è il componente originale, con gli stessi filtri, tile e tabella.
 // Questo controller aggiunge solo API e strumenti nei dialog del design esistente.
 Catalogo.prototype.renderLoading=function(){};
-Catalogo.prototype.notice=function(message,error=false){nativeToast(message);};
+Catalogo.prototype.notice=function(message,error=false){nativeToast(message,error?{warn:true}:{});};
 Catalogo.prototype.render=function(){
+  this.statoCollegamento();
   if(!this.ready)return;
   this.querySelector('.il-error')?.remove();
   this.syncing=true;
@@ -141,6 +154,13 @@ Catalogo.prototype.render=function(){
 };
 Catalogo.prototype.syncChanges=function(){
   if(this.syncing)return;
+  // Catalogo non caricato perché il server non risponde: una modifica di scorte, prezzi o stato resta solo nella demo e lo si
+  // dice subito. L'avviso parte dopo quello del pannello («… is now …»), perché ogni nuovo avviso chiude il precedente.
+  if(!this.ready){
+    const firma=firmaProdotti(legacy.products),cambiata=this.firmaDemo!==undefined&&firma!==this.firmaDemo;this.firmaDemo=firma;
+    if(cambiata&&this.offline&&/^#\/products(\/|$)/.test(location.hash))setTimeout(()=>nativeToast('Catalogo non collegato al server: la modifica non è stata salvata.',{warn:true}),0);
+    return;
+  }
   this.pendingWrites??=new Map();
   // Solo le modifiche della pagina Prodotti che non toccano ordini, resi o bozze arrivano al database (sincronizza.mjs):
   // cassa, nuovi ordini e resi dimostrativi non cambiano le scorte reali e i valori del database tornano nello stato demo.
@@ -152,23 +172,84 @@ Catalogo.prototype.syncChanges=function(){
       const ora=Date.now();if(!this.demoNotice||ora-this.demoNotice>10000){this.demoNotice=ora;nativeToast('Azione dimostrativa: scorte e prezzi reali del catalogo non sono stati modificati.');}},0);
     return;
   }
-  for(const {id,campi} of trovate){const p=this.data.products.find(x=>x.id===id);Object.assign(p,campi);this.pendingWrites.set(id,structuredClone(p));}
+  for(const {id,campi} of trovate){const p=this.data.products.find(x=>x.id===id);Object.assign(p,campi);this.pendingWrites.set(id,{...campi});}
   if(!this.pendingWrites.size)return;
   clearTimeout(this.changeTimer);this.changeTimer=setTimeout(()=>this.flush(),250);
 };
-// Coda dei salvataggi come promessa unica: readFile la attende prima di rileggere il catalogo. Il corpo parte sempre dopo
+// Coda dei salvataggi come promessa unica: readFile e la scheda prodotto la attendono. Il corpo parte sempre dopo
 // l'assegnazione (await iniziale) e libera this.flushing solo se è ancora la propria esecuzione, anche con la coda vuota.
+// Dopo un'interruzione si rilegge prima il catalogo: ogni modifica in coda parte così dalla versione più recente del
+// prodotto (anche se nel frattempo è stato cambiato dalla scheda o da un'altra finestra), non da una copia vecchia.
 Catalogo.prototype.flush=function(){
   if(this.flushing)return this.flushing;
-  const corsa=(async()=>{await null;try{while(this.pendingWrites?.size){const [id,p]=this.pendingWrites.entries().next().value;this.pendingWrites.delete(id);await api('/api/catalogo',{product:p});}}
-    catch(e){this.pendingWrites.clear();nativeToast('Salvataggio non riuscito: '+e.message);await this.load();}
-    finally{if(this.flushing===corsa)this.flushing=null;}})();
+  const corsa=(async()=>{await null;
+    const eraSospeso=!!this.salvataggioSospeso;let esito={salvati:[],scartati:[],sospeso:null,erroriServer:this.erroriServer||0};
+    try{
+      if(this.pendingWrites?.size){
+        if(eraSospeso)await this.leggi();
+        esito=await svuotaCoda({coda:this.pendingWrites,prodotto:id=>this.data.products.find(x=>x.id===id),
+          invia:corpo=>api('/api/catalogo',{product:corpo}),erroriServer:this.erroriServer||0});
+      }
+    }catch(e){esito={...esito,sospeso:e};}
+    finally{if(this.flushing===corsa)this.flushing=null;}
+    await this.dopoSalvataggi(esito,eraSospeso);
+  })();
   this.flushing=corsa;
   return corsa;
+};
+// Legge il catalogo dal server; i nuovi tentativi li decide chi la chiama. I prodotti con modifiche in coda restano come
+// modificati; la copia del server serve a ripristinare una modifica rifiutata anche quando poi il server non risponde.
+Catalogo.prototype.leggi=async function(){
+  const dati=await api();
+  this.server=new Map((dati.products||[]).map(p=>[p.id,structuredClone(p)]));
+  dati.products=conModificheInAttesa(dati.products||[],this.pendingWrites);
+  this.data=dati;this.ready=true;this.offline=false;this.retries=0;clearTimeout(this.retryTimer);
+  this.querySelector('.il-error')?.remove();this.render();
+};
+// Esito di un giro della coda: nuovo tentativo se il server non risponde, ripristino delle modifiche rifiutate e un solo
+// avviso finale (ogni nuovo avviso del pannello chiude il precedente: più avvisi di seguito non si leggerebbero).
+Catalogo.prototype.dopoSalvataggi=async function({salvati,scartati,sospeso,erroriServer},eraSospeso){
+  for(const s of salvati)this.server?.set(s.id,structuredClone(s.corpo));
+  this.erroriServer=sospeso?erroriServer:0;
+  if(sospeso){
+    this.salvataggioSospeso=true;this.motivoSalvataggio=frase(sospeso.message);
+    this.tentativiSalvataggio=(this.tentativiSalvataggio||0)+1;
+    clearTimeout(this.changeTimer);this.changeTimer=setTimeout(()=>this.flush(),attesaRiprova(this.tentativiSalvataggio-1));
+  }else{this.salvataggioSospeso=false;this.tentativiSalvataggio=0;this.motivoSalvataggio='';}
+  let avviso=null;
+  if(scartati.length){
+    // Le modifiche rifiutate tornano subito ai valori del server, poi (se risponde) si rilegge il catalogo.
+    for(const s of scartati){const p=this.data.products.find(x=>x.id===s.id),orig=this.server?.get(s.id);if(p&&orig&&!this.pendingWrites.has(s.id))Object.assign(p,soloCampi(orig));}
+    this.render();
+    const nomi=scartati.slice(0,3).map(s=>`«${s.nome}»`).join(', ')+(scartati.length>3?` e altri ${scartati.length-3}`:'');
+    avviso=[`Salvataggio non riuscito per ${nomi}: ${[...new Set(scartati.map(s=>frase(s.motivo)))].join(' ')} Ripristinati i valori del database.`,{warn:true}];
+    if(!sospeso)await this.load();
+  }else if(sospeso&&this.tentativiSalvataggio===1)avviso=[`Le modifiche restano in attesa e verranno salvate appena possibile. ${this.motivoSalvataggio}`.trim(),{warn:true}];
+  else if(eraSospeso&&!sospeso&&salvati.length&&!this.pendingWrites?.size)avviso=['Server di nuovo raggiungibile: le modifiche in attesa sono state salvate.',{}];
+  if(avviso)nativeToast(...avviso);
+  this.statoCollegamento();
+};
+// Avviso fisso e discreto nella pagina Prodotti finché il catalogo non è collegato o ci sono modifiche in attesa, con il motivo.
+Catalogo.prototype.statoCollegamento=function(){
+  let el=this.querySelector('.il-collegamento');
+  const attesa=this.pendingWrites?.size||0,unisci=(...parti)=>[...parti,'Nuovo tentativo in corso…'].filter(Boolean).join(' ');
+  const testo=this.offline&&!this.ready?unisci('Catalogo non collegato al server: la pagina mostra i dati dimostrativi del browser e le modifiche non vengono salvate.',this.motivoLettura)
+    :this.salvataggioSospeso&&attesa?unisci(`${attesa} ${attesa===1?'modifica':'modifiche'} in attesa di salvataggio.`,this.motivoSalvataggio)
+    :this.offline?unisci('Catalogo non aggiornato: la rilettura dal server non è riuscita.',this.motivoLettura):'';
+  if(!testo||!/^#\/products(\/|$)/.test(location.hash)){el?.remove();return;}
+  if(!el){el=document.createElement('div');el.className='chip glass il-collegamento';el.setAttribute('role','status');el.setAttribute('aria-live','polite');this.append(el);}
+  if(el.textContent!==testo)el.textContent=testo;
 };
 if(!window.IshtarCatalog){
   const controller=document.createElement('ishtar-catalog');window.IshtarCatalog=controller;
   window.addEventListener('ishtar:legacy-change',()=>controller.syncChanges());
+  // Ritorno della rete o della pagina: nuovo tentativo immediato. Con salvataggi sospesi basta la coda, che rilegge da sé il
+  // catalogo prima di inviare (lettura e invio insieme potrebbero mostrare valori vecchi per un prodotto appena salvato).
+  const riprova=()=>{if(controller.salvataggioSospeso){clearTimeout(controller.changeTimer);controller.flush();}else if(controller.offline||!controller.ready){clearTimeout(controller.retryTimer);controller.load();}};
+  window.addEventListener('online',riprova);
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')riprova();});
+  // Scheda chiusa o ricaricata con salvataggi in coda o in corso: il browser chiede conferma prima di perderli.
+  window.addEventListener('beforeunload',e=>{if(controller.pendingWrites?.size||controller.flushing){e.preventDefault();e.returnValue='';}});
   document.addEventListener('dragover',e=>{if(e.dataTransfer?.types.includes('Files')&&location.hash.startsWith('#/products'))e.preventDefault();});
   document.addEventListener('drop',e=>{if(!location.hash.startsWith('#/products')||!e.dataTransfer?.files.length)return;e.preventDefault();controller.readFile(e.dataTransfer.files[0]);});
   controller.importChoose=()=>{const file=controller.querySelector('.il-file');file.value='';file.click();};

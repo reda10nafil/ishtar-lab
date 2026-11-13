@@ -25,6 +25,12 @@ export const impronta=stato=>JSON.stringify([
   (stato?.drafts||[]).map(d=>d.id),
 ]);
 
+// Firma dei soli campi salvati nel catalogo: serve a capire se un'azione ha cambiato davvero scorte, prezzi o stato
+// di un prodotto (e non, per esempio, una collezione dimostrativa).
+// Campi salvati dal pannello: servono a riportare un prodotto ai valori del server quando una modifica viene rifiutata.
+export const soloCampi=p=>Object.fromEntries(CAMPI.map(k=>[k,p?.[k]]));
+export const firmaProdotti=prodotti=>JSON.stringify((prodotti||[]).map(p=>[p.id,...CAMPI.map(k=>p[k])]));
+
 export function decidi({rotta,prima,dopo,differenze}){
   if(!differenze.length)return 'nessuna';
   if(prima!==dopo)return 'ripristina';

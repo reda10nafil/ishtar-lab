@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {impronta,differenze,decidi} from '../frontend/ishtar-lab/catalogo/sincronizza.mjs';
+import {impronta,differenze,decidi,firmaProdotti,soloCampi} from '../frontend/ishtar-lab/catalogo/sincronizza.mjs';
 
 const db=[{id:'p1',stock:4,price:420,cost:180,status:'active',incoming:0,reorder:3},{id:'p2',stock:0,price:90,cost:40}];
 const legacy=(modifiche={})=>db.map(p=>({id:p.id,stock:p.stock,price:p.price,cost:p.cost,status:p.status??'draft',incoming:p.incoming??0,reorder:p.reorder??5,...(modifiche[p.id]||{})}));
@@ -49,4 +49,15 @@ test('decidi: «Pour» dalla Home (solo merce in arrivo) si salva, le scorte da 
   assert.equal(decidi({rotta:'#/home',prima:'a',dopo:'a',differenze:[{id:'p1',cambiati:['incoming']}]}),'scrivi');
   assert.equal(decidi({rotta:'#/home',prima:'a',dopo:'a',differenze:[{id:'p1',cambiati:['incoming','stock']}]}),'ripristina');
   assert.equal(decidi({rotta:'#/home',prima:'a',dopo:'b',differenze:[{id:'p1',cambiati:['incoming']}]}),'ripristina');
+});
+test('firmaProdotti: cambia con scorte, prezzi e stato dei prodotti, non con le altre parti della demo',()=>{
+  const base=firmaProdotti(legacy());
+  assert.notEqual(firmaProdotti(legacy({p1:{stock:9}})),base);
+  assert.notEqual(firmaProdotti(legacy({p2:{price:91}})),base);
+  assert.equal(firmaProdotti(legacy({p1:{notes:'testo',tint:3}})),base);
+  assert.equal(firmaProdotti(stato({collections:[{id:'C1'}]}).products),base);
+});
+test('soloCampi: solo i campi salvati dal pannello, per riportare un prodotto ai valori del server',()=>{
+  assert.deepEqual(soloCampi({id:'p1',name:'Borsa',stock:4,price:420,cost:180,status:'active',incoming:2,reorder:3,description:'x'}),
+    {stock:4,price:420,cost:180,status:'active',incoming:2,reorder:3});
 });

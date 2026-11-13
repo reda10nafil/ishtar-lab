@@ -26,6 +26,7 @@ tags: [ishtar-lab]
 | Foto remote | Parziale | Link conservato; download e associazione non verificati |
 | CSV da pulsante | Operativo verificato | Anteprima e reimportazione 82 SKU senza duplicati. Dal 12/11 (proposta satria64) l'aggiornamento conserva i dati non presenti nel file e legge i numeri con le migliaia |
 | CSV trascinato | Implementato, prova fisica mancante | Handler documentato, non simulare un esito non osservato |
+| Server del catalogo spento | Operativo verificato il 12/11 (proposta satria64) | Modifiche in coda salvate al ritorno del server senza coprire quelle fatte altrove, ricollegamento automatico, avviso fisso con il motivo, import bloccato con salvataggi in attesa; provato in Chrome headless con l'API fermata, non su Windows. Due finestre sugli stessi campi: vale l'ultimo salvataggio |
 | Varianti multiple nella stessa scheda | Proposto nell'adattatore | API attuale espone la prima variante |
 | Movimenti, riserve, depositi | Codice backend presente | Da integrare e provare nel primo pannello |
 | Dashboard e analisi vendite | Demo | Dati browser, non risultati commerciali reali. Dal 12/11 (proposta satria64) cassa, ordini e resi dimostrativi non modificano più le scorte reali |
@@ -40,6 +41,6 @@ tags: [ishtar-lab]
 | Backup completo recuperabile | Non verificato | Snapshot dei file non equivale a backup DB+foto ripristinabile |
 | Licenza personale Ishtar | Testo compilato, perimetro limitato | Titolare Reda Zahloul e recapito presenti; diritti terzi e consegna/accettazione da verificare |
 
-Le prove funzionali qui richiamate sono quelle registrate il 7 novembre e, per l'avvio su Linux, il 12 novembre (verifiche/avvio-linux-2026-11-12.json); non sono state tutte rieseguite. Numeri e configurazioni sono una fotografia, non un monitoraggio continuo.
+Le prove funzionali qui richiamate sono quelle registrate il 7 novembre e, per l'avvio su Linux e le proposte successive, il 12 novembre (verifiche/avvio-linux-2026-11-12.json, correzioni-dati-csv-2026-11-12.json, affidabilita-salvataggi-2026-11-12.json); non sono state tutte rieseguite. Numeri e configurazioni sono una fotografia, non un monitoraggio continuo.
 
 Per le prove: [[Verifiche e fonti]]. Per gli interventi: [[Backlog completo]].
