@@ -24,7 +24,7 @@ PROOFS = {"qa-catalogo-operativo.json", "pagine-ripristinate.json", "avvio-bat.j
           "accesso-locale.test.mjs", "sicurezza-riservatezza-2026-11-12.json",
           "salvataggi-atomici-2026-11-12.json", "conflitti-movimenti-2026-11-13.json",
           "scorte-console-magazzino-2026-11-13.json",
-          "crm-tappa1-2026-11-13.json", "crm-tappa2-2026-11-13.json", "chat-casella.test.mjs",
+          "crm-tappa1-2026-11-13.json", "crm-tappa2-2026-11-13.json", "crm-tappa3-2026-11-13.json", "chat-casella.test.mjs",
           "chat-api.test.mjs", "chat-controllo.test.mjs"}
 
 def permitted(p):

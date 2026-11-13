@@ -1,0 +1,48 @@
+{
+  "date": "2026-11-13",
+  "scope": "CRM omnicanale, tappa 3: email del negozio nella casella dei clienti (lettura IMAP in sola lettura, risposte SMTP nello stesso filo, connettore «Shop mailbox») e nella pagina «Chats» del primo pannello",
+  "modified_by": "satria64 — versione modificata, autorizzata dal titolare nella issue #1",
+  "branch": "crm-tappa3",
+  "base_branch": "main (con le PR #2–#10)",
+  "base_commit": "f66c250",
+  "decisions": "richiesta del titolare del 13 novembre (CRM per parlare con i clienti da tutte le piattaforme); scelte tecniche di satria64 su delega di Marco: casella intatta (EXAMINE e BODY.PEEK), primo collegamento senza la posta vecchia, una conversazione per contatto, risposta sempre al mittente (Reply-To solo come avviso), nessun collegamento automatico al cliente (proposta con la verifica DMARC), allegati come segnaposto, HTML mai mostrato; librerie imapflow 2.11.0 (MIT) e postal-mime 4.2.1 (MIT-0) approvate da Marco, nodemailer aggiornato a 10.5.0 (MIT-0); piano in «piani di implementazione/02 Roadmap/CRM omnicanale - piano tappa 3.md»",
+  "features": [
+    "connettore «Shop mailbox» (indirizzo, nome, utente, password o password per app, IMAP 993 SSL, SMTP 465 SSL o 587 STARTTLS, server per la verifica facoltativo): prova con la Posta in arrivo in sola lettura e il login SMTP senza inviare nulla",
+    "rete sicura: solo server pubblici, collegamento all'indirizzo verificato con il nome per il certificato, certificati sempre verificati; con EMAIL_PROVE_LOCALI=1 fuori dalla produzione anche 127.0.0.1 senza TLS per i server finti",
+    "lettura ogni minuto (job ricevi-email, lucchetto): cursore UIDVALIDITY + ultimo UID salvato dopo ogni email; primo collegamento senza import; casella rinumerata riletta da ieri senza doppioni; al massimo 50 email e circa 25 MB per giro; oltre 10 MB la busta con un segnaposto",
+    "traduzione delle email: testo nuovo senza citazione (testo intero a richiesta), HTML ridotto a testo, allegati «[Attachment: nome, dimensione]» (anche quelli inline di Apple Mail), automatiche, newsletter e rapporti ignorati, rimbalzi «Action: failed» che segnano la risposta, verifica DMARC dal solo server della casella",
+    "risposte nello stesso filo (In-Reply-To, References, un solo «Re:») all'indirizzo da cui il cliente ha scritto; Message-ID dall'id della risposta; invio a fasi: «fallito» prima del contenuto o con un rifiuto, «incerto» se la connessione cade dopo",
+    "pagina «Chats»: «Subject: Re: …» sopra la casella di scrittura, avviso Reply-To, «Show quoted text», avviso per le email che non passano DMARC, proposta «This email address belongs to …» con la verifica nella conferma; nelle chat email Invio va a capo (Ctrl o Cmd + Invio invia)",
+    "ritocchi: menu dei canali intero sul telefono, «Send» alto quanto la casella di scrittura"
+  ],
+  "tests": {
+    "jest_security": "365/365 (298 prima della tappa)",
+    "node_test_verifiche": "131/131 (123 prima della tappa)",
+    "typecheck_api": "0 errori",
+    "mutazioni": "18 nella lettura, 10 nell'invio, 5 nella vista, 16 nelle correzioni della revisione: tutte prese (con un test aggiunto per il DNS dell'SMTP)"
+  },
+  "end_to_end": {
+    "email": "58/58 in Chrome senza testa sul database vero, API con EMAIL_PROVE_LOCALI=1, IMAP finto (strumenti-prova/imap-finto.mjs), Mailpit e un ponte SMTP che chiude la connessione dopo il contenuto (smtp-taglio.mjs): email importata con oggetto, citazione, allegato e avviso Reply-To; Invio che va a capo; una sola risposta con il doppio clic, nel filo e al mittente; email solo HTML; risposta automatica ignorata; avviso di ritardo che non segna nulla; rimbalzo che segna la risposta e riapre la chat chiusa; proposta e collegamento del cliente con la verifica DMARC; connessione caduta dopo il contenuto «Not confirmed» con l'email arrivata una volta; UIDVALIDITY nuova senza doppioni; email falsa con l'avviso e senza effetti su nome, oggetto e filo; password da riscrivere cambiando server; casella mai modificata; telefono",
+    "chat_telegram": "67/67 dopo le correzioni (pagina Chats con il Telegram finto, come nella tappa 2), sul database riportato al backup e migrato",
+    "pannello": "18/18, 32/32, 8/8 e 20/20",
+    "console": "7/7 con l'invito del membro di prova arrivato a Mailpit (nodemailer 10)"
+  },
+  "known_limits": [
+    "Outlook, Hotmail e Microsoft 365 accettano solo OAuth: non ancora",
+    "nessuna copia della risposta nella cartella «Inviata» per i fornitori diversi da Gmail e Microsoft",
+    "una conversazione per contatto, come Telegram: i fili di email diversi dello stesso cliente stanno insieme",
+    "verifica DMARC solo quando il server della casella scrive Authentication-Results con un nome nel dominio del server IMAP o in quello scritto nel connettore",
+    "un rapporto di mancata consegna falso ma ben formato può segnare una risposta (si può rimandare)",
+    "i rimbalzi solo testuali dei server vecchi non segnano la risposta"
+  ],
+  "not_tested": [
+    "casella vera del negozio (da fare con la casella di prova di Marco)",
+    "Windows (JavaScript del pannello, TypeScript dell'API)",
+    "Firefox e Safari (prove con Chrome)"
+  ],
+  "secrets_included": false,
+  "independent_review": {
+    "method": "workflow di revisione avversariale: quattro revisori (lettura, invio, sicurezza, pagina) e uno scettico per ciascuno che ha provato a smentire ogni rilievo con il codice e piccoli esperimenti",
+    "result": "32 rilievi, tutti confermati, 23 distinti: 2 critici e 8 importanti corretti con test che fallivano prima (rapporti presi per rimbalzi, elaborazione quadratica di email ostili, email che il server non dà, rifiuti passeggeri presi per password sbagliata, rimbalzo su chat chiusa, verifica DMARC aggirabile, Invio che spediva email a metà, email falsa nella chat di un cliente, password mandata a un server nuovo, allegati inline di Apple Mail); 10 minori rimandati, elencati nel registro del piano"
+  }
+}

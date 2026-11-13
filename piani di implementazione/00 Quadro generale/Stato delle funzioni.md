@@ -33,7 +33,7 @@ tags: [ishtar-lab]
 | Visite, conversioni e funnel | Demo / integrazione proposta | Nessuna acquisizione dal sito accertata |
 | Ordini, resi e cassa | Demo | Nessun ciclo reale di pagamento/spedizione provato |
 | Clienti e segmenti | Demo + codice backend | API riutilizzabili, dati demo nel pannello |
-| Casella dei clienti (CRM) | Backend e pagina «Chats» verificati (tappe 1 e 2) | Dal 13/11 (proposte satria64) conversazioni con i clienti nel backend: Telegram letto ogni minuto, risposte inviate una sola volta, risposte rapide, collegamento al cliente. Nel primo pannello la pagina «Chats» con la scheda del cliente e i suoi ordini, attraverso il ponte locale. Provato con un server Telegram finto; manca la prova con un bot vero del negozio |
+| Casella dei clienti (CRM) | Backend, pagina «Chats» ed email verificati (tappe 1–3) | Dal 13/11 (proposte satria64) conversazioni con i clienti nel backend: Telegram ed email del negozio letti ogni minuto (l'email in sola lettura), risposte inviate una sola volta (le email nello stesso filo), risposte rapide, collegamento al cliente. Nel primo pannello la pagina «Chats» con la scheda del cliente e i suoi ordini, attraverso il ponte locale. Provato con server Telegram e IMAP finti e con Mailpit; manca la prova con un bot e una casella veri del negozio |
 | Sconti, gift card e ingrosso | Demo + codice backend | Richiedono integrazione e prove specifiche |
 | Campagne e automazioni | Demo | Nessun invio o attività periodica attivata |
 | Vetrina online | Anteprima demo | Non un sito pubblicato né un editor operativo |

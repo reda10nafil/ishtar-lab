@@ -316,3 +316,28 @@ tags: [ishtar-lab]
 ## Lasciato a chi costruisce
 
 Nomi interni, testi secondari, struttura dei server finti, ordine dei casi della prova completa.
+
+## Dopo la revisione
+
+Revisione avversariale dell'intero ramo (quattro revisori e quattro scettici): 32 rilievi, tutti confermati, 23 distinti. Corretti i 2 critici e gli 8 importanti, ognuno con un test che falliva prima o con un caso della prova nel browser:
+
+- **Rapporti dei server.** Solo un rapporto «Action: failed» per il destinatario della risposta, e non più vecchio del suo ultimo tentativo, è un rimbalzo. Avvisi di ritardo, consegne confermate, ricevute di lettura e testi di MAILER-DAEMON non segnano nulla (prima la risposta diventava «fallita» e «Retry» la rimandava).
+- **Email ostili.** Citazioni, HTML e rapporti elaborati in tempo lineare e con limiti: un'email costruita apposta fermava l'API per minuti o ore.
+- **Email che il server non dà.** Si riprova una per una; poi entra come segnaposto con la busta, o si salta con un avviso nel registro: la lettura non si ferma più per sempre.
+- **Rifiuti passeggeri.** UNAVAILABLE all'accesso IMAP, 454 o 421 all'AUTH SMTP e un server che chiude prima del saluto non mettono più la casella in errore come una password sbagliata (testo «The mail server is busy: try again later»).
+- **Rimbalzo su una chat chiusa.** La chat si riapre ed è da leggere.
+- **Verifica DMARC.** Conta solo l'Authentication-Results del server della casella (dominio del server IMAP, per Gmail google.com, oppure il campo «Sender check server» del connettore); quello scritto dal mittente non vale.
+- **Email falsa nella chat di un cliente.** Un'email che non passa DMARC ha un avviso nella bolla e non cambia nome del contatto, oggetto né filo della risposta; un From «<>» non ha mittente.
+- **Invio nelle chat email.** Invio va a capo; si invia con «Send» o Ctrl/Cmd + Invio.
+- **Password e server nuovo.** Cambiare server, porte, utente o indirizzo richiede di riscrivere la password, che altrimenti andrebbe da sola al server scelto da chi modifica; vale anche per il sito di WooCommerce.
+- **Allegati di Apple Mail.** Le parti inline con un nome sono elencate; si tolgono solo le immagini usate dall'HTML.
+
+Rimandati (minori, nel registro del piano): conferma del collegamento manuale senza la verifica, oggetto della risposta preso da un'email non ancora mostrata, proposta sulle prime 8 righe della ricerca, Reply-To e nomi degli allegati senza limite, testo citato nella regione viva, codici di certificato SMTP in originalCode, rimbalzi falsi ben formati, EMAIL_PROVE_LOCALI con NODE_ENV sempre development, UIDVALIDITY cambiata dopo più di 24 ore, ricollegamento dopo «Disconnect» che riparte dal vecchio cursore.
+
+Verifiche finali:
+- jest 365/365, node 131/131, typecheck 0; mutazioni delle correzioni 16/16;
+- prova nel browser 58/58 da database pulito (IMAP finto, Mailpit, ponte SMTP che taglia);
+- Chats con Telegram 67/67, pannello 18/18, 32/32, 8/8 e 20/20, console 7/7.
+
+Rapporto: `verifiche/crm-tappa3-2026-11-13.json`.
+
