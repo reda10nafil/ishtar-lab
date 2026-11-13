@@ -120,3 +120,14 @@ test('id delle risposte: 32 caratteri esadecimali, sempre diversi', () => {
   assert.match(a, /^[0-9a-f]{32}$/);
   assert.notEqual(a, b);
 });
+
+test('riga del server con un nuovo tentativo in corso: «Sending…» senza azioni', () => {
+  const id = 'd'.repeat(32);
+  const server = [{id: 'msgc_3', direzione: 'uscita', stato_consegna: 'fallito', errore: 'x', quando: prima(MIN), id_client: id}];
+  const visti = unisci(server, [{id_client: id, conversazione_id: 'conv_1', testo: 'Salve', fase: 'invio'}], 'conv_1');
+  assert.equal(visti.length, 1);
+  assert.equal(visti[0].inviando, true);
+  assert.deepEqual(statoRisposta(visti[0], ADESSO), {testo: 'Sending…', tono: 'plain', azione: null});
+  // Senza tentativi in corso la riga resta com'è.
+  assert.equal(unisci(server, [], 'conv_1')[0].inviando, undefined);
+});

@@ -77,12 +77,15 @@ export function percorsoElenco({stato = 'aperte', canale = '', q = '', quante = 
 
 /**
  * Messaggi da mostrare: quelli del server nell'ordine ricevuto, poi le risposte ancora in attesa di quella conversazione.
- * Una risposta che il server ha già (stesso `id_client`) compare una volta sola, come riga del server.
+ * Una risposta che il server ha già (stesso `id_client`) compare una volta sola, come riga del server; se un nuovo
+ * tentativo è in corso la riga porta `inviando` (mostra «Sending…» e nessun pulsante).
  */
 export function unisci(messaggi = [], inSospeso = [], conversazione_id) {
   const presenti = new Set(messaggi.map(m => m.id_client).filter(Boolean));
-  const locali = inSospeso.filter(r => r.conversazione_id === conversazione_id && !presenti.has(r.id_client));
-  return [...messaggi, ...locali.map(r => ({...r, locale: true}))];
+  const mie = inSospeso.filter(r => r.conversazione_id === conversazione_id);
+  const inviando = new Set(mie.filter(r => r.fase === 'invio').map(r => r.id_client));
+  const server = messaggi.map(m => (m.id_client && inviando.has(m.id_client) ? {...m, inviando: true} : m));
+  return [...server, ...mie.filter(r => !presenti.has(r.id_client)).map(r => ({...r, locale: true}))];
 }
 
 /** Id dell'ultimo messaggio del server mostrato dalla pagina (`ultimo_visto` delle richieste), oppure null. */
@@ -102,6 +105,7 @@ export function statoRisposta(m, adesso = Date.now()) {
     return {testo: m.errore || 'Not sent', tono: 'bad', azione: 'modifica'};
   }
   if (m?.direzione !== 'uscita') return null;
+  if (m.inviando) return {testo: 'Sending…', tono: 'plain', azione: null};
   switch (m.stato_consegna) {
     case 'inviato':
       return {testo: 'Sent', tono: 'good', azione: null};
