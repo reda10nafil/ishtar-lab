@@ -115,6 +115,13 @@ const CAMPI_ARTICOLO = [
 const interoPositivo = (valore: unknown): number | null =>
   typeof valore === "number" && Number.isInteger(valore) && valore >= 0 ? valore : null
 
+/** Soglia di sicurezza: quella dell'articolo, poi quella dell'azienda, poi la predefinita. La usa anche il primo pannello. */
+export function sogliaDi(metadataArticolo: Metadati, metadataAzienda: Metadati): { soglia: number; origine: OrigineSoglia } {
+  const articolo = interoPositivo(metadataArticolo?.soglia_sicurezza)
+  const azienda = interoPositivo(metadataAzienda?.soglia_sicurezza)
+  return { soglia: articolo ?? azienda ?? SOGLIA_PREDEFINITA, origine: articolo !== null ? "articolo" : azienda !== null ? "azienda" : "predefinita" }
+}
+
 /** Il costo è il prezzo di cessione scritto dall'azienda, come in Outfit Studio: se manca, niente stime. */
 const costoDi = (...origini: Metadati[]): number | null => {
   for (const metadata of origini) {
@@ -160,9 +167,7 @@ function costruisciRiga(articolo: Articolo, locazione: Locazione, azienda: Azien
   const giacenza = Number(livello?.stocked_quantity ?? 0)
   const riservate = Number(livello?.reserved_quantity ?? 0)
   const disponibili = giacenza - riservate
-  const sogliaArticolo = interoPositivo(articolo.metadata?.soglia_sicurezza)
-  const sogliaAzienda = interoPositivo(azienda.metadata?.soglia_sicurezza)
-  const soglia = sogliaArticolo ?? sogliaAzienda ?? SOGLIA_PREDEFINITA
+  const { soglia, origine } = sogliaDi(articolo.metadata, azienda.metadata)
   const costo = costoDi(
     offerta?.metadata,
     offerta?.product_variant?.metadata,
@@ -189,7 +194,7 @@ function costruisciRiga(articolo: Articolo, locazione: Locazione, azienda: Azien
     in_arrivo: Number(livello?.incoming_quantity ?? 0),
     disponibili,
     soglia,
-    origine_soglia: sogliaArticolo !== null ? "articolo" : sogliaAzienda !== null ? "azienda" : "predefinita",
+    origine_soglia: origine,
     stato: statoDi(disponibili, soglia),
     ultimo_conteggio: typeof metadataLivello.ultimo_conteggio === "string" ? metadataLivello.ultimo_conteggio : null,
     costo_unitario: costo,
