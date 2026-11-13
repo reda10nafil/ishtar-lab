@@ -6,7 +6,9 @@ import { Identita } from "./models/identita"
 import { Messaggio } from "./models/messaggio"
 import { RispostaRapida } from "./models/risposta-rapida"
 import { idClientDaMessageId } from "./canali/email-regole"
-import { chiaveInArrivo, chiaveUscita, decidiInvio, estratto, filtroNuoviDopo, statoDopo, statoDopoFallimento, type Decisione } from "./regole"
+import {
+  chiaveInArrivo, chiaveUscita, decidiInvio, estratto, filtroNuoviDopo, ORDINE_MESSAGGI, statoDopo, statoDopoFallimento, type Decisione,
+} from "./regole"
 import type { InArrivo } from "./tipi"
 
 export type MessaggioDTO = InferTypeOf<typeof Messaggio>
@@ -190,6 +192,23 @@ export default class ConversazioniModuleService extends MedusaService({ Conversa
     statoDopo(conversazione.stato, "uscita")
     const inCoda = await this.updateBattutas({ id: messaggio.id, stato_consegna: "in_coda", errore: null, tentato_il: null }, contesto)
     return { messaggio: inCoda, decisione }
+  }
+
+  /** Ultimo messaggio del cliente nella conversazione, in ordine di arrivo: le sue intestazioni dicono a cosa si risponde. */
+  async ultimoInArrivo(conversazione_id: string): Promise<MessaggioDTO | null> {
+    const [ultimo] = await this.listBattutas({ conversazione_id, direzione: "entrata" }, { order: ORDINE_MESSAGGI, take: 1 })
+    return ultimo ?? null
+  }
+
+  /**
+   * Intestazioni di una risposta email, salvate prima del tentativo: il Message-ID (anche come `id_esterno`) riconosce i
+   * rimbalzi e, se l'invio resta incerto, dice quale email cercare nella posta inviata.
+   */
+  async dettagliUscita(
+    messaggio_id: string,
+    dettagli: { message_id: string; in_reply_to: string | null; references: string[]; oggetto: string }
+  ): Promise<void> {
+    await this.updateBattutas({ id: messaggio_id, id_esterno: dettagli.message_id, dettagli })
   }
 
   /** Si sta per chiamare il canale: da qui una risposta rimasta in coda forse è arrivata. */

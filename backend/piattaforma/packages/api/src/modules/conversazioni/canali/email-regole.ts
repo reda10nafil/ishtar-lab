@@ -308,6 +308,20 @@ export function oggettoRisposta(oggetto: string): string {
   return `Re: ${resto || "Your message"}`
 }
 
+const ID_VALIDO = /^<[^<>\s]+>$/
+
+/** Intestazioni del filo salvate con un'email (JSON letto dal database): solo i valori con la forma giusta. */
+export function filoDaDettagli(dettagli: unknown): { message_id: string | null; references: string[]; oggetto: string | null } | null {
+  if (!dettagli || typeof dettagli !== "object" || Array.isArray(dettagli)) return null
+  const d = dettagli as Record<string, unknown>
+  const id = (v: unknown): v is string => typeof v === "string" && ID_VALIDO.test(v) && v.length <= MASSIMO_ID_FILO
+  return {
+    message_id: id(d.message_id) ? d.message_id : null,
+    references: Array.isArray(d.references) ? d.references.filter(id).slice(-MASSIMO_REFERENCES) : [],
+    oggetto: typeof d.oggetto === "string" ? d.oggetto : null,
+  }
+}
+
 /** Intestazioni per rispondere nello stesso filo all'ultima email del cliente (RFC 5322 §3.6.4). */
 export function intestazioniRisposta(
   ultimo: { message_id: string | null; references: string[]; oggetto: string | null } | null,
