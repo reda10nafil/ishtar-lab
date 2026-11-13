@@ -9,7 +9,11 @@ export const CANALI: Canale[] = ["telegram", "email", "sito", "whatsapp", "insta
 /** `aperta` tocca al team, `in_attesa` tocca al cliente, `chiusa` è conclusa (si riapre se il cliente riscrive). */
 export type StatoConversazione = "aperta" | "in_attesa" | "chiusa"
 export type Direzione = "entrata" | "uscita"
-export type StatoConsegna = "ricevuto" | "in_coda" | "inviato" | "fallito"
+/**
+ * `fallito`: certamente non partito (si può ritentare con lo stesso id); `incerto`: forse arrivato (Telegram non ha
+ * risposto, il processo si è fermato durante l'invio): con lo stesso id non si rimanda da solo, per non mandarlo due volte.
+ */
+export type StatoConsegna = "ricevuto" | "in_coda" | "inviato" | "fallito" | "incerto"
 
 /** Messaggio di un cliente già tradotto dal canale. */
 export type InArrivo = {

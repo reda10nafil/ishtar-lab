@@ -18,7 +18,9 @@ export const rotteConversazioni: RottaProtetta[] = [
 ]
 
 aggiungiRegole([
-  ["POST", /^\/admin\/conversazioni\/[^/]+\/messaggi$/, "Reply sent to a customer"],
+  // Si registra la richiesta: la consegna può anche non riuscire (lo dice lo stato del messaggio).
+  ["POST", /^\/admin\/conversazioni\/[^/]+\/messaggi$/, "Reply to a customer"],
+  ["POST", /^\/admin\/conversazioni\/[^/]+\/letta$/, "Customer conversation marked as read"],
   ["POST", /^\/admin\/conversazioni\/[^/]+\/stato$/, "Customer conversation opened or closed"],
   ["POST", /^\/admin\/conversazioni\/[^/]+\/cliente$/, "Customer conversation linked to a customer"],
   ["POST", /^\/admin\/risposte-rapide(\/[^/]+)?$/, "Quick reply saved"],

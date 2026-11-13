@@ -1,15 +1,10 @@
 import { Migration } from "@medusajs/framework/mikro-orm/migrations";
 
-export class Migration20261113122352 extends Migration {
+export class Migration20261113133526 extends Migration {
 
   override async up(): Promise<void> {
     this.addSql(`alter table if exists "messaggio_cliente" drop constraint if exists "messaggio_cliente_chiave_unica_unique";`);
     this.addSql(`alter table if exists "identita_contatto" drop constraint if exists "identita_contatto_canale_account_id_contatto_unique";`);
-    this.addSql(`alter table if exists "cursore_canale" drop constraint if exists "cursore_canale_canale_account_unique";`);
-    this.addSql(`create table if not exists "cursore_canale" ("id" text not null, "canale" text check ("canale" in ('telegram', 'email', 'sito', 'whatsapp', 'instagram', 'messenger')) not null, "account" text not null, "valore" text not null, "created_at" timestamptz not null default now(), "updated_at" timestamptz not null default now(), "deleted_at" timestamptz null, constraint "cursore_canale_pkey" primary key ("id"));`);
-    this.addSql(`CREATE INDEX IF NOT EXISTS "IDX_cursore_canale_deleted_at" ON "cursore_canale" ("deleted_at") WHERE deleted_at IS NULL;`);
-    this.addSql(`CREATE UNIQUE INDEX IF NOT EXISTS "IDX_cursore_canale_canale_account_unique" ON "cursore_canale" ("canale", "account") WHERE deleted_at IS NULL;`);
-
     this.addSql(`create table if not exists "identita_contatto" ("id" text not null, "canale" text check ("canale" in ('telegram', 'email', 'sito', 'whatsapp', 'instagram', 'messenger')) not null, "account" text not null, "id_contatto" text not null, "nome" text null, "recapito" text null, "cliente_id" text null, "created_at" timestamptz not null default now(), "updated_at" timestamptz not null default now(), "deleted_at" timestamptz null, constraint "identita_contatto_pkey" primary key ("id"));`);
     this.addSql(`CREATE INDEX IF NOT EXISTS "IDX_identita_contatto_deleted_at" ON "identita_contatto" ("deleted_at") WHERE deleted_at IS NULL;`);
     this.addSql(`CREATE UNIQUE INDEX IF NOT EXISTS "IDX_identita_contatto_canale_account_id_contatto_unique" ON "identita_contatto" ("canale", "account", "id_contatto") WHERE deleted_at IS NULL;`);
@@ -21,7 +16,7 @@ export class Migration20261113122352 extends Migration {
     this.addSql(`CREATE INDEX IF NOT EXISTS "IDX_conversazione_cliente_stato" ON "conversazione_cliente" ("stato") WHERE deleted_at IS NULL;`);
     this.addSql(`CREATE INDEX IF NOT EXISTS "IDX_conversazione_cliente_ultimo_messaggio_il" ON "conversazione_cliente" ("ultimo_messaggio_il") WHERE deleted_at IS NULL;`);
 
-    this.addSql(`create table if not exists "messaggio_cliente" ("id" text not null, "conversazione_id" text not null, "direzione" text check ("direzione" in ('entrata', 'uscita')) not null, "testo" text not null, "quando" timestamptz not null, "chiave_unica" text not null, "id_esterno" text null, "stato_consegna" text check ("stato_consegna" in ('ricevuto', 'in_coda', 'inviato', 'fallito')) not null, "errore" text null, "autore_id" text null, "autore_nome" text null, "created_at" timestamptz not null default now(), "updated_at" timestamptz not null default now(), "deleted_at" timestamptz null, constraint "messaggio_cliente_pkey" primary key ("id"));`);
+    this.addSql(`create table if not exists "messaggio_cliente" ("id" text not null, "conversazione_id" text not null, "direzione" text check ("direzione" in ('entrata', 'uscita')) not null, "testo" text not null, "quando" timestamptz not null, "chiave_unica" text not null, "id_esterno" text null, "stato_consegna" text check ("stato_consegna" in ('ricevuto', 'in_coda', 'inviato', 'fallito', 'incerto')) not null, "tentato_il" timestamptz null, "errore" text null, "autore_id" text null, "autore_nome" text null, "created_at" timestamptz not null default now(), "updated_at" timestamptz not null default now(), "deleted_at" timestamptz null, constraint "messaggio_cliente_pkey" primary key ("id"));`);
     this.addSql(`CREATE INDEX IF NOT EXISTS "IDX_messaggio_cliente_conversazione_id" ON "messaggio_cliente" ("conversazione_id") WHERE deleted_at IS NULL;`);
     this.addSql(`CREATE INDEX IF NOT EXISTS "IDX_messaggio_cliente_deleted_at" ON "messaggio_cliente" ("deleted_at") WHERE deleted_at IS NULL;`);
     this.addSql(`CREATE UNIQUE INDEX IF NOT EXISTS "IDX_messaggio_cliente_chiave_unica_unique" ON "messaggio_cliente" ("chiave_unica") WHERE deleted_at IS NULL;`);
@@ -38,8 +33,6 @@ export class Migration20261113122352 extends Migration {
     this.addSql(`alter table if exists "conversazione_cliente" drop constraint if exists "conversazione_cliente_identita_id_foreign";`);
 
     this.addSql(`alter table if exists "messaggio_cliente" drop constraint if exists "messaggio_cliente_conversazione_id_foreign";`);
-
-    this.addSql(`drop table if exists "cursore_canale" cascade;`);
 
     this.addSql(`drop table if exists "identita_contatto" cascade;`);
 

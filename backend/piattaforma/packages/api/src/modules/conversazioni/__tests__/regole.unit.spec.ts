@@ -1,4 +1,4 @@
-import { chiaveInArrivo, chiaveUscita, decidiInvio, estratto, ID_CLIENT, statoDopo } from "../regole"
+import { chiaveInArrivo, chiaveUscita, decidiInvio, estratto, ID_CLIENT, statoDopo, statoDopoFallimento } from "../regole"
 
 describe("regole della casella", () => {
   it("estratto: spazi compressi e taglio con i puntini", () => {
@@ -6,6 +6,10 @@ describe("regole della casella", () => {
     const lungo = estratto("a".repeat(200))
     expect(lungo).toHaveLength(140)
     expect(lungo.endsWith("…")).toBe(true)
+  })
+
+  it("estratto: non spezza un'emoji a metà", () => {
+    expect(estratto("a".repeat(138) + "😀😀😀")).toBe("a".repeat(138) + "😀…")
   })
 
   it("chiavi uniche di entrata e di uscita", () => {
@@ -21,11 +25,20 @@ describe("regole della casella", () => {
     expect(() => statoDopo("chiusa", "uscita")).toThrow(/closed/)
   })
 
-  it("decisione d'invio: si manda solo ciò che non è già partito o in partenza", () => {
+  it("decisione d'invio: si rimanda solo ciò che certamente non è partito", () => {
     expect(decidiInvio(null)).toBe("invia")
-    expect(decidiInvio({ stato_consegna: "fallito" })).toBe("invia")
-    expect(decidiInvio({ stato_consegna: "inviato" })).toBe("gia_inviato")
-    expect(decidiInvio({ stato_consegna: "in_coda" })).toBe("in_corso")
+    expect(decidiInvio({ stato_consegna: "fallito", tentato_il: new Date() })).toBe("invia")
+    expect(decidiInvio({ stato_consegna: "inviato", tentato_il: new Date() })).toBe("gia_inviato")
+    expect(decidiInvio({ stato_consegna: "incerto", tentato_il: new Date() })).toBe("incerto")
+    // In coda sotto il lucchetto dello stesso id: il tentativo precedente si è interrotto.
+    expect(decidiInvio({ stato_consegna: "in_coda", tentato_il: null })).toBe("invia")
+    expect(decidiInvio({ stato_consegna: "in_coda", tentato_il: new Date() })).toBe("incerto")
+  })
+
+  it("dopo una risposta non consegnata la conversazione torna al team, se non è chiusa", () => {
+    expect(statoDopoFallimento("in_attesa")).toBe("aperta")
+    expect(statoDopoFallimento("aperta")).toBe("aperta")
+    expect(statoDopoFallimento("chiusa")).toBe("chiusa")
   })
 
   it("identificativo di una risposta", () => {

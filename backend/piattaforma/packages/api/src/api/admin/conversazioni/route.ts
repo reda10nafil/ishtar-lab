@@ -16,7 +16,8 @@ export async function GET(req: AuthenticatedMedusaRequest, res: MedusaResponse) 
     filtri.$or = [{ ultimo_estratto: testo }, { oggetto: testo }, { identita: { nome: testo } }, { identita: { recapito: testo } }]
   }
   const [[righe, totale], [, aperte], [, chiuse], [, nonLette]] = await Promise.all([
-    s.listAndCountConversaziones(filtri, { relations: ["identita"], order: { ultimo_messaggio_il: "DESC" }, take: f.limit, skip: f.offset }),
+    // L'id come secondo criterio: con lo stesso orario l'ordine resta stabile fra una pagina e l'altra.
+    s.listAndCountConversaziones(filtri, { relations: ["identita"], order: { ultimo_messaggio_il: "DESC", id: "DESC" }, take: f.limit, skip: f.offset }),
     s.listAndCountConversaziones({ stato: APERTE } as never, { take: 1 }),
     s.listAndCountConversaziones({ stato: "chiusa" }, { take: 1 }),
     s.listAndCountConversaziones({ stato: APERTE, non_letti: { $gt: 0 } } as never, { take: 1 }),
