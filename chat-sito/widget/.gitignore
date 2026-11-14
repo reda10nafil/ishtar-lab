@@ -1,0 +1,2 @@
+# Il file costruito si consegna al sito del negozio: resta nel repository (la radice ignora **/dist/).
+!dist/
