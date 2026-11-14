@@ -1,4 +1,4 @@
-import { filtriElenco, vistaMessaggio } from "../lib/elenco"
+import { filtriElenco, rigaConversazione, vistaMessaggio } from "../lib/elenco"
 
 describe("filtri dell'elenco delle conversazioni", () => {
   it("valori predefiniti", () => {
@@ -50,5 +50,30 @@ describe("vista dei messaggi", () => {
   it("risposta del team via email: solo l'oggetto usato", () => {
     const dettagli = { message_id: "<crm.abc12345@ishtar.example>", in_reply_to: "<abc@example.com>", references: ["<abc@example.com>"], oggetto: "Re: Ordine 12" }
     expect(vistaMessaggio({ ...base, direzione: "uscita", chiave_unica: "uscita:abc12345", dettagli }).email).toEqual({ oggetto: "Re: Ordine 12", reply_to: null, verifica: null, allegati: [], testo_completo: null })
+  })
+
+  it("chat del sito: solo la pagina d'origine (http o https), mai i campi dell'email", () => {
+    const sito = (dettagli: unknown, direzione = "entrata") => vistaMessaggio({ ...base, direzione, dettagli }, "sito")
+    const vista = sito({ pagina: "https://negozio.example/abiti", dichiarato: true })
+    expect(vista.sito).toEqual({ pagina: "https://negozio.example/abiti" })
+    expect(vista).not.toHaveProperty("email")
+    expect(sito({ pagina: "javascript:alert(1)", dichiarato: true }).sito).toEqual({ pagina: null })
+    expect(sito({ pagina: 42 }).sito).toEqual({ pagina: null })
+    expect(sito(null)).not.toHaveProperty("sito")
+    expect(sito(null)).not.toHaveProperty("email")
+    // Senza canale (o per gli altri canali) resta la vista dell'email di prima.
+    expect(vistaMessaggio({ ...base, direzione: "entrata", dettagli: { oggetto: "Ordine 12" } }, "email").email?.oggetto).toBe("Ordine 12")
+    expect(vistaMessaggio({ ...base, direzione: "entrata", dettagli: { oggetto: "Ordine 12" } }, "email")).not.toHaveProperty("sito")
+  })
+})
+
+describe("righe dell'elenco", () => {
+  it("con l'id dell'identità, da cui il pannello ricava «Visitor XXXX» uguale in elenco e in chat", () => {
+    const riga = rigaConversazione({
+      id: "conv_1", canale: "sito", stato: "aperta", oggetto: null, ultimo_estratto: "Ciao", non_letti: 1, ultimo_messaggio_il: "2026-11-14T10:00:00Z",
+      identita: { id: "idco_01JD8XW4M3T7KQ2", canale: "sito", nome: null, recapito: null, cliente_id: null },
+    })
+    expect(riga.identita_id).toBe("idco_01JD8XW4M3T7KQ2")
+    expect(rigaConversazione({ id: "conv_2", canale: "telegram", stato: "aperta", oggetto: null, ultimo_estratto: "x", non_letti: 0, ultimo_messaggio_il: "2026-11-14T10:00:00Z" }).identita_id).toBeNull()
   })
 })

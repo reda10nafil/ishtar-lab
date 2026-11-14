@@ -14,7 +14,7 @@ export async function GET(req: AuthenticatedMedusaRequest, res: MedusaResponse) 
   const messaggi = await s.listBattutas({ conversazione_id: conversazione.id }, { order: ORDINE_MESSAGGI, take: 200 })
   res.json({
     conversazione: rigaConversazione(conversazione),
-    messaggi: messaggi.reverse().map(vistaMessaggio),
+    messaggi: messaggi.reverse().map((m) => vistaMessaggio(m, conversazione.canale)),
     identita: vistaIdentita(conversazione.identita),
   })
 }

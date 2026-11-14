@@ -51,6 +51,8 @@ export const rigaConversazione = (c: ConversazioneLetta) => ({
   non_letti: c.non_letti,
   ultimo_messaggio_il: c.ultimo_messaggio_il,
   cliente_id: c.identita?.cliente_id ?? null,
+  /** Per il nome «Visitor XXXX» della chat del sito, uguale nell'elenco e nella conversazione aperta. */
+  identita_id: c.identita?.id ?? null,
 })
 
 export const vistaIdentita = (i: IdentitaLetta) => ({ id: i.id, canale: i.canale, nome: i.nome, recapito: i.recapito, cliente_id: i.cliente_id })
@@ -92,13 +94,21 @@ function vistaEmail(dettagli: unknown) {
   }
 }
 
+/** Chat del sito: la pagina da cui il visitatore ha scritto (solo http e https), da mostrare come testo. */
+function vistaSito(dettagli: unknown) {
+  if (!dettagli || typeof dettagli !== "object" || Array.isArray(dettagli)) return null
+  const pagina = testoO((dettagli as Record<string, unknown>).pagina)
+  return { pagina: pagina && /^https?:\/\//i.test(pagina) ? pagina : null }
+}
+
 /**
  * `id_client`: l'id che il pannello ha dato alla risposta. Con questo il pannello riconosce la propria risposta nella
  * conversazione riletta e la ritenta con lo stesso id. La chiave dei messaggi in arrivo non si espone. `email`: solo per
- * i messaggi con i dettagli di un'email.
+ * i messaggi con i dettagli di un'email; `sito`: per quelli della chat del sito (dal canale della conversazione).
  */
-export const vistaMessaggio = (m: MessaggioLetto) => {
-  const email = vistaEmail(m.dettagli)
+export const vistaMessaggio = (m: MessaggioLetto, canale?: string) => {
+  const sito = canale === "sito" ? vistaSito(m.dettagli) : null
+  const email = canale === "sito" ? null : vistaEmail(m.dettagli)
   return {
     id: m.id,
     direzione: m.direzione,
@@ -109,6 +119,7 @@ export const vistaMessaggio = (m: MessaggioLetto) => {
     autore_nome: m.autore_nome,
     id_client: m.direzione === "uscita" && m.chiave_unica?.startsWith(USCITA) ? m.chiave_unica.slice(USCITA.length) : null,
     ...(email ? { email } : {}),
+    ...(sito ? { sito } : {}),
   }
 }
 

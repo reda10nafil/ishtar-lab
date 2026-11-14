@@ -61,6 +61,7 @@
 }
 .chat-bolla__citato:hover { text-decoration: underline; }
 .chat-bolla__avviso { color: var(--warn); font-size: var(--fs-2xs); font-weight: 600; max-width: 100%; }
+.chat-bolla__pagina { color: var(--muted); font-size: var(--fs-2xs); max-width: 100%; overflow-wrap: anywhere; }
 .chat-bolla__azioni { display: flex; gap: 6px; flex-wrap: wrap; }
 .chat-nuovi { position: sticky; bottom: 4px; align-self: center; list-style: none; }
 .chat-stato--good { color: var(--good); }
@@ -102,6 +103,7 @@
 .chat-scheda__contatti { display: flex; flex-direction: column; gap: 4px; margin: 0; }
 .chat-scheda__contatti a { display: inline-flex; gap: 6px; align-items: center; color: var(--accent-text); overflow-wrap: anywhere; }
 .chat-scheda__nota { margin: 0; color: var(--ink-2); white-space: pre-wrap; overflow-wrap: anywhere; }
+.chat-scheda__nota--avviso { color: var(--warn); font-size: var(--fs-2xs); font-weight: 600; }
 .chat-scheda__scollega { align-self: center; margin-top: 6px; }
 .chat-proposta {
   display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 10px 12px; border-radius: var(--r-sm);
