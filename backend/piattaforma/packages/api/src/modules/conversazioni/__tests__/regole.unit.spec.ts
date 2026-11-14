@@ -1,4 +1,4 @@
-import { chiaveInArrivo, chiaveUscita, decidiInvio, estratto, filtroNuoviDopo, ID_CLIENT, ORDINE_MESSAGGI, statoDopo, statoDopoFallimento } from "../regole"
+import { chiaveInArrivo, chiaveUscita, decidiInvio, estratto, filtroNuoviDopo, ID_CLIENT, idClientUscita, ORDINE_MESSAGGI, regolaRileggibile, statoDopo, statoDopoFallimento } from "../regole"
 
 describe("regole della casella", () => {
   it("estratto: spazi compressi e taglio con i puntini", () => {
@@ -63,5 +63,25 @@ describe("ordine dei messaggi e messaggi nuovi", () => {
       $or: [{ created_at: { $gt: quando } }, { created_at: quando, id: { $gt: "msgc_B" } }],
     })
   })
-})
 
+  it("regolaRileggibile: risposta ritrovata → inviata; non ritrovata dopo 2 minuti dal tentativo → fallita; prima si aspetta", () => {
+    const adesso = new Date("2026-11-14T12:00:00Z")
+    const fa = (secondi: number) => new Date(adesso.getTime() - secondi * 1000)
+    expect(regolaRileggibile("incerto", fa(5), true, adesso)).toBe("inviato")
+    expect(regolaRileggibile("in_coda", fa(5), true, adesso)).toBe("inviato")
+    expect(regolaRileggibile("incerto", fa(30), false, adesso)).toBeNull()
+    expect(regolaRileggibile("incerto", fa(119), false, adesso)).toBeNull()
+    expect(regolaRileggibile("incerto", fa(120), false, adesso)).toBe("fallito")
+    expect(regolaRileggibile("in_coda", fa(600).toISOString(), false, adesso)).toBe("fallito")
+    expect(regolaRileggibile("incerto", null, false, adesso)).toBe("fallito")
+    // Mai tentata (in coda senza tentativo), già chiusa o ricevuta: non si tocca.
+    expect(regolaRileggibile("in_coda", null, true, adesso)).toBeNull()
+    for (const stato of ["inviato", "fallito", "ricevuto"] as const) expect(regolaRileggibile(stato, fa(600), true, adesso)).toBeNull()
+  })
+
+  it("idClientUscita: l'id della risposta dalla chiave unica, altrimenti l'id del messaggio", () => {
+    expect(idClientUscita({ id: "msgc_1", chiave_unica: "uscita:8f14e45f-ceea-467f" })).toBe("8f14e45f-ceea-467f")
+    expect(idClientUscita({ id: "msgc_1", chiave_unica: null })).toBe("msgc_1")
+    expect(idClientUscita({ id: "msgc_1", chiave_unica: "telegram:bot:1" })).toBe("msgc_1")
+  })
+})

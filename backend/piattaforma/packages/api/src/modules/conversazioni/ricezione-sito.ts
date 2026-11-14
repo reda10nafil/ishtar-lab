@@ -3,10 +3,11 @@ import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { CONNECTORS_MODULE } from "../connectors"
 import type ConnectorsModuleService from "../connectors/service"
-import { clientCasella } from "./canali/sito"
+import { clientCasella, type ClientCasella } from "./canali/sito"
 import { ErroreSito, rigaInArrivo, type CodiceSito, type RigaCasella } from "./canali/sito-regole"
 import { CONVERSAZIONI_MODULE } from "./index"
 import type { EsitoLettura } from "./ricezione"
+import { idClientUscita, regolaRileggibile } from "./regole"
 import type ConversazioniModuleService from "./service"
 import type { InArrivo } from "./tipi"
 
@@ -16,6 +17,7 @@ import type { InArrivo } from "./tipi"
  * mezzo fa rileggere il messaggio e la chiave unica del modulo evita il doppione. Un solo giro alla volta (lucchetto) e
  * un solo lettore per casella: un altro Ishtar Lab attivo sulla stessa casella mette il connettore in errore invece di
  * dividersi i messaggi in silenzio. Nel registro solo testi fissi e il tipo degli errori, mai i dati dei visitatori.
+ * Prima di leggere, le risposte del negozio rimaste incerte si cercano nella casella (riconciliazione).
  */
 
 type Lucchetti = { execute: <T>(chiavi: string[], lavoro: () => Promise<T>, opzioni?: { timeout?: number }) => Promise<T> }
@@ -64,6 +66,19 @@ async function idLettore(conversazioni: ConversazioniModuleService): Promise<str
   return id
 }
 
+/** Risposta non ritrovata nella casella due minuti dopo il tentativo: un nuovo tentativo con lo stesso id non la duplica. */
+export const NON_ARRIVATA = "Not sent: the site chat did not receive this reply. Try again"
+
+/** Risposte del sito forse arrivate (incerte o rimaste in coda dopo il tentativo): ritrovate o no, con `regolaRileggibile`. */
+async function riconcilia(conversazioni: ConversazioniModuleService, client: ClientCasella): Promise<void> {
+  for (const risposta of await conversazioni.daRiconciliare("sito")) {
+    const trovata = await client.verifica(idClientUscita(risposta))
+    const esito = regolaRileggibile(risposta.stato_consegna, risposta.tentato_il, Boolean(trovata), new Date())
+    if (esito === "inviato" && trovata) await conversazioni.riconciliaUscita(risposta.id, { stato: "inviato", id_esterno: trovata.id })
+    else if (esito === "fallito") await conversazioni.riconciliaUscita(risposta.id, { stato: "fallito", errore: NON_ARRIVATA })
+  }
+}
+
 const pausa = (secondi: number) => new Promise((ok) => setTimeout(ok, secondi * 1000))
 
 /**
@@ -89,6 +104,7 @@ async function leggiSito(container: MedusaContainer, giri: number, attesa: numbe
   try {
     const client = clientCasella({ url: credenziali.valori.url, chiave: credenziali.valori.chiave })
     const lettore = await idLettore(conversazioni)
+    await riconcilia(conversazioni, client)
     for (let giro = 0; giro < giri; giro += 1) {
       if (giro) await pausa(attesa)
       const { scartati, errore } = await elaboraSito(await client.preleva(lettore, LIMITE), {

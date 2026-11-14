@@ -9,7 +9,7 @@ import { idClientDaMessageId } from "./canali/email-regole"
 import {
   chiaveInArrivo, chiaveUscita, decidiInvio, estratto, filtroNuoviDopo, ORDINE_MESSAGGI, statoDopo, statoDopoFallimento, type Decisione,
 } from "./regole"
-import type { InArrivo } from "./tipi"
+import type { Canale, InArrivo } from "./tipi"
 
 export type MessaggioDTO = InferTypeOf<typeof Messaggio>
 type ConversazioneDTO = InferTypeOf<typeof Conversazione>
@@ -232,6 +232,47 @@ export default class ConversazioniModuleService extends MedusaService({ Conversa
     const messaggio = await this.updateBattutas({ id: messaggio_id, stato_consegna: esito.stato, errore: esito.errore }, contesto)
     const conversazione = await this.retrieveConversazione(messaggio.conversazione_id, {}, contesto)
     await this.updateConversaziones({ id: conversazione.id, stato: statoDopoFallimento(conversazione.stato) }, contesto)
+  }
+
+  /**
+   * Risposte di un canale che le ritrova dal loro id (la chat del sito) forse arrivate: incerte o rimaste in coda dopo il
+   * tentativo, le più vecchie prima. Le verifica il job di lettura del canale con `regolaRileggibile`.
+   */
+  async daRiconciliare(canale: Canale, limite = 50): Promise<MessaggioDTO[]> {
+    return this.listBattutas(
+      {
+        direzione: "uscita",
+        conversazione: { canale },
+        $or: [{ stato_consegna: "incerto" }, { stato_consegna: "in_coda", tentato_il: { $ne: null } }],
+      } as never,
+      { order: { tentato_il: "ASC" }, take: limite }
+    )
+  }
+
+  /**
+   * Esito ritrovato dal canale per una risposta forse arrivata; vale solo se la risposta è ancora in quello stato (un
+   * invio finito nel frattempo conta di più). Ritrovata: «inviato», e la conversazione torna in attesa del cliente se era
+   * stata rimessa al team solo per il dubbio (aperta, nulla da leggere, nessun messaggio del cliente dopo la risposta).
+   * Non ritrovata: «fallito», come un invio fallito.
+   */
+  @InjectTransactionManager()
+  async riconciliaUscita(
+    messaggio_id: string,
+    esito: { stato: "inviato"; id_esterno: string } | { stato: "fallito"; errore: string },
+    @MedusaContext() contesto: Context = {}
+  ): Promise<boolean> {
+    const messaggio = await this.retrieveBattuta(messaggio_id, {}, contesto)
+    if (messaggio.stato_consegna !== "incerto" && !(messaggio.stato_consegna === "in_coda" && messaggio.tentato_il)) return false
+    if (esito.stato === "fallito") {
+      await this.esitoUscita(messaggio_id, esito, contesto)
+      return true
+    }
+    await this.updateBattutas({ id: messaggio_id, stato_consegna: "inviato", id_esterno: esito.id_esterno, errore: null }, contesto)
+    const conversazione = await this.retrieveConversazione(messaggio.conversazione_id, {}, contesto)
+    if (conversazione.stato === "aperta" && conversazione.non_letti === 0 && (await this.nuoviDopo(conversazione.id, messaggio.id, contesto)) === 0) {
+      await this.updateConversaziones({ id: conversazione.id, stato: "in_attesa" }, contesto)
+    }
+    return true
   }
 
   /**

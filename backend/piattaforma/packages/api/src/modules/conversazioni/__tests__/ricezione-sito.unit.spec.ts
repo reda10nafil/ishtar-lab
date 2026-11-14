@@ -1,9 +1,9 @@
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { CONNECTORS_MODULE } from "../../connectors"
-import { MESSAGGI_SITO } from "../canali/sito"
+import { clientCasella, MESSAGGI_SITO } from "../canali/sito"
 import { MESSAGGIO_INDIRIZZO, type RigaCasella } from "../canali/sito-regole"
 import { CONVERSAZIONI_MODULE } from "../index"
-import { elaboraSito, riceviDaSito } from "../ricezione-sito"
+import { elaboraSito, NON_ARRIVATA, riceviDaSito } from "../ricezione-sito"
 import type { InArrivo } from "../tipi"
 import { avviaCasellaFinta, type CasellaFinta } from "./finti/casella"
 
@@ -12,6 +12,7 @@ const ANNA = "0d9e8f7a-6b5c-4d3e-9f2a-1b0c9d8e7f6a"
 const BRUNO = "1e8d7c6b-5a49-4382-8716-0a9b8c7d6e5f"
 
 type Cursore = { uidvalidity: string; ultimo_uid: number }
+type DaVerificare = { id: string; chiave_unica: string; stato_consegna: string; tentato_il: Date | null }
 type Guasti = { registraAl?: number; dopoRegistra?: (e: InArrivo) => void; cursore?: boolean }
 
 /**
@@ -25,6 +26,8 @@ function contenitore(valori: Record<string, string> | null, { occupato = false }
   const registro: string[] = []
   const cursori = new Map<string, Cursore>()
   const guasti: Guasti = {}
+  const daVerificare: DaVerificare[] = []
+  const riconciliate: unknown[][] = []
   const scrivi = (riga: string) => { registro.push(riga) }
   const servizi: Record<string, unknown> = {
     [Modules.LOCKING]: {
@@ -52,10 +55,12 @@ function contenitore(valori: Record<string, string> | null, { occupato = false }
         return cursori.get(`${canale}|${account}|${cartella}`) ?? null
       },
       salvaCursore: async (canale: string, account: string, cartella: string, valore: Cursore) => { cursori.set(`${canale}|${account}|${cartella}`, valore) },
+      daRiconciliare: async (canale: string) => (canale === "sito" ? daVerificare.map((r) => ({ ...r })) : []),
+      riconciliaUscita: async (...argomenti: unknown[]) => { riconciliate.push(argomenti); return true },
     },
     [ContainerRegistrationKeys.LOGGER]: { info: scrivi, warn: scrivi, error: scrivi },
   }
-  return { container: { resolve: (chiave: string) => servizi[chiave] } as never, registrati: () => [...unici.values()], chiamate, errori, registro, cursori, guasti }
+  return { container: { resolve: (chiave: string) => servizi[chiave] } as never, registrati: () => [...unici.values()], chiamate, errori, registro, cursori, guasti, daVerificare, riconciliate }
 }
 
 describe("lettura della chat del sito (casella finta)", () => {
@@ -208,6 +213,37 @@ describe("lettura della chat del sito (casella finta)", () => {
     expect(await riceviDaSito(c.container, { giri: 3, attesa: 0.05 })).toBe("fatto")
     expect(Date.now() - inizio).toBeGreaterThanOrEqual(90)
     expect(conta("chat_preleva")).toBe(3)
+  })
+
+  it("riconciliazione: risposta incerta ritrovata → inviata con l'id della casella; persa da più di 2 minuti → fallita; recente → si aspetta", async () => {
+    casella.aggiungiDalVisitatore({ visitatore: ANNA, testo: "Ciao" })
+    const trovata = await clientCasella(valori()).rispondi(ANNA, "risposta-trovata-1", "Ciao Anna", null)
+    const c = contenitore(valori())
+    const adesso = Date.now()
+    c.daVerificare.push(
+      { id: "msgc_a", chiave_unica: "uscita:risposta-trovata-1", stato_consegna: "incerto", tentato_il: new Date(adesso - 30_000) },
+      { id: "msgc_b", chiave_unica: "uscita:risposta-persa-0001", stato_consegna: "incerto", tentato_il: new Date(adesso - 3 * 60_000) },
+      { id: "msgc_c", chiave_unica: "uscita:risposta-recente-01", stato_consegna: "in_coda", tentato_il: new Date(adesso - 30_000) },
+      { id: "msgc_d", chiave_unica: "uscita:risposta-recente-02", stato_consegna: "incerto", tentato_il: new Date(adesso - 30_000) },
+    )
+    expect(await riceviDaSito(c.container, { giri: 3, attesa: 0 })).toBe("fatto")
+    expect(c.riconciliate).toEqual([
+      ["msgc_a", { stato: "inviato", id_esterno: trovata.id }],
+      ["msgc_b", { stato: "fallito", errore: NON_ARRIVATA }],
+    ])
+    // Una verifica per risposta a ogni esecuzione, non a ogni giro; la lettura dei messaggi va avanti.
+    expect(conta("chat_verifica")).toBe(4)
+    expect(c.registrati().map((e) => e.testo)).toEqual(["Ciao"])
+  })
+
+  it("riconciliazione: con la casella in errore non si decide nulla e l'esecuzione si ferma come per la lettura", async () => {
+    const c = contenitore(valori())
+    c.daVerificare.push({ id: "msgc_b", chiave_unica: "uscita:risposta-persa-0001", stato_consegna: "incerto", tentato_il: new Date(Date.now() - 3 * 60_000) })
+    casella.guasti = { stato: 503 }
+    expect(await riceviDaSito(c.container, { giri: 2, attesa: 0 })).toBe("errore")
+    expect(c.riconciliate).toEqual([])
+    expect(c.registro.join("\n")).toContain(MESSAGGI_SITO.servizio)
+    expect(conta("chat_preleva")).toBe(0)
   })
 
   it("elaboraSito: righe senza gli identificativi della casella scartate e mai confermate; al primo errore si ferma", async () => {

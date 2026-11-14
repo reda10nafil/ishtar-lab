@@ -5,8 +5,11 @@ import type ConnectorsModuleService from "../connectors/service"
 import { credenzialiEmail } from "./canali/email-connessioni"
 import { filoDaDettagli, intestazioniRisposta, messageIdNostro } from "./canali/email-regole"
 import { inviaEmail } from "./canali/email-smtp"
+import { clientCasella } from "./canali/sito"
+import { ErroreSito, type CodiceSito } from "./canali/sito-regole"
 import { clientTelegram, ErroreCanale } from "./canali/telegram"
 import { CONVERSAZIONI_MODULE } from "./index"
+import { idClientUscita } from "./regole"
 import { NON_CONFERMATO } from "./service"
 import type ConversazioniModuleService from "./service"
 import type { EsitoUscita, MessaggioDTO, Uscita } from "./service"
@@ -50,6 +53,7 @@ async function invia(scope: MedusaContainer, conversazione_id: string, uscita: U
 
 async function consegna(scope: MedusaContainer, conversazione: Destinazione, messaggio: MessaggioDTO, primaDellInvio: () => Promise<void>): Promise<EsitoUscita> {
   if (conversazione.canale === "email") return consegnaEmail(scope, conversazione, messaggio, primaDellInvio)
+  if (conversazione.canale === "sito") return consegnaSito(scope, conversazione, messaggio, primaDellInvio)
   if (conversazione.canale !== "telegram") return { stato: "fallito", errore: "Replies on this channel are not available yet" }
   const id_contatto = conversazione.identita.id_contatto
   const testo = messaggio.testo
@@ -83,8 +87,7 @@ async function consegnaEmail(scope: MedusaContainer, conversazione: Destinazione
   const cred = credenzialiEmail(credenziali.valori)
   const ultimo = await conversazioni.ultimoInArrivo(conversazione.id)
   const filo = intestazioniRisposta(filoDaDettagli(ultimo?.dettagli), conversazione.oggetto ?? null)
-  const id_client = messaggio.chiave_unica?.startsWith("uscita:") ? messaggio.chiave_unica.slice("uscita:".length) : messaggio.id
-  const message_id = messageIdNostro(id_client, cred.indirizzo)
+  const message_id = messageIdNostro(idClientUscita(messaggio), cred.indirizzo)
   await conversazioni.dettagliUscita(messaggio.id, { message_id, in_reply_to: filo.inReplyTo ?? null, references: filo.references, oggetto: filo.oggetto })
   const { esito, daSegnalare } = await inviaEmail(
     cred,
@@ -94,4 +97,31 @@ async function consegnaEmail(scope: MedusaContainer, conversazione: Destinazione
   // Con i valori usati: se nel frattempo la casella è stata riconfigurata, l'errore non tocca la configurazione nuova.
   if (daSegnalare) await connettori.segnaErrore("casella_email", daSegnalare, credenziali.valori)
   return esito
+}
+
+/** Errori della chat del sito che chiedono un intervento dalla console (come per la lettura). */
+const SITO_DA_CORREGGERE: CodiceSito[] = ["credenziali", "versione", "indirizzo"]
+
+/**
+ * Risposta nella chat del sito: la casella la scrive una volta sola per id (lo stesso della risposta del pannello), quindi
+ * un nuovo tentativo dopo un «fallito» non la duplica mai. Senza una risposta chiara della casella (rete, tempo scaduto,
+ * errore del servizio) è incerta: la verifica il job di lettura (riconciliazione).
+ */
+async function consegnaSito(scope: MedusaContainer, conversazione: Destinazione, messaggio: MessaggioDTO, primaDellInvio: () => Promise<void>): Promise<EsitoUscita> {
+  const connettori = scope.resolve<ConnectorsModuleService>(CONNECTORS_MODULE)
+  const credenziali = await connettori.credenzialiCollegate("chat_sito")
+  if (!credenziali?.valori.chiave) return { stato: "fallito", errore: "Site chat is not connected" }
+  try {
+    const client = clientCasella({ url: credenziali.valori.url, chiave: credenziali.valori.chiave })
+    await primaDellInvio()
+    const firma = credenziali.valori.nome?.trim() || null
+    const { id } = await client.rispondi(conversazione.identita.id_contatto, idClientUscita(messaggio), messaggio.testo, firma)
+    return { stato: "inviato", id_esterno: id }
+  } catch (errore) {
+    if (!(errore instanceof ErroreSito)) throw errore
+    // Con i valori usati: se nel frattempo il connettore è stato riconfigurato, l'errore non tocca la configurazione nuova.
+    if (SITO_DA_CORREGGERE.includes(errore.codice)) await connettori.segnaErrore("chat_sito", errore.message, credenziali.valori)
+    if (errore.codice === "rete" || errore.codice === "servizio") return { stato: "incerto", errore: NON_CONFERMATO }
+    return { stato: "fallito", errore: errore.message }
+  }
 }
