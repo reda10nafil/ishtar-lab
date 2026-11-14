@@ -9,6 +9,14 @@ import {archivioSessione, CHIAVE_SESSIONE} from './archivio.mjs';
 /** Una chiave JWT (quella vecchia di Supabase) va anche come Bearer; la chiave pubblicabile nuova mai. */
 const jwt = chiave => /^[\w-]+\.[\w-]+\.[\w-]+$/.test(chiave);
 
+/** Attesa massima di ogni richiesta: una richiesta ferma finisce in «Non inviato» o in una lettura fallita, non blocca tutto. */
+const ATTESA_MS = 15000;
+function conAttesa(segnale) {
+  const tempo = globalThis.AbortSignal?.timeout?.(ATTESA_MS);
+  if (!segnale) return tempo;
+  return tempo && AbortSignal.any ? AbortSignal.any([segnale, tempo]) : segnale;
+}
+
 export function creaCasella(config) {
   const archivio = archivioSessione(config.ricorda);
   const auth = new AuthClient({
@@ -19,8 +27,18 @@ export function creaCasella(config) {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: false,
+    fetch: (indirizzo, opzioni = {}) => fetch(indirizzo, {...opzioni, signal: conAttesa(opzioni.signal)}),
   });
-  const sessione = async () => (await auth.getSession()).data.session ?? null;
+  /**
+   * Stato dell'accesso: la sessione valida (rinnovata se serve), l'eventuale errore del rinnovo e se una sessione è ancora
+   * salvata. Una sessione salvata che ora non si rinnova (rete o servizio fuori uso) resta del visitatore: auth-js la toglie
+   * solo quando non vale più.
+   */
+  const accesso = async () => {
+    const {data, error} = await auth.getSession();
+    return {sessione: data.session ?? null, errore: error ?? null, salvata: Boolean(archivio.getItem(CHIAVE_SESSIONE))};
+  };
+  const sessione = async () => (await accesso()).sessione;
   /** Errori con il codice di PostgREST (PTxyz dei rifiuti della casella), mai il corpo intero. */
   async function rpc(nome, argomenti) {
     const accesso = await sessione();
@@ -31,6 +49,7 @@ export function creaCasella(config) {
       body: JSON.stringify(argomenti),
       credentials: 'omit',
       redirect: 'error',
+      signal: conAttesa(),
     });
     const testo = await risposta.text();
     let dati = null;
@@ -43,6 +62,7 @@ export function creaCasella(config) {
     return dati;
   }
   return {
+    accesso,
     sessione,
     entra: async captchaToken => {
       const {data, error} = await auth.signInAnonymously(captchaToken ? {options: {captchaToken}} : undefined);

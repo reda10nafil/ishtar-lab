@@ -23,6 +23,7 @@ const valida = r => !!r && typeof r === 'object' && typeof r.id === 'string' && 
   && typeof r.testo === 'string' && typeof r.creato_il === 'string';
 const pulita = r => ({
   id: r.id, direzione: r.direzione, testo: r.testo, firma: typeof r.firma === 'string' ? r.firma : null, creato_il: r.creato_il, importato: r.importato === true,
+  id_client: typeof r.id_client === 'string' ? r.id_client : null,
 });
 
 function aggiorna(s, id_client, cambi, ammesso = () => true) {
@@ -62,7 +63,10 @@ export function riduci(s, a) {
       for (const r of a.righe) if (valida(r)) perId.set(r.id, pulita(r));
       const messaggi = [...perId.values()].sort(ordine);
       const letti = new Set(messaggi.map(m => m.id));
-      return {...s, messaggi, inSospeso: s.inSospeso.filter(m => !(m.id && letti.has(m.id))), erroriLettura: 0};
+      // Un messaggio già nella casella toglie la sua copia in sospeso: per id, o per id_client se la risposta all'invio si
+      // è persa (la copia direbbe «Non inviato» per un messaggio arrivato).
+      const scritti = new Set(messaggi.map(m => m.id_client).filter(Boolean));
+      return {...s, messaggi, inSospeso: s.inSospeso.filter(m => !(m.id && letti.has(m.id)) && !scritti.has(m.id_client)), erroriLettura: 0};
     }
     case 'negozio':
       return {...s, negozio: {online: a.online === true, nome: typeof a.nome === 'string' ? a.nome : null}, erroriLettura: 0};
@@ -84,6 +88,9 @@ export function etichetta(m, t) {
   if (m?.direzione === 'entrata') return {testo: m.importato ? t.consegnato : t.inviato, riprova: false};
   return null;
 }
+
+/** Risposta del negozio da segnalare a chat chiusa: l'ultima non è quella vista per ultima (anche se nessuna è stata vista). */
+export const rispostaNuova = (ultima, vista) => Boolean(ultima && ultima !== vista);
 
 /** «online» (Ishtar Lab ha letto da poco), «away», «offline» (la casella non risponde), null finché non si sa. */
 export function statoNegozio(s) {

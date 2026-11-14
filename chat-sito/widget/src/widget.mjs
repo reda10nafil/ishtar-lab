@@ -2,7 +2,7 @@
 // (textContent o nodi di testo), mai come HTML. Lo stato sta in stato.mjs; la casella (supabase-js) arriva da
 // `caricaCasella` solo quando serve. Il controllo Turnstile parte solo al primo invio, prima dell'accesso anonimo.
 import {archivioSessione} from './archivio.mjs';
-import {etichetta, intervalloLettura, MASSIMO_TESTO, motivoErrore, paginaCorrente, riduci, statoIniziale, statoNegozio, vista} from './stato.mjs';
+import {etichetta, intervalloLettura, MASSIMO_TESTO, motivoErrore, paginaCorrente, riduci, rispostaNuova, statoIniziale, statoNegozio, vista} from './stato.mjs';
 import {STILE} from './stile.mjs';
 import {testi} from './testi.mjs';
 
@@ -69,18 +69,29 @@ function neutro(nome, proprieta = {}) {
 
 const nuovoId = () => (globalThis.crypto?.randomUUID?.() ?? `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}`);
 
+const ATTESA_TURNSTILE_MS = 20000;
+const ATTESA_VERIFICA_MS = 120000;
+const verificaFallita = () => Object.assign(new Error('turnstile'), {verifica: true});
+
 let scriptTurnstile = null;
 function caricaTurnstile() {
   scriptTurnstile ??= new Promise((ok, ko) => {
     if (window.turnstile) return ok();
     const script = document.createElement('script');
+    // Uno script che non arriva (né carica né sbaglia) non deve lasciare il messaggio fermo su «Invio…».
+    const tempo = setTimeout(() => fallito(), ATTESA_TURNSTILE_MS);
+    const fallito = () => {
+      clearTimeout(tempo);
+      scriptTurnstile = null;
+      ko(verificaFallita());
+    };
     script.src = TURNSTILE;
     script.async = true;
-    script.onload = () => ok();
-    script.onerror = () => {
-      scriptTurnstile = null;
-      ko(Object.assign(new Error('turnstile'), {verifica: true}));
+    script.onload = () => {
+      clearTimeout(tempo);
+      ok();
     };
+    script.onerror = fallito;
     document.head.append(script);
   });
   return scriptTurnstile;
@@ -94,11 +105,11 @@ export function creaWidget(config, caricaCasella, {haConversazione = false} = {}
   let aperta = false;
   let conConversazione = haConversazione;
   let casellaPromessa = null;
-  let accesso = null;
+  let accessoInCorso = null;
+  let ultimoStato = null;
   let coda = Promise.resolve();
   let timer = null;
   let inLettura = false;
-  let primaLettura = true;
   const nodi = new Map();
 
   // ——— Struttura ———
@@ -173,11 +184,19 @@ export function creaWidget(config, caricaCasella, {haConversazione = false} = {}
     let widgetId = null;
     return caricaTurnstile()
       .then(() => new Promise((ok, ko) => {
-        const fallita = () => ko(Object.assign(new Error('turnstile'), {verifica: true}));
+        const tempo = setTimeout(() => ko(verificaFallita()), ATTESA_VERIFICA_MS);
+        const fallita = () => {
+          clearTimeout(tempo);
+          ko(verificaFallita());
+        };
         try {
           widgetId = window.turnstile.render(verifica, {
             sitekey: config.turnstile, language: config.lingua, appearance: 'interaction-only',
-            callback: ok, 'error-callback': fallita, 'expired-callback': fallita, 'timeout-callback': fallita,
+            callback: token => {
+              clearTimeout(tempo);
+              ok(token);
+            },
+            'error-callback': fallita, 'expired-callback': fallita, 'timeout-callback': fallita,
           });
         } catch {
           fallita();
@@ -189,11 +208,17 @@ export function creaWidget(config, caricaCasella, {haConversazione = false} = {}
       });
   }
 
-  /** Accesso anonimo solo al primo invio (con il controllo Turnstile se il sito ha la chiave); uno solo alla volta. */
+  /**
+   * Accesso anonimo solo al primo invio (con il controllo Turnstile se il sito ha la chiave); uno solo alla volta. Una
+   * sessione salvata che ora non si rinnova (rete o servizio fuori uso) non si sostituisce: un nuovo accesso creerebbe un
+   * altro visitatore e spezzerebbe la conversazione. Il messaggio resta «Non inviato» e si riprova con lo stesso visitatore.
+   */
   async function entraSeServe(c) {
-    if (await c.sessione()) return;
-    accesso ??= (async () => c.entra(config.turnstile ? await tokenTurnstile() : null))().finally(() => { accesso = null; });
-    await accesso;
+    const {sessione, salvata} = await c.accesso();
+    if (sessione) return;
+    if (salvata) throw new Error('session_unavailable');
+    accessoInCorso ??= (async () => c.entra(config.turnstile ? await tokenTurnstile() : null))().finally(() => { accessoInCorso = null; });
+    await accessoInCorso;
   }
 
   // ——— Invio ———
@@ -255,6 +280,8 @@ export function creaWidget(config, caricaCasella, {haConversazione = false} = {}
       s = riduci(s, {tipo: 'negozio', online: stato?.online, nome: stato?.nome});
       if (await c.sessione()) {
         conConversazione = true;
+        // Con una conversazione avviata nome ed email si possono lasciare anche su un'altra pagina.
+        dettagli.hidden = false;
         // Prima le righe, poi lo stato: con l'await dentro gli argomenti si ripartirebbe dallo stato di prima della lettura
         // e una conferma d'invio arrivata nel frattempo andrebbe persa (messaggio doppio o fermo su «Invio…»).
         const righe = await c.leggi();
@@ -307,8 +334,10 @@ export function creaWidget(config, caricaCasella, {haConversazione = false} = {}
     if (nodo.testo.textContent !== m.testo) nodo.testo.textContent = m.testo;
     const piede = tu ? stato?.testo ?? '' : m.firma || t.negozio;
     if (nodo.piede.textContent !== piede) nodo.piede.textContent = piede;
-    nodo.motivo.textContent = m.errore ?? '';
-    nodo.motivo.hidden = !m.errore || m.fase !== 'errore';
+    // Solo testi cambiati: nel registro (role=log) un nodo riscritto verrebbe annunciato di nuovo a ogni lettura.
+    const motivo = m.fase === 'errore' ? m.errore ?? '' : '';
+    if (nodo.motivo.textContent !== motivo) nodo.motivo.textContent = motivo;
+    nodo.motivo.hidden = !motivo;
     nodo.bottone.hidden = !stato?.riprova;
     nodo.bottone.onclick = stato?.riprova ? () => riprova(m.id_client) : null;
   }
@@ -345,22 +374,24 @@ export function creaWidget(config, caricaCasella, {haConversazione = false} = {}
       }
     }
 
+    // La riga di stato (aria-live) si riscrive solo quando lo stato cambia: altrimenti verrebbe annunciata a ogni lettura.
     const negozio = statoNegozio(s);
-    statoRiga.hidden = !negozio;
-    statoRiga.className = `stato stato--${negozio ?? 'sconosciuto'}`;
-    statoRiga.replaceChildren();
-    if (negozio === 'offline' && config.email) {
-      statoRiga.append(el('span', {class: 'pallino'}), `${t.offlineEmail} `, el('a', {href: `mailto:${config.email}`, testo: config.email}));
-    } else if (negozio) {
-      statoRiga.append(el('span', {class: 'pallino'}), t[negozio]);
+    if (negozio !== ultimoStato) {
+      ultimoStato = negozio;
+      statoRiga.hidden = !negozio;
+      statoRiga.className = `stato stato--${negozio ?? 'sconosciuto'}`;
+      statoRiga.replaceChildren();
+      if (negozio === 'offline' && config.email) {
+        statoRiga.append(el('span', {class: 'pallino'}), `${t.offlineEmail} `, el('a', {href: `mailto:${config.email}`, testo: config.email}));
+      } else if (negozio) {
+        statoRiga.append(el('span', {class: 'pallino'}), t[negozio]);
+      }
     }
 
-    // Risposte nuove a chat chiusa: un punto sul pulsante (la prima lettura dopo il caricamento ne prende nota).
+    // Risposte nuove a chat chiusa: un punto sul pulsante finché il visitatore non apre la chat (anche la prima risposta).
     const ultima = ultimaRisposta();
     if (aperta) segnaVista();
-    else if (primaLettura && ultima && !archivio.getItem(VISTA)) segnaVista();
-    if (ultima) primaLettura = false;
-    const nuova = !aperta && ultima && ultima !== archivio.getItem(VISTA);
+    const nuova = !aperta && rispostaNuova(ultima, archivio.getItem(VISTA));
     punto.hidden = !nuova;
     pulsante.setAttribute('aria-label', aperta ? t.chiudi : nuova ? t.apriNuovo : t.apri);
 

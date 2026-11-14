@@ -2,7 +2,7 @@
 const {test} = await import('node:test');
 const {default: assert} = await import('node:assert/strict');
 const {
-  statoIniziale, riduci, vista, etichetta, statoNegozio, attesa, intervalloLettura, configurazione, paginaCorrente, motivoErrore,
+  statoIniziale, riduci, vista, etichetta, statoNegozio, attesa, intervalloLettura, configurazione, paginaCorrente, motivoErrore, rispostaNuova,
 } = await import('../chat-sito/widget/src/stato.mjs');
 const {testi, LINGUE} = await import('../chat-sito/widget/src/testi.mjs');
 
@@ -137,4 +137,26 @@ test('testi in due lingue con le stesse voci; lingua sconosciuta: inglese', () =
   assert.equal(testi('fr'), testi('en'));
   for (const lingua of LINGUE) for (const [voce, testo] of Object.entries(testi(lingua))) assert.ok(typeof testo === 'string' && testo.trim(), `${lingua}.${voce}`);
   assert.deepEqual(etichetta(vista(scritta(statoIniziale(), 'Ciao', 'cliente-0001'))[0], testi('it')), {testo: 'Invio…', riprova: false});
+});
+
+test('pallino delle risposte nuove: una risposta mai vista è nuova, anche la prima', () => {
+  assert.equal(rispostaNuova('r1', null), true);
+  assert.equal(rispostaNuova('r2', 'r1'), true);
+  assert.equal(rispostaNuova('r1', 'r1'), false);
+  assert.equal(rispostaNuova(null, null), false);
+  assert.equal(rispostaNuova(null, 'r1'), false);
+});
+
+test('risposta all\'invio persa: la lettura che contiene il messaggio (stesso id_client) toglie la copia «Non inviato»', () => {
+  let s = scritta(statoIniziale(), 'Ciao', 'cliente-0001');
+  s = riduci(s, {tipo: 'non_inviato', id_client: 'cliente-0001', errore: null});
+  s = riduci(s, {tipo: 'letti', righe: [riga('srv-1', '2026-11-14T12:00:01Z', {testo: 'Ciao', id_client: 'cliente-0001'})]});
+  assert.deepEqual(vista(s).map(m => [m.id, m.testo]), [['srv-1', 'Ciao']]);
+  assert.equal(s.inSospeso.length, 0);
+  // Anche ancora in invio (la lettura arriva prima della risposta all'invio): una sola bolla.
+  let t = scritta(statoIniziale(), 'Ancora', 'cliente-0002');
+  t = riduci(t, {tipo: 'letti', righe: [riga('srv-2', '2026-11-14T12:00:02Z', {testo: 'Ancora', id_client: 'cliente-0002'})]});
+  assert.deepEqual(vista(t).map(m => m.id), ['srv-2']);
+  // L'id_client della riga resta nei messaggi letti (solo come testo).
+  assert.equal(t.messaggi[0].id_client, 'cliente-0002');
 });
