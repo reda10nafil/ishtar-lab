@@ -27,7 +27,10 @@ create table chat.visitatore (
   nome text check (nome is null or char_length(nome) <= 100),
   email text check (email is null or char_length(email) <= 254),
   creato_il timestamptz not null default now(),
-  ultimo_il timestamptz not null default now()
+  ultimo_il timestamptz not null default now(),
+  -- Cambi di nome o email nell'ultima ora (al massimo 10): ogni cambio rimette in coda un messaggio per il negozio.
+  profilo_cambi integer not null default 0,
+  profilo_finestra timestamptz
 );
 
 create table chat.messaggio (
@@ -39,12 +42,19 @@ create table chat.messaggio (
   pagina text check (pagina is null or char_length(pagina) <= 500),
   firma text check (firma is null or char_length(firma) <= 100),
   creato_il timestamptz not null default clock_timestamp(),
-  importato_il timestamptz
+  importato_il timestamptz,
+  -- Da quando aspetta il negozio (creazione, o nome ed email nuovi): l'ordine della coda. Un messaggio rimesso in coda va
+  -- in fondo e non scavalca quelli già in attesa.
+  in_coda_dal timestamptz not null default clock_timestamp(),
+  -- Ultimo prelievo del negozio: un messaggio rimesso in coda dopo il prelievo non si conferma, si rilegge con i dati nuovi.
+  prelevato_il timestamptz,
+  -- Prima importazione: per il visitatore resta «Consegnato» anche se il messaggio torna in coda per un profilo nuovo.
+  consegnato_il timestamptz
 );
 -- Lo stesso messaggio del visitatore (stesso id_client) e la stessa risposta del negozio non si scrivono due volte.
 create unique index messaggio_entrata_unico on chat.messaggio (visitatore, id_client) where direzione = 'entrata';
 create unique index messaggio_uscita_unico on chat.messaggio (id_client) where direzione = 'uscita';
-create index messaggio_da_importare on chat.messaggio (creato_il, id) where direzione = 'entrata' and importato_il is null;
+create index messaggio_da_importare on chat.messaggio (in_coda_dal, id) where direzione = 'entrata' and importato_il is null;
 create index messaggio_del_visitatore on chat.messaggio (visitatore, creato_il);
 
 alter table chat.negozio enable row level security;
@@ -89,30 +99,50 @@ end $$;
 
 create function public.chat_profilo(p_nome text, p_email text)
 returns void language plpgsql security definer set search_path = '' as $$
-declare v_visitatore uuid := auth.uid();
+declare
+  v_visitatore uuid := auth.uid();
+  v_nome text := nullif(left(btrim(p_nome), 100), '');
+  v_email text := nullif(left(lower(btrim(p_email)), 254), '');
+  v_prima chat.visitatore;
 begin
   if v_visitatore is null then raise exception 'not_signed_in' using errcode = 'PT401'; end if;
-  update chat.visitatore set
-    nome = coalesce(nullif(left(btrim(p_nome), 100), ''), nome),
-    email = coalesce(nullif(left(lower(btrim(p_email)), 254), ''), email),
-    ultimo_il = now()
-  where id = v_visitatore;
-  -- Nome ed email lasciati dopo l'importazione arrivano lo stesso a Ishtar Lab: l'ultimo messaggio del visitatore torna da
-  -- importare; Ishtar Lab lo riconosce già registrato (stesso id), non lo duplica e aggiorna il contatto.
-  update chat.messaggio set importato_il = null
-  where id = (select m.id from chat.messaggio m where m.visitatore = v_visitatore and m.direzione = 'entrata' order by m.creato_il desc, m.id desc limit 1)
-    and importato_il is not null;
+  perform pg_advisory_xact_lock(hashtextextended('chat:' || v_visitatore::text, 0));
+  select * into v_prima from chat.visitatore v where v.id = v_visitatore;
+  if not found then return; end if;
+  -- Valori vuoti o uguali a quelli salvati: niente cambia e nessun messaggio torna in coda.
+  if coalesce(v_nome, v_prima.nome) is not distinct from v_prima.nome and coalesce(v_email, v_prima.email) is not distinct from v_prima.email then
+    return;
+  end if;
+  if v_prima.profilo_finestra is null or v_prima.profilo_finestra < now() - interval '1 hour' then
+    v_prima.profilo_cambi := 0;
+    v_prima.profilo_finestra := now();
+  end if;
+  if v_prima.profilo_cambi >= 10 then raise exception 'too_many_changes' using errcode = 'PT429'; end if;
+  update chat.visitatore v set
+    nome = coalesce(v_nome, v.nome),
+    email = coalesce(v_email, v.email),
+    ultimo_il = now(),
+    profilo_cambi = v_prima.profilo_cambi + 1,
+    profilo_finestra = v_prima.profilo_finestra
+  where v.id = v_visitatore;
+  -- Nome ed email nuovi arrivano lo stesso a Ishtar Lab: l'ultimo messaggio del visitatore torna in coda, in fondo; se il
+  -- negozio l'ha appena prelevato non lo conferma e lo rilegge (lo riconosce già registrato e aggiorna il contatto).
+  update chat.messaggio m set importato_il = null, in_coda_dal = clock_timestamp()
+  where m.id = (select x.id from chat.messaggio x where x.visitatore = v_visitatore and x.direzione = 'entrata' order by x.creato_il desc, x.id desc limit 1);
 end $$;
 
 create function public.chat_leggi(p_dopo timestamptz default null, p_limite integer default 50)
-returns table (id uuid, direzione text, testo text, firma text, creato_il timestamptz, importato boolean)
+returns table (id uuid, direzione text, testo text, firma text, creato_il timestamptz, importato boolean, id_client text)
 language plpgsql security definer set search_path = '' as $$
 declare v_visitatore uuid := auth.uid();
 begin
   if v_visitatore is null then raise exception 'not_signed_in' using errcode = 'PT401'; end if;
   return query
-    select u.id, u.direzione, u.testo, u.firma, u.creato_il, u.importato from (
-      select m.id, m.direzione, m.testo, m.firma, m.creato_il, (m.direzione = 'uscita' or m.importato_il is not null) as importato
+    select u.id, u.direzione, u.testo, u.firma, u.creato_il, u.importato, u.id_client from (
+      -- id_client solo dei messaggi del visitatore (il suo valore): il widget riconosce i suoi messaggi anche se la
+      -- risposta all'invio si è persa.
+      select m.id, m.direzione, m.testo, m.firma, m.creato_il, (m.direzione = 'uscita' or m.consegnato_il is not null) as importato,
+        case when m.direzione = 'entrata' then m.id_client end as id_client
       from chat.messaggio m
       where m.visitatore = v_visitatore and (p_dopo is null or m.creato_il > p_dopo)
       order by m.creato_il desc, m.id desc
@@ -144,12 +174,20 @@ begin
     raise exception 'reader_busy' using errcode = 'PT409';
   end if;
   update chat.negozio n set lettore = p_lettore, battito = now() where n.id = 1;
+  -- In ordine di coda; il prelievo si segna sui messaggi restituiti (chat_conferma lo confronta con in_coda_dal).
   return query
-    select m.id, m.visitatore, m.testo, m.pagina, v.nome, v.email, m.creato_il
-    from chat.messaggio m join chat.visitatore v on v.id = m.visitatore
-    where m.direzione = 'entrata' and m.importato_il is null
-    order by m.creato_il, m.id
-    limit least(greatest(coalesce(p_limite, 50), 1), 200);
+    with scelti as (
+      select m.id from chat.messaggio m
+      where m.direzione = 'entrata' and m.importato_il is null
+      order by m.in_coda_dal, m.id
+      limit least(greatest(coalesce(p_limite, 50), 1), 200)
+    ), segnati as (
+      update chat.messaggio m set prelevato_il = clock_timestamp() from scelti s where m.id = s.id
+      returning m.id, m.visitatore, m.testo, m.pagina, m.creato_il, m.in_coda_dal
+    )
+    select g.id, g.visitatore, g.testo, g.pagina, v.nome, v.email, g.creato_il
+    from segnati g join chat.visitatore v on v.id = g.visitatore
+    order by g.in_coda_dal, g.id;
 end $$;
 
 create function public.chat_conferma(p_lettore text, p_ids uuid[])
@@ -158,8 +196,10 @@ declare v_negozio chat.negozio; v_conferme integer;
 begin
   select * into v_negozio from chat.negozio n where n.id = 1;
   if v_negozio.lettore is distinct from p_lettore then raise exception 'reader_busy' using errcode = 'PT409'; end if;
-  update chat.messaggio m set importato_il = now()
-    where m.id = any (coalesce(p_ids, '{}')) and m.direzione = 'entrata' and m.importato_il is null;
+  -- Solo messaggi prelevati e non rimessi in coda dopo il prelievo (nome o email nuovi): quelli si rileggono.
+  update chat.messaggio m set importato_il = now(), consegnato_il = coalesce(m.consegnato_il, now())
+    where m.id = any (coalesce(p_ids, '{}')) and m.direzione = 'entrata' and m.importato_il is null
+      and m.prelevato_il is not null and m.in_coda_dal <= m.prelevato_il;
   get diagnostics v_conferme = row_count;
   return v_conferme;
 end $$;

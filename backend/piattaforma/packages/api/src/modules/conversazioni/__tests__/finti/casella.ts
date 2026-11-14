@@ -21,6 +21,10 @@ export type MessaggioFinto = {
   firma: string | null
   creato_il: string
   importato_il: string | null
+  /** Ordine della coda del negozio, come nell'SQL: creazione, o profilo nuovo (in fondo). */
+  in_coda_dal: string
+  prelevato_il: string | null
+  consegnato_il: string | null
 }
 export type GuastiCasella = { stato?: number; lento?: number; cadeDopoScrittura?: boolean; confermaPersa?: boolean; assenti?: string[] }
 export type CasellaFinta = {
@@ -69,16 +73,20 @@ export async function avviaCasellaFinta({ chiave, porta = 0 }: { chiave: string;
       finta.visitatori.set(visitatore, { nome: nome ?? prima?.nome ?? null, email: email?.toLowerCase() ?? prima?.email ?? null })
       const esistente = finta.messaggi.find((m) => m.visitatore === visitatore && m.id_client === id_client && m.direzione === "entrata")
       if (esistente) return esistente
-      const m: MessaggioFinto = { id: randomUUID(), visitatore, direzione: "entrata", id_client, testo, pagina, firma: null, creato_il: ora(), importato_il: null }
+      const quando = ora()
+      const m: MessaggioFinto = { id: randomUUID(), visitatore, direzione: "entrata", id_client, testo, pagina, firma: null, creato_il: quando, importato_il: null, in_coda_dal: quando, prelevato_il: null, consegnato_il: null }
       finta.messaggi.push(m)
       return m
     },
     profiloDalVisitatore({ visitatore, nome = null, email = null }) {
       const prima = finta.visitatori.get(visitatore)
       if (!prima) return
-      finta.visitatori.set(visitatore, { nome: nome?.trim() || prima.nome, email: email?.trim().toLowerCase() || prima.email })
+      const dopo = { nome: nome?.trim() || prima.nome, email: email?.trim().toLowerCase() || prima.email }
+      // Come chat_profilo: valori uguali non cambiano nulla; altrimenti l'ultimo messaggio torna in coda, in fondo.
+      if (dopo.nome === prima.nome && dopo.email === prima.email) return
+      finta.visitatori.set(visitatore, dopo)
       const ultimo = finta.messaggi.filter((m) => m.visitatore === visitatore && m.direzione === "entrata").sort((a, b) => b.creato_il.localeCompare(a.creato_il))[0]
-      if (ultimo) ultimo.importato_il = null
+      if (ultimo) Object.assign(ultimo, { importato_il: null, in_coda_dal: ora() })
     },
     chiudi: () => new Promise((ok) => { for (const p of prese) p.destroy(); server.close(() => ok()) }),
   }
@@ -92,10 +100,12 @@ export async function avviaCasellaFinta({ chiave, porta = 0 }: { chiave: string;
       finta.negozio.lettore = p_lettore
       finta.negozio.battito = new Date().toISOString()
       const limite = Math.min(Math.max(Number(p_limite) || 50, 1), 200)
-      return finta.messaggi
+      const scelti = finta.messaggi
         .filter((m) => m.direzione === "entrata" && !m.importato_il)
-        .sort((a, b) => a.creato_il.localeCompare(b.creato_il) || a.id.localeCompare(b.id))
+        .sort((a, b) => a.in_coda_dal.localeCompare(b.in_coda_dal) || a.id.localeCompare(b.id))
         .slice(0, limite)
+      for (const m of scelti) m.prelevato_il = ora()
+      return scelti
         .map((m) => ({ id: m.id, visitatore: m.visitatore, testo: m.testo, pagina: m.pagina, nome: finta.visitatori.get(m.visitatore)?.nome ?? null, email: finta.visitatori.get(m.visitatore)?.email ?? null, creato_il: m.creato_il }))
     },
     chat_conferma: ({ p_lettore, p_ids }, res) => {
@@ -103,7 +113,12 @@ export async function avviaCasellaFinta({ chiave, porta = 0 }: { chiave: string;
       const ids = new Set(Array.isArray(p_ids) ? p_ids : [])
       let conferme = 0
       for (const m of finta.messaggi) {
-        if (ids.has(m.id) && m.direzione === "entrata" && !m.importato_il) { m.importato_il = ora(); conferme += 1 }
+        // Come l'SQL: solo messaggi prelevati e non rimessi in coda dopo il prelievo.
+        if (ids.has(m.id) && m.direzione === "entrata" && !m.importato_il && m.prelevato_il && m.in_coda_dal <= m.prelevato_il) {
+          m.importato_il = ora()
+          m.consegnato_il ??= m.importato_il
+          conferme += 1
+        }
       }
       if (finta.guasti.confermaPersa) { res.destroy(); return undefined }
       return conferme
@@ -115,7 +130,8 @@ export async function avviaCasellaFinta({ chiave, porta = 0 }: { chiave: string;
       let m = finta.messaggi.find((x) => x.id_client === p_id_client && x.direzione === "uscita")
       if (m && m.visitatore !== p_visitatore) throw new ErroreRpc(409, "PT409", "id_conflict")
       if (!m) {
-        m = { id: randomUUID(), visitatore: p_visitatore, direzione: "uscita", id_client: p_id_client, testo: p_testo, pagina: null, firma: typeof p_firma === "string" && p_firma.trim() ? p_firma.trim().slice(0, 100) : null, creato_il: ora(), importato_il: null }
+        const quando = ora()
+        m = { id: randomUUID(), visitatore: p_visitatore, direzione: "uscita", id_client: p_id_client, testo: p_testo, pagina: null, firma: typeof p_firma === "string" && p_firma.trim() ? p_firma.trim().slice(0, 100) : null, creato_il: quando, importato_il: null, in_coda_dal: quando, prelevato_il: null, consegnato_il: null }
         finta.messaggi.push(m)
       }
       if (finta.guasti.cadeDopoScrittura) { res.destroy(); return undefined }

@@ -89,13 +89,36 @@ set local role authenticated;
 set local request.jwt.claims to '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated","is_anonymous":true}';
 select is((select count(*) from public.chat_leggi(null, 50)), 2::bigint, 'A vede il suo messaggio e una sola risposta');
 select is((select firma from public.chat_leggi(null, 50) where direzione = 'uscita'), 'Ishtar Lab', 'la risposta porta la firma del negozio');
--- Nome ed email lasciati dopo l'importazione: l'ultimo messaggio di A torna da importare, così Ishtar Lab li riceve
--- anche se A non scrive più (lo riconosce già registrato e aggiorna il contatto).
+-- Nome ed email lasciati dopo l'importazione: l'ultimo messaggio di A torna in coda, ma in fondo (dopo quelli già in
+-- attesa), così Ishtar Lab riceve i dati nuovi anche se A non scrive più; valori uguali non cambiano nulla.
+set local request.jwt.claims to '{"sub":"55555555-5555-4555-8555-555555555555","role":"authenticated","is_anonymous":true}';
+select lives_ok($$ select public.chat_scrivi('c-messaggio-0001', 'Ciao da Carla', null, null, null) $$, 'C scrive (resta da importare)');
+set local request.jwt.claims to '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated","is_anonymous":true}';
 select lives_ok($$ select public.chat_profilo('Anna Bianchi', null) $$, 'A cambia nome dopo che i suoi messaggi sono stati importati');
+select lives_ok($$ select public.chat_profilo('Anna Bianchi', '') $$, 'stessi valori di nuovo: nessun effetto');
+select is((select importato from public.chat_leggi(null, 50) where testo like 'Ciao, avete%'), true, 'per A resta «Consegnato» anche mentre è di nuovo in coda');
+select is((select id_client from public.chat_leggi(null, 50) where direzione = 'entrata' and testo like 'Ciao, avete%'), 'a-messaggio-0001', 'chat_leggi dà al visitatore l''id dei suoi messaggi');
+select ok((select bool_and(id_client is null) from public.chat_leggi(null, 50) where direzione = 'uscita'), 'mai quello delle risposte del negozio');
+reset role;
+create temp table prelevati on commit drop as select * from public.chat_preleva('istanza-1', 50) with ordinality as t(id, visitatore, testo, pagina, nome, email, creato_il, n);
+grant select on prelevati to service_role;
+select is((select string_agg(testo || ' / ' || coalesce(nome, '-'), ' | ' order by n) from prelevati),
+  'Ciao da Carla / - | Ciao, avete l''abito verde? / Anna Bianchi', 'il messaggio rimesso in coda viene dopo quelli già in attesa, una volta sola');
+-- Email cambiata fra il prelievo e la conferma: il messaggio di A non si conferma e si rilegge con l'email nuova.
+set local role authenticated;
+select lives_ok($$ select public.chat_profilo(null, 'anna.b@example.com') $$, 'A cambia email mentre il negozio importa');
 set local role service_role;
+select is(public.chat_conferma('istanza-1', array(select id from prelevati)), 1, 'si conferma solo il messaggio di C: quello di A è tornato in coda dopo il prelievo');
 select is((select string_agg(testo || ' / ' || nome || ' / ' || email, ',') from public.chat_preleva('istanza-1', 50)),
-  'Ciao, avete l''abito verde? / Anna Bianchi / anna.rossi@example.com', 'solo l''ultimo messaggio di A torna da importare, con il nome nuovo');
-select is(public.chat_conferma('istanza-1', array(select id from public.chat_preleva('istanza-1', 50))), 1, 'riconfermato una volta');
+  'Ciao, avete l''abito verde? / Anna Bianchi / anna.b@example.com', 'riletto con l''email nuova');
+select is(public.chat_conferma('istanza-1', array(select id from public.chat_preleva('istanza-1', 50))), 1, 'poi confermato');
+-- Al massimo 10 cambi di nome o email all'ora per visitatore: oltre, rifiutati.
+set local role authenticated;
+-- Già 3 cambi di A (nome ed email all'inizio, nome, email): altri 7 arrivano a 10.
+select lives_ok($$ select public.chat_profilo('Nome ' || g, null) from generate_series(1, 7) g $$, 'A arriva a 10 cambi in un''ora');
+select throws_ok($$ select public.chat_profilo('Nome undici', null) $$, 'PT429', 'too_many_changes', 'l''undicesimo cambio nell''ora è rifiutato');
+set local role service_role;
+select is(public.chat_conferma('istanza-1', array(select id from public.chat_preleva('istanza-1', 50))), 1, 'riconfermato dopo i cambi');
 set local role authenticated;
 set local request.jwt.claims to '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated","is_anonymous":true}';
 select lives_ok($$ select public.chat_scrivi('a-messaggio-0004', 'Grazie, la prendo!', null, null, null) $$, 'A scrive ancora (resta da importare)');
