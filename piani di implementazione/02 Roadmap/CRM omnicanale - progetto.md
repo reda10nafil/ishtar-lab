@@ -46,7 +46,7 @@ La ricognizione del 13 novembre (codice di v1 e v2, documentazione ufficiale dei
 - Si lavora sulla **versione 1** (backend Mercur/Medusa 2.22.3 in `backend/piattaforma`, primo pannello in `frontend/ishtar-lab`). Licenza, titolarità e avvisi dei terzi non si toccano.
 - Il primo pannello è compilato (React minificato, senza sorgenti): una pagina nuova si aggiunge come il catalogo, con un adattatore, i componenti e i token originali (`.ai-style-rules.md`) e modifiche minime a router e menu.
 - Le credenziali dei canali restano nel modulo connettori (AES-256-GCM con `CONNECTORS_KEY`); solo il server le legge.
-- WhatsApp, Instagram, Messenger e la chat del sito in produzione richiedono un indirizzo HTTPS pubblico con certificato valido per i webhook; Telegram e l'email funzionano anche senza, leggendo a intervalli.
+- WhatsApp, Instagram e Messenger in produzione richiedono un indirizzo HTTPS pubblico con certificato valido per i webhook. Telegram, l'email e la chat del sito funzionano senza, leggendo a intervalli: la chat del sito passa da una casella su Supabase, che ha il suo indirizzo HTTPS, e Ishtar Lab resta su 127.0.0.1 (scelta di Marco del 14/11).
 - Gli account di prova li creano Marco e Reda; satria64 dice quali servono e non inserisce password o token.
 - I messaggi sono dati personali: vanno inclusi nell'esportazione dei dati del cliente e cancellati con lui (da completare in una tappa successiva).
 
@@ -68,7 +68,7 @@ La ricognizione del 13 novembre (codice di v1 e v2, documentazione ufficiale dei
 | 1 | Nucleo delle conversazioni nel backend, API per la casella, permesso, risposte rapide; canale Telegram (lettura a intervalli e invio) | un bot Telegram di prova del negozio, creato con @BotFather e usato solo per i clienti, con il token inserito da Marco nella console › Connettori › Telegram |
 | 2 | Pagina «Chats» nel primo pannello con la scheda cliente, attraverso il ponte (fatta il 13/11: [[CRM omnicanale - piano tappa 2]]) | niente |
 | 3 | Email: lettura IMAP della casella del negozio, risposte via SMTP nello stesso filo (fatta il 13/11: [[CRM omnicanale - piano tappa 3]]) | una casella email di prova con IMAP attivo e password per app, inserita da Marco nella console |
-| 4 | Chat del sito: rotte pubbliche per il negozio, aggiornamento in tempo reale, piccolo widget | il sito del negozio su cui provarla |
+| 4 | Chat del sito: casella su un progetto Supabase dedicato, letta a intervalli da Ishtar Lab, e piccolo widget per il sito (scelta del 14/11: [[CRM omnicanale - piano tappa 4]]) | il progetto Supabase della chat e il captcha Turnstile, creati da Reda; il sito su cui provarla |
 | 5 | WhatsApp, Instagram, Messenger: webhook firmati, finestra di 24 ore, modelli WhatsApp | app Meta per sviluppatori, portafoglio business, numero di prova WhatsApp, Pagina Facebook e profilo Instagram professionale di prova, un indirizzo HTTPS pubblico |
 | 6 | Connettori per spedizioni (Sendcloud), pagamenti (Stripe), Google Analytics e Search Console per SEO e GEO | account di prova dei servizi scelti |
 
@@ -76,4 +76,4 @@ Ogni tappa è una pull request con test, prove dal vivo, revisione avversariale 
 
 ## Lasciato a chi costruisce
 
-Nomi interni, struttura dei file, messaggi dell'interfaccia (in inglese come il resto della console), intervalli di lettura, limiti di lunghezza: decisi nei piani di ogni tappa. Piani: [[CRM omnicanale - piano tappa 1]], [[CRM omnicanale - piano tappa 2]], [[CRM omnicanale - piano tappa 3]].
+Nomi interni, struttura dei file, messaggi dell'interfaccia (in inglese come il resto della console), intervalli di lettura, limiti di lunghezza: decisi nei piani di ogni tappa. Piani: [[CRM omnicanale - piano tappa 1]], [[CRM omnicanale - piano tappa 2]], [[CRM omnicanale - piano tappa 3]], [[CRM omnicanale - piano tappa 4]].
