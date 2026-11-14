@@ -6,7 +6,8 @@ import type { AddressInfo } from "node:net"
  * Casella finta della chat del sito per le prove (solo node:http): le funzioni del negozio della casella su Supabase
  * (chat_versione, chat_preleva, chat_conferma, chat_rispondi, chat_verifica) su POST /rest/v1/rpc/<nome>, con gli errori
  * nel formato di PostgREST ({ code, message }, stato HTTP dal codice PTxyz). I messaggi dei visitatori si aggiungono a
- * mano; guasti a comando: stato fisso, lentezza, caduta dopo la scrittura della risposta, conferma persa. Le stesse
+ * mano; guasti a comando: stato fisso, lentezza, caduta dopo la scrittura della risposta, conferma persa, funzioni assenti
+ * (404 PGRST202, come un progetto senza l'SQL della chat). Le stesse
  * richieste si confrontano con la Supabase locale in strumenti-prova/contratto-casella.mjs.
  */
 
@@ -21,7 +22,7 @@ export type MessaggioFinto = {
   creato_il: string
   importato_il: string | null
 }
-export type GuastiCasella = { stato?: number; lento?: number; cadeDopoScrittura?: boolean; confermaPersa?: boolean }
+export type GuastiCasella = { stato?: number; lento?: number; cadeDopoScrittura?: boolean; confermaPersa?: boolean; assenti?: string[] }
 export type CasellaFinta = {
   base: string
   porta: number
@@ -144,6 +145,9 @@ export async function avviaCasellaFinta({ chiave, porta = 0 }: { chiave: string;
     if (req.headers.apikey !== chiave) return json(res, 401, { message: "Invalid API key" })
     if (finta.guasti.lento) await new Promise((ok) => setTimeout(ok, finta.guasti.lento))
     if (finta.guasti.stato) return json(res, finta.guasti.stato, { code: "XX000", message: "fake failure" })
+    if (finta.guasti.assenti?.includes(nome)) {
+      return json(res, 404, { code: "PGRST202", details: null, hint: null, message: `Could not find the function public.${nome} in the schema cache` })
+    }
     try {
       const esito = funzioni[nome](corpo ? JSON.parse(corpo) : {}, res)
       if (!res.destroyed) json(res, 200, esito)
