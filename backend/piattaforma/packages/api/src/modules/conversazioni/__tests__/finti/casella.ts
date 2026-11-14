@@ -33,6 +33,8 @@ export type CasellaFinta = {
   /** Nomi delle funzioni chiamate, in ordine (mai la chiave). */
   chiamate: string[]
   aggiungiDalVisitatore: (dati: { visitatore?: string; id_client?: string; testo: string; pagina?: string | null; nome?: string | null; email?: string | null }) => MessaggioFinto
+  /** Come chat_profilo: nome ed email del visitatore, e il suo ultimo messaggio torna da importare. */
+  profiloDalVisitatore: (dati: { visitatore: string; nome?: string | null; email?: string | null }) => void
   chiudi: () => Promise<void>
 }
 
@@ -70,6 +72,13 @@ export async function avviaCasellaFinta({ chiave, porta = 0 }: { chiave: string;
       const m: MessaggioFinto = { id: randomUUID(), visitatore, direzione: "entrata", id_client, testo, pagina, firma: null, creato_il: ora(), importato_il: null }
       finta.messaggi.push(m)
       return m
+    },
+    profiloDalVisitatore({ visitatore, nome = null, email = null }) {
+      const prima = finta.visitatori.get(visitatore)
+      if (!prima) return
+      finta.visitatori.set(visitatore, { nome: nome?.trim() || prima.nome, email: email?.trim().toLowerCase() || prima.email })
+      const ultimo = finta.messaggi.filter((m) => m.visitatore === visitatore && m.direzione === "entrata").sort((a, b) => b.creato_il.localeCompare(a.creato_il))[0]
+      if (ultimo) ultimo.importato_il = null
     },
     chiudi: () => new Promise((ok) => { for (const p of prese) p.destroy(); server.close(() => ok()) }),
   }
@@ -136,6 +145,7 @@ export async function avviaCasellaFinta({ chiave, porta = 0 }: { chiave: string;
       const dati = corpo ? JSON.parse(corpo) : {}
       if (percorso === "/_prova/visitatore") return json(res, 200, finta.aggiungiDalVisitatore(dati))
       if (percorso === "/_prova/guasti") { finta.guasti = dati; return json(res, 200, { ok: true }) }
+      if (percorso === "/_prova/profilo") { finta.profiloDalVisitatore(dati); return json(res, 200, { ok: true }) }
       if (percorso === "/_prova/stato") return json(res, 200, { negozio: finta.negozio, messaggi: finta.messaggi, chiamate: finta.chiamate })
       return json(res, 404, { message: "unknown test route" })
     }

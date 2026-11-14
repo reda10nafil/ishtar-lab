@@ -22,6 +22,12 @@ export type Preparata = { messaggio: MessaggioDTO; decisione: Decisione }
 /** Risposta rimasta in coda dopo la chiamata al canale (processo fermato durante l'invio): forse è arrivata. */
 export const NON_CONFERMATO = "Not confirmed: the customer may have received it. To repeat it, send it as a new reply"
 
+/** Nome e recapito da aggiornare: solo quelli che il canale dà e sono diversi (un valore assente non cancella il salvato). */
+const cambiIdentita = (e: Pick<InArrivo, "nome" | "recapito">, esistente: { nome: string | null; recapito: string | null }) => ({
+  ...(e.nome && e.nome !== esistente.nome ? { nome: e.nome } : {}),
+  ...(e.recapito && e.recapito !== esistente.recapito ? { recapito: e.recapito } : {}),
+})
+
 const ERRORE_UNICITA = /unique|duplicate|already exists/i
 const unicita = (errore: unknown) => ERRORE_UNICITA.test(String((errore as Error)?.message ?? errore))
 
@@ -95,6 +101,19 @@ export default class ConversazioniModuleService extends MedusaService({ Conversa
     return c ? { uidvalidity: c.uidvalidity, ultimo_uid: Number(c.ultimo_uid) } : null
   }
 
+  /**
+   * Nome e recapito nuovi di un contatto già noto, da un messaggio riletto e già registrato: la chat del sito rimanda
+   * l'ultimo messaggio quando il visitatore lascia nome o email dopo l'importazione. Vero se qualcosa è cambiato.
+   */
+  async aggiornaIdentita(e: Pick<InArrivo, "canale" | "account" | "id_contatto" | "nome" | "recapito">): Promise<boolean> {
+    const [esistente] = await this.listIdentitas({ canale: e.canale, account: e.account, id_contatto: e.id_contatto }, { take: 1 })
+    if (!esistente) return false
+    const cambi = cambiIdentita(e, esistente)
+    if (!Object.keys(cambi).length) return false
+    await this.updateIdentitas({ id: esistente.id, ...cambi })
+    return true
+  }
+
   /** Salva il punto di lettura (solo il job di lettura, sotto il suo lucchetto, scrive il cursore del suo canale). */
   async salvaCursore(canale: string, account: string, cartella: string, valore: { uidvalidity: string; ultimo_uid: number }): Promise<void> {
     const dati = { uidvalidity: valore.uidvalidity, ultimo_uid: String(valore.ultimo_uid) }
@@ -109,10 +128,7 @@ export default class ConversazioniModuleService extends MedusaService({ Conversa
     const [esistente] = await this.listIdentitas(filtro, { take: 1 }, contesto)
     if (!esistente) return this.createIdentitas({ ...filtro, nome: e.nome, recapito: e.recapito }, contesto)
     if (!aggiorna) return esistente
-    const cambi = {
-      ...(e.nome && e.nome !== esistente.nome ? { nome: e.nome } : {}),
-      ...(e.recapito && e.recapito !== esistente.recapito ? { recapito: e.recapito } : {}),
-    }
+    const cambi = cambiIdentita(e, esistente)
     if (Object.keys(cambi).length) await this.updateIdentitas({ id: esistente.id, ...cambi }, contesto)
     return esistente
   }

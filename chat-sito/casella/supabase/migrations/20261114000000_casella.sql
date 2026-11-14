@@ -97,6 +97,11 @@ begin
     email = coalesce(nullif(left(lower(btrim(p_email)), 254), ''), email),
     ultimo_il = now()
   where id = v_visitatore;
+  -- Nome ed email lasciati dopo l'importazione arrivano lo stesso a Ishtar Lab: l'ultimo messaggio del visitatore torna da
+  -- importare; Ishtar Lab lo riconosce già registrato (stesso id), non lo duplica e aggiorna il contatto.
+  update chat.messaggio set importato_il = null
+  where id = (select m.id from chat.messaggio m where m.visitatore = v_visitatore and m.direzione = 'entrata' order by m.creato_il desc, m.id desc limit 1)
+    and importato_il is not null;
 end $$;
 
 create function public.chat_leggi(p_dopo timestamptz default null, p_limite integer default 50)

@@ -89,6 +89,15 @@ set local role authenticated;
 set local request.jwt.claims to '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated","is_anonymous":true}';
 select is((select count(*) from public.chat_leggi(null, 50)), 2::bigint, 'A vede il suo messaggio e una sola risposta');
 select is((select firma from public.chat_leggi(null, 50) where direzione = 'uscita'), 'Ishtar Lab', 'la risposta porta la firma del negozio');
+-- Nome ed email lasciati dopo l'importazione: l'ultimo messaggio di A torna da importare, così Ishtar Lab li riceve
+-- anche se A non scrive più (lo riconosce già registrato e aggiorna il contatto).
+select lives_ok($$ select public.chat_profilo('Anna Bianchi', null) $$, 'A cambia nome dopo che i suoi messaggi sono stati importati');
+set local role service_role;
+select is((select string_agg(testo || ' / ' || nome || ' / ' || email, ',') from public.chat_preleva('istanza-1', 50)),
+  'Ciao, avete l''abito verde? / Anna Bianchi / anna.rossi@example.com', 'solo l''ultimo messaggio di A torna da importare, con il nome nuovo');
+select is(public.chat_conferma('istanza-1', array(select id from public.chat_preleva('istanza-1', 50))), 1, 'riconfermato una volta');
+set local role authenticated;
+set local request.jwt.claims to '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated","is_anonymous":true}';
 select lives_ok($$ select public.chat_scrivi('a-messaggio-0004', 'Grazie, la prendo!', null, null, null) $$, 'A scrive ancora (resta da importare)');
 
 -- ——— Lettore fermo da più di 10 minuti: un altro può subentrare ———

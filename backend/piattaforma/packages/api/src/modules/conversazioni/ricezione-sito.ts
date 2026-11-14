@@ -109,7 +109,11 @@ async function leggiSito(container: MedusaContainer, giri: number, attesa: numbe
       if (giro) await pausa(attesa)
       const { scartati, errore } = await elaboraSito(await client.preleva(lettore, LIMITE), {
         rif: client.rif,
-        registra: (e) => conversazioni.registraInArrivo(e),
+        registra: async (e) => {
+          const { nuovo } = await conversazioni.registraInArrivo(e)
+          // Già registrato: riletto perché il visitatore ha lasciato nome o email dopo l'importazione (o conferma persa).
+          if (!nuovo) await conversazioni.aggiornaIdentita(e)
+        },
         conferma: (ids) => client.conferma(lettore, ids),
       })
       if (scartati) logger.warn(`Customer inbox, site chat: ${scartati} message${scartati === 1 ? "" : "s"} without the chat's ids skipped`)

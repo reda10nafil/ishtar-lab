@@ -28,6 +28,7 @@ function contenitore(valori: Record<string, string> | null, { occupato = false }
   const guasti: Guasti = {}
   const daVerificare: DaVerificare[] = []
   const riconciliate: unknown[][] = []
+  const aggiornate: InArrivo[] = []
   const scrivi = (riga: string) => { registro.push(riga) }
   const servizi: Record<string, unknown> = {
     [Modules.LOCKING]: {
@@ -57,10 +58,11 @@ function contenitore(valori: Record<string, string> | null, { occupato = false }
       salvaCursore: async (canale: string, account: string, cartella: string, valore: Cursore) => { cursori.set(`${canale}|${account}|${cartella}`, valore) },
       daRiconciliare: async (canale: string) => (canale === "sito" ? daVerificare.map((r) => ({ ...r })) : []),
       riconciliaUscita: async (...argomenti: unknown[]) => { riconciliate.push(argomenti); return true },
+      aggiornaIdentita: async (e: InArrivo) => { aggiornate.push(e); return true },
     },
     [ContainerRegistrationKeys.LOGGER]: { info: scrivi, warn: scrivi, error: scrivi },
   }
-  return { container: { resolve: (chiave: string) => servizi[chiave] } as never, registrati: () => [...unici.values()], chiamate, errori, registro, cursori, guasti, daVerificare, riconciliate }
+  return { container: { resolve: (chiave: string) => servizi[chiave] } as never, registrati: () => [...unici.values()], chiamate, errori, registro, cursori, guasti, daVerificare, riconciliate, aggiornate }
 }
 
 describe("lettura della chat del sito (casella finta)", () => {
@@ -108,6 +110,18 @@ describe("lettura della chat del sito (casella finta)", () => {
     expect(c.registrati().map((e) => e.testo)).toEqual(["Ciao", "Ci sei?"])
     expect(c.chiamate).toHaveLength(2)
     expect(c.cursori.size).toBe(1)
+  })
+
+  it("nome ed email lasciati dopo l'importazione: il messaggio riletto aggiorna il contatto, senza doppioni", async () => {
+    casella.aggiungiDalVisitatore({ visitatore: ANNA, testo: "Ciao" })
+    const c = contenitore(valori())
+    expect(await riceviDaSito(c.container, { giri: 1, attesa: 0 })).toBe("fatto")
+    expect(c.aggiornate).toEqual([])
+    casella.profiloDalVisitatore({ visitatore: ANNA, nome: "Anna", email: "Anna@Example.com" })
+    expect(await riceviDaSito(c.container, { giri: 1, attesa: 0 })).toBe("fatto")
+    expect(c.registrati()).toHaveLength(1)
+    expect(c.aggiornate.map((e) => [e.canale, e.account, e.id_contatto, e.nome, e.recapito])).toEqual([["sito", "locale", ANNA, "Anna", "anna@example.com"]])
+    expect(casella.messaggi.every((m) => m.importato_il)).toBe(true)
   })
 
   it("caduta fra registrazione e conferma: al giro dopo si rilegge e la chiave unica evita il doppione", async () => {
