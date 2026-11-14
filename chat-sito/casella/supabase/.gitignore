@@ -1,0 +1,12 @@
+# Supabase
+.branches
+.temp
+
+# dotenvx
+.env.keys
+.env.local
+.env.*.local
+
+# La radice ignora *.sql (dump dei database): qui la migrazione e le prove della casella sono sorgenti.
+!migrations/*.sql
+!tests/*.sql
