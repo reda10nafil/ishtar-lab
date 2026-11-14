@@ -293,6 +293,10 @@ test('chat del sito: pagina mostrata al primo messaggio del visitatore e quando 
 test('chat del sito: risposta non confermata senza «Send again» (Ishtar Lab la verifica nella casella da solo)', () => {
   const incerta = {id: 'r', direzione: 'uscita', stato_consegna: 'incerto', quando: ADESSO - MIN, id_client: 'abc12345'};
   assert.deepEqual(statoRisposta(incerta, ADESSO, 'sito'), {testo: 'Not confirmed yet: checking with the site chat…', tono: 'warn', azione: null});
+  // Oltre 10 minuti la verifica non sta girando (per esempio connettore da sistemare): lo si dice e si può rimandare.
+  const ferma = {...incerta, quando: ADESSO - 11 * MIN};
+  assert.deepEqual(statoRisposta(ferma, ADESSO, 'sito'),
+    {testo: 'Not confirmed: the site chat could not be checked. Check Site chat in Apps, or send it again.', tono: 'warn', azione: 'rimanda'});
   assert.equal(statoRisposta(incerta, ADESSO, 'telegram').azione, 'rimanda');
   assert.equal(statoRisposta(incerta, ADESSO).azione, 'rimanda');
 });

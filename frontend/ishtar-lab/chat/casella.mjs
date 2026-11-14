@@ -145,12 +145,15 @@ export const ultimoVisto = messaggi => (messaggi?.length ? messaggi[messaggi.len
 
 const NON_CONFERMATO = 'Not confirmed: the customer may have received it.';
 const IN_CODA_DA = 60e3;
+// La verifica della chat del sito decide in pochi minuti: oltre questo tempo non sta girando (connettore da sistemare).
+const VERIFICA_SITO = 10 * 60e3;
 
 /**
  * Riga di stato sotto una risposta del team, con l'azione possibile:
  * `riprova` (stesso id: il server non la manda due volte), `rimanda` (id nuovo, dopo conferma), `modifica` (rifiutata).
- * Nella chat del sito una risposta non confermata non si rimanda: Ishtar Lab la cerca nella casella e la segna inviata
- * o non inviata entro pochi minuti (poi «Retry» con lo stesso id, che la casella non duplica).
+ * Nella chat del sito una risposta non confermata non si rimanda subito: Ishtar Lab la cerca nella casella e la segna
+ * inviata o non inviata entro pochi minuti (poi «Retry» con lo stesso id, che la casella non duplica). Se dopo 10 minuti
+ * è ancora incerta la verifica non sta girando: lo si dice e si può rimandare come nuova.
  */
 export function statoRisposta(m, adesso = Date.now(), canale = null) {
   if (m?.locale) {
@@ -173,9 +176,10 @@ export function statoRisposta(m, adesso = Date.now(), canale = null) {
       return {testo: !m.errore ? 'Not sent' : /^Not sent\b/.test(m.errore) ? m.errore : `Not sent: ${m.errore}`, tono: 'bad', azione: 'riprova'};
     case 'incerto':
       if (m.rimandata) return {testo: 'Not confirmed: sent again as a new message.', tono: 'warn', azione: null};
-      return canale === 'sito'
+      if (canale !== 'sito') return {testo: NON_CONFERMATO, tono: 'warn', azione: 'rimanda'};
+      return adesso - istante(m.quando) < VERIFICA_SITO
         ? {testo: 'Not confirmed yet: checking with the site chat…', tono: 'warn', azione: null}
-        : {testo: NON_CONFERMATO, tono: 'warn', azione: 'rimanda'};
+        : {testo: 'Not confirmed: the site chat could not be checked. Check Site chat in Apps, or send it again.', tono: 'warn', azione: 'rimanda'};
     default:
       return null;
   }

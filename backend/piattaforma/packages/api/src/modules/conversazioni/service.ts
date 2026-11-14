@@ -7,7 +7,8 @@ import { Messaggio } from "./models/messaggio"
 import { RispostaRapida } from "./models/risposta-rapida"
 import { idClientDaMessageId } from "./canali/email-regole"
 import {
-  chiaveInArrivo, chiaveUscita, decidiInvio, estratto, filtroNuoviDopo, ORDINE_MESSAGGI, statoDopo, statoDopoFallimento, type Decisione,
+  chiaveInArrivo, chiaveUscita, conversazioneDopoNonArrivata, decidiInvio, estratto, filtroNuoviDopo, ORDINE_MESSAGGI, statoDopo, statoDopoFallimento,
+  tornaInAttesa, type Decisione,
 } from "./regole"
 import type { Canale, InArrivo } from "./tipi"
 
@@ -268,8 +269,8 @@ export default class ConversazioniModuleService extends MedusaService({ Conversa
   /**
    * Esito ritrovato dal canale per una risposta forse arrivata; vale solo se la risposta è ancora in quello stato (un
    * invio finito nel frattempo conta di più). Ritrovata: «inviato», e la conversazione torna in attesa del cliente se era
-   * stata rimessa al team solo per il dubbio (aperta, nulla da leggere, nessun messaggio del cliente dopo la risposta).
-   * Non ritrovata: «fallito», come un invio fallito.
+   * rimessa al team solo per il dubbio su questa risposta (`tornaInAttesa`). Non ritrovata: «fallito», e la conversazione
+   * torna al team come dopo un rimbalzo (`conversazioneDopoNonArrivata`).
    */
   @InjectTransactionManager()
   async riconciliaUscita(
@@ -279,13 +280,15 @@ export default class ConversazioniModuleService extends MedusaService({ Conversa
   ): Promise<boolean> {
     const messaggio = await this.retrieveBattuta(messaggio_id, {}, contesto)
     if (messaggio.stato_consegna !== "incerto" && !(messaggio.stato_consegna === "in_coda" && messaggio.tentato_il)) return false
+    const conversazione = await this.retrieveConversazione(messaggio.conversazione_id, {}, contesto)
     if (esito.stato === "fallito") {
-      await this.esitoUscita(messaggio_id, esito, contesto)
+      await this.updateBattutas({ id: messaggio_id, stato_consegna: "fallito", errore: esito.errore }, contesto)
+      await this.updateConversaziones({ id: conversazione.id, ...conversazioneDopoNonArrivata(conversazione) }, contesto)
       return true
     }
     await this.updateBattutas({ id: messaggio_id, stato_consegna: "inviato", id_esterno: esito.id_esterno, errore: null }, contesto)
-    const conversazione = await this.retrieveConversazione(messaggio.conversazione_id, {}, contesto)
-    if (conversazione.stato === "aperta" && conversazione.non_letti === 0 && (await this.nuoviDopo(conversazione.id, messaggio.id, contesto)) === 0) {
+    const [ultimaUscita] = await this.listBattutas({ conversazione_id: conversazione.id, direzione: "uscita" }, { order: ORDINE_MESSAGGI, take: 1 }, contesto)
+    if (tornaInAttesa(conversazione, await this.nuoviDopo(conversazione.id, messaggio.id, contesto), ultimaUscita?.id ?? null, messaggio.id)) {
       await this.updateConversaziones({ id: conversazione.id, stato: "in_attesa" }, contesto)
     }
     return true

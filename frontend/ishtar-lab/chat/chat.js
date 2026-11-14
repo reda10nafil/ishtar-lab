@@ -264,7 +264,7 @@ function Aperta({s, scheda, id, conv, dati, larghezza}) {
   const messaggi = dati ? unisci(dati.messaggi, s.inSospeso, id, s.rimandate) : [];
   const adesso = Date.now();
   // Risposte da sistemare (non partite, rifiutate o non confermate): la chiusura chiede conferma e la chat chiusa lo dice.
-  const daSistemare = messaggi.filter(m => ['riprova', 'rimanda', 'modifica'].includes(statoRisposta(m, adesso)?.azione)).length;
+  const daSistemare = messaggi.filter(m => ['riprova', 'rimanda', 'modifica'].includes(statoRisposta(m, adesso, conv.canale)?.azione)).length;
   const inviando = s.inSospeso.some(r => r.conversazione_id === id && r.fase === 'invio');
   // Email: la risposta continua il filo dell'ultima email del cliente e va sempre a chi l'ha mandata.
   const email = conv.canale === 'email';
