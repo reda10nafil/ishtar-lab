@@ -25,17 +25,31 @@ PROOFS = {"qa-catalogo-operativo.json", "pagine-ripristinate.json", "avvio-bat.j
           "salvataggi-atomici-2026-11-12.json", "conflitti-movimenti-2026-11-13.json",
           "scorte-console-magazzino-2026-11-13.json",
           "crm-tappa1-2026-11-13.json", "crm-tappa2-2026-11-13.json", "crm-tappa3-2026-11-13.json", "chat-casella.test.mjs",
-          "chat-api.test.mjs", "chat-controllo.test.mjs"}
+          "chat-api.test.mjs", "chat-controllo.test.mjs", "crm-tappa4-2026-11-14.json", "chat-sito-widget.test.mjs"}
+# Chat del sito: il widget costruito si consegna (la cartella dist è altrove saltata), così come la migrazione e le prove
+# SQL della casella (gli altri .sql sono dump); lo stato locale della CLI di Supabase no.
+WIDGET_COSTRUITO = "chat-sito/widget/dist/ishtar-chat.js"
+SQL_CASELLA = {("chat-sito", "casella", "supabase", "migrations"), ("chat-sito", "casella", "supabase", "tests")}
+
+def visitare(base, d):
+    """Cartella da visitare durante la copia: saltate quelle di SKIP_DIRS, tranne la dist del widget della chat del sito."""
+    percorso = Path(base) / d
+    if percorso.is_symlink():
+        return False
+    return d not in SKIP_DIRS or percorso.relative_to(ROOT).as_posix() == "chat-sito/widget/dist"
 
 def permitted(p):
     rel = p.relative_to(ROOT)
     parts = rel.parts
     name = p.name
-    if any(x in SKIP_DIRS for x in parts) or p.is_symlink():
+    widget_costruito = rel.as_posix() == WIDGET_COSTRUITO
+    if (any(x in SKIP_DIRS for x in parts) and not widget_costruito) or p.is_symlink():
         return False
     if name.startswith(".env") or "credenzial" in name.lower():
         return False
-    if p.suffix.lower() in {".log", ".zip", ".sql", ".dump", ".pem", ".key", ".pfx", ".p12", ".pyc"}:
+    if p.suffix.lower() == ".sql" and tuple(parts[:4]) in SQL_CASELLA:
+        pass
+    elif p.suffix.lower() in {".log", ".zip", ".sql", ".dump", ".pem", ".key", ".pfx", ".p12", ".pyc"}:
         return False
     if len(parts) == 1:
         return name in ROOT_FILES or p.suffix.lower() in {".bat", ".cmd", ".sh"}
@@ -54,6 +68,8 @@ def permitted(p):
         return not name.startswith("workspace") and "cache" not in parts
     if top == "verifiche":
         return name in PROOFS
+    if top == "chat-sito":
+        return not any(x in {".branches", ".temp"} for x in parts)
     return False
 
 def main():
@@ -62,9 +78,9 @@ def main():
         raise SystemExit("Cartella di consegna già popolata: aggiornare i file mirati senza cancellazioni automatiche.")
     copied = []
     for base, dirs, files in os.walk(ROOT, followlinks=False):
-        dirs[:] = [d for d in dirs if d not in SKIP_DIRS and d not in {
+        dirs[:] = [d for d in dirs if visitare(base, d) and d not in {
             "consegne", "consegne-private", "Recupero-pannello-2026-11-06", "dati", "outputs"
-        } and not (Path(base) / d).is_symlink()]
+        }]
         for name in files:
             source = Path(base) / name
             if not permitted(source):

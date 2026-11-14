@@ -200,3 +200,16 @@ tags: [ishtar-lab]
 ## Lasciato a chi costruisce
 
 Nomi interni, testi secondari, forma esatta dei registri, struttura dei server finti, ordine dei casi della prova completa, aspetto del widget dentro i limiti di accessibilità.
+
+## Dopo la revisione (minori rimandati)
+
+Revisione avversariale del 14/11 (27 rilievi, 26 confermati): corretti i 6 importanti e i minori che pesavano; restano questi minori, da riprendere in una tappa successiva.
+
+- `chat_leggi` mostra al visitatore solo gli ultimi 50 messaggi: servono pagine precedenti.
+- Nessun limite complessivo all'afflusso: i limiti sono per visitatore; un attacco che paga i captcha moltiplica le sessioni.
+- La finestra di collegamento al cliente tratta «Visitor XXXX» come un nome scelto dal visitatore.
+- «Visitor XXXX» non si trova con la ricerca delle chat.
+- «Ricorda questa chat» toglie la sessione dalla scheda anche se la copia sul dispositivo non è riuscita.
+- «Riprova» nasconde il pulsante che ha il fuoco: chi usa la tastiera perde il punto.
+- La regola di stampa del widget non si applica (l'ospite ha `all: initial` con priorità).
+
