@@ -1,5 +1,6 @@
 import type { EsitoProva } from "./prova"
 import { provaCasella } from "../conversazioni/canali/email-connessioni"
+import { provaCasellaSito, validaSito } from "../conversazioni/canali/sito"
 
 /**
  * Catalogo dei servizi collegabili. Ogni voce descrive come si accede e come provare il collegamento.
@@ -332,6 +333,31 @@ export const CATALOGO: Servizio[] = [
       url: `${baseTelegram()}/bot${v.bot_token}/getMe`,
       account: (d) => d?.result?.username,
     }),
+  },
+  {
+    id: "chat_sito",
+    nome: "Site chat",
+    fornitore: "Supabase",
+    categoria: "messaggi",
+    descrizione:
+      "Chat window for the shop's website: visitors' messages appear in Chats and replies go back to the same window. Messages wait in a Supabase project of their own, so this computer is never exposed to the internet.",
+    accesso: "chiave",
+    campi: [
+      {
+        chiave: "url",
+        etichetta: "Project URL",
+        segreto: false,
+        segnaposto: "https://abcdefghijklmnopqrst.supabase.co",
+        aiuto: "The chat project's address, in Supabase under Project Settings",
+        legatoAlSegreto: true,
+      },
+      { chiave: "chiave", etichetta: "Secret key", segreto: true, segnaposto: "sb_secret_...", aiuto: "Project Settings → API Keys: the secret key, never the publishable one" },
+      { chiave: "nome", etichetta: "Name shown to visitors", segreto: false, facoltativo: true, segnaposto: "Ishtar Hub", aiuto: "Signs the replies in the chat window" },
+    ],
+    documentazione: "https://supabase.com/docs/guides/api/api-keys",
+    confermato: true,
+    valida: validaSito,
+    provaPersonalizzata: (valori) => provaCasellaSito(valori),
   },
   {
     id: "casella_email",

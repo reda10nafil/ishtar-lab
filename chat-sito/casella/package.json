@@ -1,0 +1,11 @@
+{
+  "name": "ishtar-chat-sito-casella",
+  "private": true,
+  "description": "Casella della chat del sito su Supabase: migrazione e prove pgTAP. La CLI serve solo alle prove locali e non entra nell'app.",
+  "scripts": {
+    "avvia": "npx supabase@2.122.0 start -x studio,imgproxy,storage-api,realtime,edge-runtime,logflare,vector,mailpit,supavisor",
+    "prove": "npx supabase@2.122.0 test db",
+    "azzera": "npx supabase@2.122.0 db reset",
+    "ferma": "npx supabase@2.122.0 stop"
+  }
+}

@@ -7,9 +7,10 @@ import { Messaggio } from "./models/messaggio"
 import { RispostaRapida } from "./models/risposta-rapida"
 import { idClientDaMessageId } from "./canali/email-regole"
 import {
-  chiaveInArrivo, chiaveUscita, decidiInvio, estratto, filtroNuoviDopo, ORDINE_MESSAGGI, statoDopo, statoDopoFallimento, type Decisione,
+  chiaveInArrivo, chiaveUscita, conversazioneDopoNonArrivata, decidiInvio, estratto, filtroNuoviDopo, ORDINE_MESSAGGI, statoDopo, statoDopoFallimento,
+  tornaInAttesa, type Decisione,
 } from "./regole"
-import type { InArrivo } from "./tipi"
+import type { Canale, InArrivo } from "./tipi"
 
 export type MessaggioDTO = InferTypeOf<typeof Messaggio>
 type ConversazioneDTO = InferTypeOf<typeof Conversazione>
@@ -21,6 +22,12 @@ export type Preparata = { messaggio: MessaggioDTO; decisione: Decisione }
 
 /** Risposta rimasta in coda dopo la chiamata al canale (processo fermato durante l'invio): forse è arrivata. */
 export const NON_CONFERMATO = "Not confirmed: the customer may have received it. To repeat it, send it as a new reply"
+
+/** Nome e recapito da aggiornare: solo quelli che il canale dà e sono diversi (un valore assente non cancella il salvato). */
+const cambiIdentita = (e: Pick<InArrivo, "nome" | "recapito">, esistente: { nome: string | null; recapito: string | null }) => ({
+  ...(e.nome && e.nome !== esistente.nome ? { nome: e.nome } : {}),
+  ...(e.recapito && e.recapito !== esistente.recapito ? { recapito: e.recapito } : {}),
+})
 
 const ERRORE_UNICITA = /unique|duplicate|already exists/i
 const unicita = (errore: unknown) => ERRORE_UNICITA.test(String((errore as Error)?.message ?? errore))
@@ -95,6 +102,19 @@ export default class ConversazioniModuleService extends MedusaService({ Conversa
     return c ? { uidvalidity: c.uidvalidity, ultimo_uid: Number(c.ultimo_uid) } : null
   }
 
+  /**
+   * Nome e recapito nuovi di un contatto già noto, da un messaggio riletto e già registrato: la chat del sito rimanda
+   * l'ultimo messaggio quando il visitatore lascia nome o email dopo l'importazione. Vero se qualcosa è cambiato.
+   */
+  async aggiornaIdentita(e: Pick<InArrivo, "canale" | "account" | "id_contatto" | "nome" | "recapito">): Promise<boolean> {
+    const [esistente] = await this.listIdentitas({ canale: e.canale, account: e.account, id_contatto: e.id_contatto }, { take: 1 })
+    if (!esistente) return false
+    const cambi = cambiIdentita(e, esistente)
+    if (!Object.keys(cambi).length) return false
+    await this.updateIdentitas({ id: esistente.id, ...cambi })
+    return true
+  }
+
   /** Salva il punto di lettura (solo il job di lettura, sotto il suo lucchetto, scrive il cursore del suo canale). */
   async salvaCursore(canale: string, account: string, cartella: string, valore: { uidvalidity: string; ultimo_uid: number }): Promise<void> {
     const dati = { uidvalidity: valore.uidvalidity, ultimo_uid: String(valore.ultimo_uid) }
@@ -109,10 +129,7 @@ export default class ConversazioniModuleService extends MedusaService({ Conversa
     const [esistente] = await this.listIdentitas(filtro, { take: 1 }, contesto)
     if (!esistente) return this.createIdentitas({ ...filtro, nome: e.nome, recapito: e.recapito }, contesto)
     if (!aggiorna) return esistente
-    const cambi = {
-      ...(e.nome && e.nome !== esistente.nome ? { nome: e.nome } : {}),
-      ...(e.recapito && e.recapito !== esistente.recapito ? { recapito: e.recapito } : {}),
-    }
+    const cambi = cambiIdentita(e, esistente)
     if (Object.keys(cambi).length) await this.updateIdentitas({ id: esistente.id, ...cambi }, contesto)
     return esistente
   }
@@ -232,6 +249,49 @@ export default class ConversazioniModuleService extends MedusaService({ Conversa
     const messaggio = await this.updateBattutas({ id: messaggio_id, stato_consegna: esito.stato, errore: esito.errore }, contesto)
     const conversazione = await this.retrieveConversazione(messaggio.conversazione_id, {}, contesto)
     await this.updateConversaziones({ id: conversazione.id, stato: statoDopoFallimento(conversazione.stato) }, contesto)
+  }
+
+  /**
+   * Risposte di un canale che le ritrova dal loro id (la chat del sito) forse arrivate: incerte o rimaste in coda dopo il
+   * tentativo, le più vecchie prima. Le verifica il job di lettura del canale con `regolaRileggibile`.
+   */
+  async daRiconciliare(canale: Canale, limite = 50): Promise<MessaggioDTO[]> {
+    return this.listBattutas(
+      {
+        direzione: "uscita",
+        conversazione: { canale },
+        $or: [{ stato_consegna: "incerto" }, { stato_consegna: "in_coda", tentato_il: { $ne: null } }],
+      } as never,
+      { order: { tentato_il: "ASC" }, take: limite }
+    )
+  }
+
+  /**
+   * Esito ritrovato dal canale per una risposta forse arrivata; vale solo se la risposta è ancora in quello stato (un
+   * invio finito nel frattempo conta di più). Ritrovata: «inviato», e la conversazione torna in attesa del cliente se era
+   * rimessa al team solo per il dubbio su questa risposta (`tornaInAttesa`). Non ritrovata: «fallito», e la conversazione
+   * torna al team come dopo un rimbalzo (`conversazioneDopoNonArrivata`).
+   */
+  @InjectTransactionManager()
+  async riconciliaUscita(
+    messaggio_id: string,
+    esito: { stato: "inviato"; id_esterno: string } | { stato: "fallito"; errore: string },
+    @MedusaContext() contesto: Context = {}
+  ): Promise<boolean> {
+    const messaggio = await this.retrieveBattuta(messaggio_id, {}, contesto)
+    if (messaggio.stato_consegna !== "incerto" && !(messaggio.stato_consegna === "in_coda" && messaggio.tentato_il)) return false
+    const conversazione = await this.retrieveConversazione(messaggio.conversazione_id, {}, contesto)
+    if (esito.stato === "fallito") {
+      await this.updateBattutas({ id: messaggio_id, stato_consegna: "fallito", errore: esito.errore }, contesto)
+      await this.updateConversaziones({ id: conversazione.id, ...conversazioneDopoNonArrivata(conversazione) }, contesto)
+      return true
+    }
+    await this.updateBattutas({ id: messaggio_id, stato_consegna: "inviato", id_esterno: esito.id_esterno, errore: null }, contesto)
+    const [ultimaUscita] = await this.listBattutas({ conversazione_id: conversazione.id, direzione: "uscita" }, { order: ORDINE_MESSAGGI, take: 1 }, contesto)
+    if (tornaInAttesa(conversazione, await this.nuoviDopo(conversazione.id, messaggio.id, contesto), ultimaUscita?.id ?? null, messaggio.id)) {
+      await this.updateConversaziones({ id: conversazione.id, stato: "in_attesa" }, contesto)
+    }
+    return true
   }
 
   /**

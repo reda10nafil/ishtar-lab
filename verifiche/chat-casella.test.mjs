@@ -6,7 +6,7 @@ const {
   etichettaCanale, etichettaStato, nomeContatto, quandoElenco, quandoMessaggio, soldi, statoOrdine,
   percorsoElenco, unisci, ultimoVisto, statoRisposta, testoErrore, nuovoId,
   oggettoRisposta, ultimaEmail, avvisoRispondiA, clienteConEmail, testoVerifica, testoCompleto, avvisoVerifica, inviaConTasto,
-  verificaContatto,
+  verificaContatto, notaSito, pagineDaMostrare, testoPagina,
 } = await import('../frontend/ishtar-lab/chat/casella.mjs');
 
 // Venerdì 13 novembre 2026, 15:30 a Roma.
@@ -249,4 +249,54 @@ test('proposta del cliente: la verifica del contatto è «non verificato» se un
   assert.equal(verificaContatto([email('a', 'verificato'), email('b', 'sconosciuto')]), 'sconosciuto');
   assert.equal(verificaContatto([{id: 'r', direzione: 'uscita', testo: 'x', email: {verifica: null}}]), null);
   assert.equal(verificaContatto(undefined), null);
+});
+
+test('chat del sito: «Visitor XXXX» senza nome, dalle ultime 4 lettere dell\'identità (uguale in elenco e in chat)', () => {
+  const identita = {id: 'idco_01JD8XW4M3T7KQ2', canale: 'sito', nome: null, recapito: null};
+  const riga = {id: 'conv_01JD8XW5ZZZZZZ', identita_id: 'idco_01JD8XW4M3T7KQ2', canale: 'sito', nome: null, recapito: null};
+  assert.equal(nomeContatto(identita), 'Visitor 7KQ2');
+  assert.equal(nomeContatto(riga), 'Visitor 7KQ2');
+  assert.equal(nomeContatto({...identita, nome: '  Anna  '}), 'Anna');
+  assert.equal(nomeContatto({...identita, recapito: 'anna@example.com'}), 'anna@example.com');
+  assert.equal(nomeContatto({canale: 'sito'}), 'Visitor');
+  assert.equal(nomeContatto({id: 'idco_X', canale: 'telegram'}), 'Customer');
+});
+
+test('chat del sito: nome ed email «typed by the visitor, not verified»; niente nota senza dati o fuori dal sito', () => {
+  assert.equal(notaSito({canale: 'sito', nome: 'Anna', recapito: 'anna@example.com'}), 'Name and email typed by the visitor, not verified.');
+  assert.equal(notaSito({canale: 'sito', nome: 'Anna', recapito: null}), 'Name typed by the visitor, not verified.');
+  assert.equal(notaSito({canale: 'sito', nome: ' ', recapito: 'anna@example.com'}), 'Email typed by the visitor, not verified.');
+  assert.equal(notaSito({canale: 'sito', nome: null, recapito: null}), null);
+  assert.equal(notaSito({canale: 'email', nome: 'Anna', recapito: 'anna@example.com'}), null);
+  assert.equal(notaSito(null), null);
+});
+
+test('chat del sito: pagina d\'origine solo come testo (dominio e percorso), solo http e https', () => {
+  assert.equal(testoPagina('https://negozio.example/abiti/verde'), 'From negozio.example/abiti/verde');
+  assert.equal(testoPagina('https://negozio.example/'), 'From negozio.example');
+  assert.equal(testoPagina('javascript:alert(1)'), null);
+  assert.equal(testoPagina('non un indirizzo'), null);
+  assert.equal(testoPagina(null), null);
+  const lunga = testoPagina(`https://negozio.example/${'a'.repeat(200)}`);
+  assert.equal([...lunga].length, 80);
+  assert.ok(lunga.endsWith('…'));
+});
+
+test('chat del sito: pagina mostrata al primo messaggio del visitatore e quando cambia, non a ogni messaggio', () => {
+  const da = (id, pagina) => ({id, direzione: 'entrata', testo: 'x', sito: {pagina}});
+  const messaggi = [da('a', 'https://n.example/1'), da('b', 'https://n.example/1'), {id: 'r', direzione: 'uscita', testo: 'y', sito: {pagina: 'https://n.example/9'}},
+    da('c', 'https://n.example/1'), da('d', 'https://n.example/2'), da('e', null), da('f', 'https://n.example/2')];
+  assert.deepEqual([...pagineDaMostrare(messaggi)], ['a', 'd']);
+  assert.deepEqual([...pagineDaMostrare([])], []);
+});
+
+test('chat del sito: risposta non confermata senza «Send again» (Ishtar Lab la verifica nella casella da solo)', () => {
+  const incerta = {id: 'r', direzione: 'uscita', stato_consegna: 'incerto', quando: ADESSO - MIN, id_client: 'abc12345'};
+  assert.deepEqual(statoRisposta(incerta, ADESSO, 'sito'), {testo: 'Not confirmed yet: checking with the site chat…', tono: 'warn', azione: null});
+  // Oltre 10 minuti la verifica non sta girando (per esempio connettore da sistemare): lo si dice e si può rimandare.
+  const ferma = {...incerta, quando: ADESSO - 11 * MIN};
+  assert.deepEqual(statoRisposta(ferma, ADESSO, 'sito'),
+    {testo: 'Not confirmed: the site chat could not be checked. Check Site chat in Apps, or send it again.', tono: 'warn', azione: 'rimanda'});
+  assert.equal(statoRisposta(incerta, ADESSO, 'telegram').azione, 'rimanda');
+  assert.equal(statoRisposta(incerta, ADESSO).azione, 'rimanda');
 });

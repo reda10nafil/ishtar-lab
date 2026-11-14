@@ -6,8 +6,49 @@ const STATI = {aperta: 'Open', in_attesa: 'Waiting for customer', chiusa: 'Close
 
 export const etichettaCanale = canale => CANALI[canale] ?? String(canale ?? '');
 export const etichettaStato = stato => STATI[stato] ?? String(stato ?? '');
-/** Mai vuoto: l'avatar del kit ricava le iniziali dal nome. */
-export const nomeContatto = contatto => contatto?.nome?.trim() || contatto?.recapito?.trim() || 'Customer';
+/**
+ * Mai vuoto: l'avatar del kit ricava le iniziali dal nome. Un visitatore della chat del sito senza nome è «Visitor» con
+ * le ultime 4 lettere della sua identità (`identita_id` nelle righe dell'elenco, `id` nell'identità): lo stesso nome
+ * nell'elenco e nella conversazione aperta.
+ */
+export const nomeContatto = contatto => contatto?.nome?.trim() || contatto?.recapito?.trim()
+  || (contatto?.canale === 'sito' ? visitatore(contatto) : 'Customer');
+const visitatore = contatto => {
+  const id = String(contatto?.identita_id ?? contatto?.id ?? '');
+  return id ? `Visitor ${id.slice(-4).toUpperCase()}` : 'Visitor';
+};
+
+/** Nome ed email della chat del sito li scrive il visitatore: si dice in chiaro che nessuno li ha verificati. */
+export function notaSito(identita) {
+  if (identita?.canale !== 'sito') return null;
+  const nome = Boolean(identita.nome?.trim()), email = Boolean(identita.recapito?.trim());
+  if (!nome && !email) return null;
+  return `${nome && email ? 'Name and email' : nome ? 'Name' : 'Email'} typed by the visitor, not verified.`;
+}
+
+/** Pagina da cui il visitatore ha scritto, come testo (mai un collegamento): dominio e percorso, al massimo 80 caratteri. */
+export function testoPagina(pagina) {
+  let url;
+  try { url = new URL(String(pagina ?? '')); } catch { return null; }
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+  let percorso = url.pathname;
+  try { percorso = decodeURI(percorso); } catch { /* percorso lasciato codificato */ }
+  const caratteri = [...`From ${url.host}${percorso === '/' ? '' : percorso}`];
+  return caratteri.length > 80 ? `${caratteri.slice(0, 79).join('')}…` : caratteri.join('');
+}
+
+/** Messaggi del visitatore sotto cui mostrare la pagina: il primo con una pagina e poi solo quando cambia. */
+export function pagineDaMostrare(messaggi) {
+  const mostra = new Set();
+  let ultima = null;
+  for (const m of messaggi ?? []) {
+    const pagina = m?.direzione === 'entrata' ? m.sito?.pagina ?? null : null;
+    if (!pagina) continue;
+    if (pagina !== ultima) mostra.add(m.id);
+    ultima = pagina;
+  }
+  return mostra;
+}
 
 const ORA = new Intl.DateTimeFormat('en-GB', {hour: '2-digit', minute: '2-digit'});
 const SETTIMANA = new Intl.DateTimeFormat('en-GB', {weekday: 'short'});
@@ -104,12 +145,17 @@ export const ultimoVisto = messaggi => (messaggi?.length ? messaggi[messaggi.len
 
 const NON_CONFERMATO = 'Not confirmed: the customer may have received it.';
 const IN_CODA_DA = 60e3;
+// La verifica della chat del sito decide in pochi minuti: oltre questo tempo non sta girando (connettore da sistemare).
+const VERIFICA_SITO = 10 * 60e3;
 
 /**
  * Riga di stato sotto una risposta del team, con l'azione possibile:
  * `riprova` (stesso id: il server non la manda due volte), `rimanda` (id nuovo, dopo conferma), `modifica` (rifiutata).
+ * Nella chat del sito una risposta non confermata non si rimanda subito: Ishtar Lab la cerca nella casella e la segna
+ * inviata o non inviata entro pochi minuti (poi «Retry» con lo stesso id, che la casella non duplica). Se dopo 10 minuti
+ * è ancora incerta la verifica non sta girando: lo si dice e si può rimandare come nuova.
  */
-export function statoRisposta(m, adesso = Date.now()) {
+export function statoRisposta(m, adesso = Date.now(), canale = null) {
   if (m?.locale) {
     if (m.fase === 'invio') return {testo: 'Sending…', tono: 'plain', azione: null};
     if (m.fase === 'attesa') return {testo: 'Not sent yet', tono: 'warn', azione: 'riprova'};
@@ -129,9 +175,11 @@ export function statoRisposta(m, adesso = Date.now()) {
     case 'fallito':
       return {testo: !m.errore ? 'Not sent' : /^Not sent\b/.test(m.errore) ? m.errore : `Not sent: ${m.errore}`, tono: 'bad', azione: 'riprova'};
     case 'incerto':
-      return m.rimandata
-        ? {testo: 'Not confirmed: sent again as a new message.', tono: 'warn', azione: null}
-        : {testo: NON_CONFERMATO, tono: 'warn', azione: 'rimanda'};
+      if (m.rimandata) return {testo: 'Not confirmed: sent again as a new message.', tono: 'warn', azione: null};
+      if (canale !== 'sito') return {testo: NON_CONFERMATO, tono: 'warn', azione: 'rimanda'};
+      return adesso - istante(m.quando) < VERIFICA_SITO
+        ? {testo: 'Not confirmed yet: checking with the site chat…', tono: 'warn', azione: null}
+        : {testo: 'Not confirmed: the site chat could not be checked. Check Site chat in Apps, or send it again.', tono: 'warn', azione: 'rimanda'};
     default:
       return null;
   }

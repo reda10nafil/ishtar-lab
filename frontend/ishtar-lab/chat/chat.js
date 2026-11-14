@@ -10,12 +10,12 @@ import {creaCasella} from './controllo.mjs';
 import {
   etichettaCanale, etichettaStato, nomeContatto, quandoElenco, quandoMessaggio, soldi, statoOrdine, unisci, statoRisposta,
   testoErrore, nuovoId, oggettoRisposta, ultimaEmail, avvisoRispondiA, clienteConEmail, testoVerifica, testoCompleto, avvisoVerifica,
-  verificaContatto, inviaConTasto,
+  verificaContatto, inviaConTasto, notaSito, pagineDaMostrare, testoPagina,
 } from './casella.mjs';
 import {attesaRiprova} from '../catalogo/collegamento.mjs';
 
 const React = modulo();
-const {useState, useEffect, useLayoutEffect, useRef, useSyncExternalStore, Fragment} = React;
+const {useState, useEffect, useLayoutEffect, useMemo, useRef, useSyncExternalStore, Fragment} = React;
 const h = React.createElement;
 const CANALI = ['telegram', 'email', 'sito', 'whatsapp', 'instagram', 'messenger'];
 const MASSIMO_RISPOSTA = 4000;
@@ -178,7 +178,7 @@ function Elenco({s, scheda, id, larghezza}) {
       ? h(Vuoto, {icon: 'search', title: 'No chats match', body: 'Try another name or word.'})
       : scheda === 'closed'
         ? h(Vuoto, {icon: 'chat', title: 'No closed chats'})
-        : h(Vuoto, {icon: 'chat', title: 'No open chats', body: "When a customer writes to the shop's Telegram bot or mailbox, the chat appears here."});
+        : h(Vuoto, {icon: 'chat', title: 'No open chats', body: "When a customer writes to the shop's Telegram bot, mailbox or site chat, the chat appears here."});
   } else {
     corpo = h('ul', {className: 'chat__righe'}, righe.map(r => h(Riga, {key: r.id, r, scheda, attiva: r.id === id, adesso, esito: s.esiti[r.id]})));
   }
@@ -264,7 +264,7 @@ function Aperta({s, scheda, id, conv, dati, larghezza}) {
   const messaggi = dati ? unisci(dati.messaggi, s.inSospeso, id, s.rimandate) : [];
   const adesso = Date.now();
   // Risposte da sistemare (non partite, rifiutate o non confermate): la chiusura chiede conferma e la chat chiusa lo dice.
-  const daSistemare = messaggi.filter(m => ['riprova', 'rimanda', 'modifica'].includes(statoRisposta(m, adesso)?.azione)).length;
+  const daSistemare = messaggi.filter(m => ['riprova', 'rimanda', 'modifica'].includes(statoRisposta(m, adesso, conv.canale)?.azione)).length;
   const inviando = s.inSospeso.some(r => r.conversazione_id === id && r.fase === 'invio');
   // Email: la risposta continua il filo dell'ultima email del cliente e va sempre a chi l'ha mandata.
   const email = conv.canale === 'email';
@@ -293,7 +293,7 @@ function Aperta({s, scheda, id, conv, dati, larghezza}) {
           // Mentre una risposta parte la chat non si chiude: un esito negativo finirebbe fra le chiuse senza che nessuno lo veda.
           : h('button', {type: 'button', className: 'btn btn--sm', 'aria-label': 'Close chat', disabled: !dati || inviando, onClick: chiudi}, h(Icona, {name: 'check'}), h('span', {className: 'chat-etichetta'}, 'Close')))),
     s.aperta.errore && dati && h('p', {className: 'chat-avviso', role: 'alert'}, `Not updated: ${s.aperta.errore}`),
-    dati ? h(Registro, {messaggi, conversazione_id: id, riprendi, chiusa, adesso})
+    dati ? h(Registro, {messaggi, conversazione_id: id, canale: conv.canale, riprendi, chiusa, adesso})
       : s.aperta.errore ? h(Vuoto, {icon: 'alert', title: 'Chats are offline', body: `${s.aperta.errore} Trying again…`})
         : h('p', {className: 'chat-carica', role: 'status'}, 'Loading messages…'),
     chiusa
@@ -315,8 +315,9 @@ function Aperta({s, scheda, id, conv, dati, larghezza}) {
         testo.length > MASSIMO_RISPOSTA - 500 && h('small', {className: 'chat-conta', 'aria-live': 'polite'}, `${testo.length} / ${MASSIMO_RISPOSTA}`)));
 }
 
-function Registro({messaggi, conversazione_id, riprendi, chiusa, adesso}) {
+function Registro({messaggi, conversazione_id, canale, riprendi, chiusa, adesso}) {
   const ref = useRef(null), inFondo = useRef(true), quanti = useRef(messaggi.length);
+  const pagine = useMemo(() => pagineDaMostrare(messaggi), [messaggi]);
   const [nuovi, cambiaNuovi] = useState(false);
   const ultimo = messaggi.length ? messaggi[messaggi.length - 1] : null;
   const chiaveUltimo = ultimo ? `${ultimo.id ?? ultimo.id_client}:${ultimo.stato_consegna ?? ultimo.fase}` : '';
@@ -343,16 +344,17 @@ function Registro({messaggi, conversazione_id, riprendi, chiusa, adesso}) {
     casella.segnaLetta();
   };
   return h('ol', {className: 'chat__registro', ref, role: 'log', 'aria-live': 'polite', 'aria-label': 'Messages', tabIndex: 0, onScroll: segui},
-    messaggi.length ? messaggi.map(m => h(Bolla, {key: m.id ?? m.id_client, m, adesso, conversazione_id, riprendi, chiusa}))
+    messaggi.length ? messaggi.map(m => h(Bolla, {key: m.id ?? m.id_client, m, adesso, conversazione_id, canale, pagina: pagine.has(m.id), riprendi, chiusa}))
       : h('li', {className: 'chat-carica'}, 'No messages yet.'),
     nuovi && h('li', {className: 'chat-nuovi'},
       h('button', {type: 'button', className: 'btn btn--sm btn--primary', onClick: vaiInFondo}, h(Icona, {name: 'arrowDown', size: 'sm'}), 'New messages')));
 }
 
-function Bolla({m, adesso, conversazione_id, riprendi, chiusa}) {
+function Bolla({m, adesso, conversazione_id, canale, pagina, riprendi, chiusa}) {
   const [citato, cambiaCitato] = useState(false);
   const fuori = m.locale || m.direzione === 'uscita';
-  const stato = statoRisposta(m, adesso);
+  const stato = statoRisposta(m, adesso, canale);
+  const daPagina = pagina ? testoPagina(m.sito?.pagina) : null;
   const riprova = () => (m.id_client ? casella.riprova({id_client: m.id_client, testo: m.testo, conversazione_id}) : rimanda());
   const rimanda = async () => {
     const si = await conferma({title: 'Send again?', body: 'The customer may already have this reply. Send it again as a new message?', ok: 'Send again'});
@@ -372,6 +374,7 @@ function Bolla({m, adesso, conversazione_id, riprendi, chiusa}) {
     m.email?.testo_completo && h('button', {type: 'button', className: 'chat-bolla__citato', 'aria-expanded': citato, onClick: () => cambiaCitato(!citato)},
       citato ? 'Hide quoted text' : 'Show quoted text'),
     avvisoVerifica(m) && h('small', {className: 'chat-bolla__avviso', role: 'note'}, avvisoVerifica(m)),
+    daPagina && h('small', {className: 'chat-bolla__pagina', title: m.sito.pagina}, daPagina),
     h('div', {className: 'chat-bolla__piede'},
       h('small', null, [chi, quandoMessaggio(m.quando, adesso)].filter(Boolean).join(' · ')),
       stato && h('small', {className: `chat-stato chat-stato--${stato.tono}`}, stato.testo)),
@@ -405,6 +408,7 @@ function SchedaCliente({idConversazione}) {
   if (!clienteId) {
     return h('div', {className: 'chat-scheda'},
       h('div', {className: 'chat-scheda__testa'}, h(Avatar, {name: contatto, size: 'lg'}), h('b', null, contatto), h('small', null, canale)),
+      notaSito(identita) && h('p', {className: 'chat-scheda__nota chat-scheda__nota--avviso', role: 'note'}, notaSito(identita)),
       h('p', {className: 'chat-scheda__nota'}, 'Not linked to a shop customer.'),
       identita.canale === 'email' && identita.recapito && h(PropostaEmail, {
         key: identita.recapito, idConversazione, indirizzo: identita.recapito, verifica: verificaContatto(dati.messaggi),

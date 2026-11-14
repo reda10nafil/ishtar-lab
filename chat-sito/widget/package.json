@@ -1,0 +1,12 @@
+{
+  "name": "ishtar-chat-sito-widget",
+  "private": true,
+  "type": "module",
+  "description": "Widget della chat del sito: un solo file JavaScript (dist/ishtar-chat.js) da aggiungere al sito del negozio. supabase-js entra solo dentro questo file.",
+  "scripts": {
+    "costruisci": "bun costruisci.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.118.0"
+  }
+}

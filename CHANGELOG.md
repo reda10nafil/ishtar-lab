@@ -211,7 +211,7 @@ Aggiornamento caricato su GitHub, commit d5235b84b5f2078294c953bda5cea9a89c7ba70
 - Una risposta non parte mai due volte e non sparisce in silenzio; «letta» solo con la pagina visibile e in primo piano; i dati veri restano in memoria.
 - Revisione avversariale (4 revisori e 4 verificatori): 27 rilievi confermati, 21 distinti, tutti corretti (fra questi, nel backend, l'ordine della conversazione uguale a quello dei messaggi nuovi e gli ordini recenti del cliente per data). Verifiche: jest 272/272, 123 test node, ponte 15/15, prova nel browser 67/67 con un Telegram finto, pannello 18/18, 32/32, 8/8 e 20/20; database ripristinato. Rapporto `verifiche/crm-tappa2-2026-11-13.json`.
 
-## 2026-11-13 — Email nella casella dei clienti, tappa 3 del CRM (versione modificata da satria64, proposta)
+## 2026-11-13 — Email nella casella dei clienti, tappa 3 del CRM (versione modificata da satria64, PR #11)
 
 - Connettore «Shop mailbox» (IMAP e SMTP con password o password per app): prova in sola lettura, solo server pubblici con TLS e certificati verificati, errori con testi fissi; cambiare server o utente richiede di riscrivere la password (anche per il sito di WooCommerce).
 - Lettura della Posta in arrivo ogni minuto senza cambiarla: primo collegamento senza la posta vecchia, casella rinumerata riletta da ieri senza doppioni, al massimo 50 email e circa 25 MB per giro; testo nuovo senza citazione, HTML ridotto a testo, allegati come segnaposto; risposte automatiche, newsletter e rapporti ignorati; i rimbalzi veri segnano la risposta e riaprono la chat.
@@ -220,3 +220,13 @@ Aggiornamento caricato su GitHub, commit d5235b84b5f2078294c953bda5cea9a89c7ba70
 - Librerie: imapflow 2.11.0 (MIT), postal-mime 4.2.1 (MIT-0), nodemailer 10.5.0 (MIT-0). Dopo l'unione `bun install` e `node infra/migra.mjs`.
 - Revisione avversariale (4 revisori e 4 scettici): 32 rilievi confermati, 23 distinti; corretti i 2 critici e gli 8 importanti, fra cui avvisi di ritardo presi per rimbalzi, email ostili che fermavano l'API, verifica DMARC aggirabile e password mandata a un server nuovo. Verifiche: jest 365/365, 131 test node, typecheck 0 errori; prova nel browser 58/58; Chats con Telegram 67/67; pannello 18/18, 32/32, 8/8 e 20/20; console 7/7; database ripristinato. Rapporto `verifiche/crm-tappa3-2026-11-13.json`.
 
+## 2026-11-14 — Chat del sito, tappa 4 del CRM (versione modificata da satria64, proposta)
+
+- Casella della chat su un progetto Supabase dedicato (`chat-sito/casella`): schema privato `chat`, solo funzioni del visitatore (utente anonimo con Turnstile) e del negozio (chiave segreta), limiti per visitatore e casella piena, un solo lettore alla volta; 49 prove pgTAP.
+- Connettore «Site chat» (Project URL, chiave segreta, firma delle risposte): prova con testi fissi, chiave legata al progetto e mai fuori dall'indirizzo del progetto.
+- Lettura ogni minuto (dieci prelievi a cinque secondi), conferma solo dopo la registrazione, lettore unico salvato nel database; nome ed email lasciati dopo l'importazione aggiornano il contatto.
+- Risposte scritte una volta sola per id, anche ritentate; le incerte si ritrovano da sole (Sent) o, dopo due minuti, diventano Not sent con Retry.
+- Pagina «Chats»: «Visitor XXXX», nome ed email «typed by the visitor, not verified», pagina d'origine, risposta incerta senza «Send again».
+- Widget per il sito (`chat-sito/widget/dist/ishtar-chat.js`): un file, Shadow DOM, testo mai come HTML, CSP rigorose e temi aggressivi, nulla prima di aprire la chat, Turnstile al primo invio, «ricorda» facoltativo, italiano e inglese, tastiera, 320 px e zoom.
+- Librerie: @supabase/supabase-js 2.118.0 (MIT) solo nel widget, solo AuthClient; CLI di Supabase 2.122.0 solo per le prove. Guida in `chat-sito/GUIDA.md`. Dopo l'unione: riavviare Ishtar Lab, nessuna migrazione.
+- Revisione avversariale (4 revisori e 4 scettici): 27 rilievi, 26 confermati; corretti i 6 importanti e i minori che pesavano (abuso del profilo nella casella, profilo perso durante l'importazione, risposte riconciliate senza segnale, nuovo visitatore dopo un rinnovo fallito, regioni live, tempi massimi, guida); 7 minori rimandati. Verifiche: jest 412/412, 148 test node, pgTAP 60/60, contratto 35/35, typecheck 0; prova nel browser 67/67, che ha trovato tre difetti veri, corretti; Chats con Telegram 67/67, email 58/58, pannello 18/18, 32/32, 8/8 e 20/20, console 7/7; database ripristinato. Rapporto `verifiche/crm-tappa4-2026-11-14.json`.

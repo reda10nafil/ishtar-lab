@@ -42,6 +42,47 @@ export function decidiInvio(esistente: { stato_consegna: StatoConsegna; tentato_
   return "incerto"
 }
 
+/** Id della risposta mandato dal pannello (dalla chiave unica «uscita:<id>»); per sicurezza l'id del messaggio. */
+export const idClientUscita = (m: { id: string; chiave_unica?: string | null }) =>
+  m.chiave_unica?.startsWith("uscita:") ? m.chiave_unica.slice("uscita:".length) : m.id
+
+/** Dopo il tentativo si aspetta questo tempo prima di dire che una risposta non ritrovata non è arrivata. */
+export const ATTESA_RILETTURA_MS = 2 * 60_000
+
+/**
+ * Canali che ritrovano una risposta dal suo id (la chat del sito): una risposta forse arrivata (incerta, oppure rimasta in
+ * coda dopo il tentativo) ritrovata è «inviato»; non ritrovata due minuti dopo il tentativo è «fallito», e lì un nuovo
+ * tentativo con lo stesso id non può duplicarla (il canale la scrive una volta sola per id). Prima si aspetta: la
+ * richiesta potrebbe essere ancora in viaggio. null: niente da cambiare.
+ */
+export function regolaRileggibile(
+  stato: StatoConsegna,
+  tentato_il: Date | string | null | undefined,
+  trovata: boolean,
+  adesso: Date
+): "inviato" | "fallito" | null {
+  if (stato !== "incerto" && !(stato === "in_coda" && tentato_il)) return null
+  if (trovata) return "inviato"
+  const quando = tentato_il ? new Date(tentato_il).getTime() : Number.NaN
+  return Number.isNaN(quando) || adesso.getTime() - quando >= ATTESA_RILETTURA_MS ? "fallito" : null
+}
+
+/**
+ * Risposta che la riconciliazione dà per non arrivata: arriva minuti dopo, quando il team è passato ad altro. Come un
+ * rimbalzo, la conversazione torna al team anche se chiusa, con un segno da leggere (si toglie aprendola).
+ */
+// Lo stato di prima non conta: aperta, in attesa o chiusa, torna aperta.
+export const conversazioneDopoNonArrivata = (c: { stato?: string; non_letti: number }) => ({ stato: "aperta" as const, non_letti: c.non_letti + 1 })
+
+/**
+ * Risposta ritrovata dalla riconciliazione: la conversazione torna in attesa del cliente solo se era rimessa al team per il
+ * dubbio su questa risposta (aperta, nulla da leggere, nessun messaggio del cliente dopo) e la risposta è l'ultima del
+ * team: una successiva incerta o fallita la tiene al team.
+ */
+export function tornaInAttesa(c: { stato: string; non_letti: number }, nuoviDopo: number, ultimaUscitaId: string | null, rispostaId: string): boolean {
+  return c.stato === "aperta" && c.non_letti === 0 && nuoviDopo === 0 && ultimaUscitaId === rispostaId
+}
+
 /** Una risposta non consegnata lascia la conversazione al team: nell'elenco non deve sembrare già risposta. */
 export const statoDopoFallimento = (stato: StatoConversazione): StatoConversazione => (stato === "chiusa" ? "chiusa" : "aperta")
 

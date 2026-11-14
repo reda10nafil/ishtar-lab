@@ -1,0 +1,66 @@
+{
+ "date": "2026-11-14",
+ "scope": "CRM omnicanale, tappa 4: chat del sito del negozio nella casella dei clienti — casella su un progetto Supabase dedicato (chat-sito/casella), connettore «Site chat», lettura a intervalli, risposte con riconciliazione, pagina «Chats» e widget per il sito (chat-sito/widget)",
+ "modified_by": "satria64 — versione modificata, autorizzata dal titolare nella issue #1",
+ "branch": "crm-tappa4",
+ "base_branch": "main (con le PR #2–#11)",
+ "base_commit": "e0e1bd3",
+ "decisions": "scelta di Marco del 14/11: casella su un progetto Supabase dedicato letta a intervalli da Ishtar Lab (il PC non è mai esposto), @supabase/supabase-js 2.118.0 (MIT) dentro il widget e CLI di Supabase 2.122.0 per le prove approvate da Marco; scelte tecniche di satria64 su delega di Marco: schema privato chat con sole funzioni RPC, visitatore anonimo con Turnstile, un solo lettore con un identificativo salvato nel database, conferma dopo la registrazione, risposte una volta sola per id con riconciliazione delle incerte, nome ed email del visitatore mai verificati e mai collegati da soli a un cliente, widget in un file solo con Shadow DOM; decisioni di Reda in sospeso (progetto Supabase e Turnstile, dominio del sito, lingua, conservazione e informativa); piano in «piani di implementazione/02 Roadmap/CRM omnicanale - piano tappa 4.md»",
+ "features": [
+  "casella su Supabase: schema chat privato (RLS, nessun permesso), funzioni del visitatore (chat_scrivi, chat_profilo, chat_leggi, chat_stato) e del negozio (chat_versione, chat_preleva, chat_conferma, chat_rispondi, chat_verifica, chat_pulizia), security definer con search_path vuoto",
+  "limiti: 20 messaggi in 10 minuti e 200 al giorno per visitatore, 4000 caratteri, casella piena a 5000 non importati, 10 cambi di profilo all'ora; un solo lettore (battito di 10 minuti)",
+  "coda del negozio per in_coda_dal: un messaggio rimesso in coda da un profilo nuovo va in fondo; un profilo cambiato fra prelievo e conferma fa rileggere il messaggio; «Consegnato» dalla prima importazione",
+  "connettore «Site chat» (Project URL, chiave segreta, firma delle risposte): solo https://<rif>.supabase.co (127.0.0.1 con SITO_PROVE_LOCALI=1 fuori dalla produzione), chiave pubblicabile rifiutata, nessun reindirizzamento seguito, testi fissi senza chiave",
+  "lettura (job ricevi-sito): ogni minuto dieci prelievi a cinque secondi, conferma dopo la registrazione, lettore unico salvato nel database, contatto aggiornato da un messaggio riletto (nome ed email lasciati dopo)",
+  "risposte: chat_rispondi una volta sola per id; incerte riconciliate dal job (ritrovate → Sent; non ritrovate dopo 2 minuti → Not sent con Retry, la chat torna al team anche se chiusa)",
+  "pagina «Chats»: «Visitor XXXX», nome ed email «typed by the visitor, not verified», nessuna proposta di cliente, pagina d'origine, risposta incerta «checking with the site chat…» e, dopo 10 minuti, «could not be checked» con Send again",
+  "widget (dist/ishtar-chat.js, 141 KB, 36 KB compressi): Shadow DOM con foglio costruibile (CSP rigorose), ospite neutro fuori dal body, testo mai come HTML, nulla prima di aprire la chat, Turnstile e accesso anonimo al primo invio, sessione nella scheda o sul dispositivo (ricorda), stati Invio/Inviato/Consegnato/Non inviato con Riprova, online/assenti/non disponibile, tempi massimi, italiano e inglese, tastiera, 320 px e zoom 200%",
+  "guida chat-sito/GUIDA.md per Reda e per chi gestisce il sito, con le bozze dell'avviso e dell'informativa"
+ ],
+ "tests": {
+  "jest_security": "412/412 (365 prima della tappa)",
+  "node_test_verifiche": "148/148 (131 prima della tappa)",
+  "pgtap_casella": "60/60",
+  "python_ponte_e_consegna": "19/19",
+  "typecheck_api": "0 errori",
+  "contratto_casella_finta_supabase_locale": "35/35",
+  "mutazioni": "11 nel connettore, 14 nella lettura, 16 nell'invio e nella riconciliazione, 11 nella vista e nel pannello, 20 nello stato del widget, 2 nell'aggiornamento del contatto: tutte prese (una equivalente: la firma senza trim, che la casella toglie già)"
+ },
+ "end_to_end": {
+  "chat_del_sito": "67/67 in Chrome senza testa: Supabase locale della CLI, istanza con SITO_PROVE_LOCALI=1, negozio finto con CSP rigorosa e CSS aggressivo, Turnstile di prova di Cloudflare, ponte che taglia o perde le risposte di chat_rispondi o fa buio. Casi: stile e posizione sotto la CSP, solo tastiera, HTML ostile, doppio clic, lettura lenta durante un invio, 4000 caratteri, rete persa e Riprova, nome ed email, importazione in ordine con la pagina d'origine, Consegnato e Online, risposte dal pannello, conferma persa riconciliata, risposta mai arrivata riconciliata che riapre la chat chiusa, API ferma (PC spento) e ripartenza, casella irraggiungibile dal browser e da Ishtar Lab, limite di 20 messaggi, due schede con «ricorda», secondo lettore, chiave sbagliata, 320 px e zoom, rinnovo del token fallito, regioni live, modulo dopo un cambio di pagina, richiesta ferma, pallino alla prima risposta",
+  "difetti_trovati_dalla_prova": "tre, corretti con un test che falliva prima: stile bloccato da una CSP rigorosa; conferma d'invio persa durante una lettura (messaggio doppio, fermo su «Invio…»); nome ed email lasciati dopo l'importazione mai arrivati",
+  "chat_telegram": "67/67",
+  "email": "58/58",
+  "pannello": "18/18, 32/32, 8/8 e 20/20",
+  "console": "7/7",
+  "database": "ripristinato dal backup di prima della prova; istantanea di 249 tabelle uguale"
+ },
+ "known_limits": [
+  "letture a intervalli (circa 5 secondi con Ishtar Lab acceso), non in tempo reale",
+  "il nome del negozio nella finestra è un testo fisso; niente allegati",
+  "chat_leggi mostra al visitatore solo gli ultimi 50 messaggi della conversazione",
+  "nessun limite complessivo all'afflusso oltre ai limiti per visitatore, al captcha e ai 30 accessi anonimi l'ora per IP di Supabase",
+  "conservazione e informativa da decidere con Reda: la pulizia della casella va pianificata (pg_cron), la copia in Ishtar Lab segue il gestionale",
+  "piano gratuito di Supabase in pausa dopo una settimana di poca attività",
+  "un Ishtar Lab avviato con una copia del database di un altro condivide il suo identificativo di lettore: non vanno collegati alla stessa casella"
+ ],
+ "not_tested": [
+  "progetto Supabase vero di Reda con il suo Turnstile e il sito del negozio (passi in chat-sito/GUIDA.md)",
+  "Firefox e Safari (prove con Chrome); lettori di schermo veri (controllate le regioni live con un osservatore delle mutazioni)",
+  "Windows (JavaScript del pannello e del widget, TypeScript dell'API)"
+ ],
+ "secrets_included": false,
+ "independent_review": {
+  "method": "workflow di revisione avversariale: quattro revisori (casella SQL, lato Ishtar Lab, widget, pannello e guida) e uno scettico per ciascuno che ha provato a smentire ogni rilievo con il codice e piccoli esperimenti",
+  "result": "27 rilievi, 26 confermati e 1 smentito; corretti con un test che falliva prima i 6 importanti e i minori rivalutati per effetto (abuso di chat_profilo, profilo perso durante l'importazione, Consegnato che tornava Inviato, risposta riconciliata «Not sent» senza segnale e chat chiusa che restava chiusa, «in attesa» con una risposta successiva fallita, «checking…» per sempre, primo pallino mancante, nuovo visitatore dopo un rinnovo fallito, annunci ripetuti ai lettori di schermo, modulo solo dopo un invio, nessun tempo massimo, messaggio doppio dopo una risposta persa, guida: CSP, chiave, nomi dei menu, informativa)",
+  "deferred_minors": [
+   "chat_leggi senza pagine precedenti oltre gli ultimi 50 messaggi",
+   "nessun limite complessivo all'afflusso (attacco che paga i captcha)",
+   "la finestra di collegamento tratta «Visitor XXXX» come un nome scelto dal visitatore",
+   "«Visitor XXXX» non si trova con la ricerca delle chat",
+   "«Ricorda» toglie la sessione dalla scheda anche se la copia sul dispositivo non è riuscita",
+   "«Riprova» nasconde il pulsante con il fuoco da tastiera",
+   "la regola di stampa del widget non si applica"
+  ]
+ }
+}
