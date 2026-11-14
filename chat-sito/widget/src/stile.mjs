@@ -1,5 +1,5 @@
 // Stile del widget, dentro lo Shadow DOM: non tocca la pagina del negozio e la pagina non lo tocca. Il colore si può
-// cambiare dal sito con la proprietà --ishtar-chat-colore sull'elemento [data-ishtar-chat-widget] (testo bianco sopra).
+// cambiare dal sito con la proprietà --ishtar-chat-colore sull'elemento ishtar-chat (testo bianco sopra).
 export const STILE = `
 :host { all: initial; }
 @media print { :host { display: none; } }

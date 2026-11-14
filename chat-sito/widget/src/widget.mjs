@@ -45,6 +45,28 @@ function icona(nome) {
   return svg;
 }
 
+/**
+ * Stile dentro lo Shadow DOM con un foglio costruibile: una CSP senza 'unsafe-inline' per gli stili blocca un <style>,
+ * non un foglio creato da JavaScript. Il <style> resta solo per i browser senza fogli costruibili.
+ */
+function applicaStile(ombra) {
+  try {
+    const foglio = new CSSStyleSheet();
+    foglio.replaceSync(STILE);
+    ombra.adoptedStyleSheets = [foglio];
+  } catch {
+    ombra.append(el('style', {testo: STILE}));
+  }
+}
+
+/** Elemento del documento che il tema del negozio non deve toccare: proprietà iniziali con priorità (CSSOM, ammesso dalla CSP). */
+function neutro(nome, proprieta = {}) {
+  const nodo = document.createElement(nome);
+  nodo.style.setProperty('all', 'initial', 'important');
+  for (const [chiave, valore] of Object.entries(proprieta)) nodo.style.setProperty(chiave, valore, 'important');
+  return nodo;
+}
+
 const nuovoId = () => (globalThis.crypto?.randomUUID?.() ?? `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}`);
 
 let scriptTurnstile = null;
@@ -80,10 +102,14 @@ export function creaWidget(config, caricaCasella, {haConversazione = false} = {}
   const nodi = new Map();
 
   // ——— Struttura ———
-  const ospite = el('div', {'data-ishtar-chat-widget': ''});
+  // Ospite con un nome suo (le regole del tema per div e simili non lo prendono) e fuori dal body: una transform del tema
+  // sul body non sposta la finestra, che resta fissa sullo schermo.
+  const ospite = neutro('ishtar-chat');
+  ospite.setAttribute('data-ishtar-chat-widget', '');
   const ombra = ospite.attachShadow({mode: 'open'});
   // Il controllo Turnstile sta nel documento (contenuto dello slot «verifica»): lo script di Cloudflare lavora lì.
-  const verifica = el('div', {slot: 'verifica', style: 'margin: 0 16px 8px'});
+  const verifica = neutro('ishtar-chat-verifica', {display: 'block', margin: '0 16px 8px'});
+  verifica.setAttribute('slot', 'verifica');
   ospite.append(verifica);
 
   const punto = el('span', {class: 'punto', hidden: true});
@@ -125,8 +151,9 @@ export function creaWidget(config, caricaCasella, {haConversazione = false} = {}
       }
     }},
   el('div', {class: 'testa'}, el('div', {}, titolo, statoRiga), chiudiPulsante), corpo, scrivi);
-  ombra.append(el('style', {testo: STILE}), el('div', {class: 'radice'}, finestra, pulsante));
-  document.body.append(ospite);
+  applicaStile(ombra);
+  ombra.append(el('div', {class: 'radice'}, finestra, pulsante));
+  document.documentElement.append(ospite);
 
   // ——— Casella e accesso ———
   function casella() {
@@ -228,7 +255,10 @@ export function creaWidget(config, caricaCasella, {haConversazione = false} = {}
       s = riduci(s, {tipo: 'negozio', online: stato?.online, nome: stato?.nome});
       if (await c.sessione()) {
         conConversazione = true;
-        s = riduci(s, {tipo: 'letti', righe: await c.leggi()});
+        // Prima le righe, poi lo stato: con l'await dentro gli argomenti si ripartirebbe dallo stato di prima della lettura
+        // e una conferma d'invio arrivata nel frattempo andrebbe persa (messaggio doppio o fermo su «Invio…»).
+        const righe = await c.leggi();
+        s = riduci(s, {tipo: 'letti', righe});
       }
     } catch {
       s = riduci(s, {tipo: 'errore_lettura'});
